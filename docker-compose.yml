@@ -1,0 +1,60 @@
+services:
+  # 1. Gateway & Web Server (Nginx)
+  webserver:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    container_name: siakad-pro-app
+    restart: unless-stopped
+    expose:
+      - "80"
+    depends_on:
+      - php_fpm
+    networks:
+      - autodev-net
+
+  # 2. Application Logic (PHP-FPM)
+  php_fpm:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    restart: unless-stopped
+    volumes:
+      - ./src:/var/www/html
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    environment:
+      - DB_HOST=mariadb_db
+      - REDIS_HOST=redis_cache
+      - DB_DATABASE=${DB_DATABASE:-siakad_db}
+      - DB_USERNAME=${DB_USERNAME:-siakad_user}
+      - DB_PASSWORD=${DB_PASSWORD:-secret_password_secure_123}
+    networks:
+      - autodev-net
+
+  # 3. Database (MariaDB)
+  mariadb_db:
+    build:
+      context: .
+      dockerfile: docker/db/Dockerfile
+    command: mysqld --log-warnings=1
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-siakad_db}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret_password_secure_123}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret_password_secure_123}
+      MYSQL_USER: ${DB_USERNAME:-siakad_user}
+    networks:
+      - autodev-net
+
+  # 4. Caching & Session (Redis)
+  redis_cache:
+    image: redis:alpine
+    restart: unless-stopped
+    networks:
+      - autodev-net
+
+# Network Isolation
+networks:
+  autodev-net:
+    external: true
+

@@ -1,0 +1,46 @@
+{{- range $key, $val := .Values.services }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $key }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $key }}
+  template:
+    metadata:
+      labels:
+        app: {{ $key }}
+    spec:
+      containers:
+        - name: {{ $key }}
+          image: {{ $val.image }}
+          ports:
+            - containerPort: {{ $val.port }}
+          {{- if eq $key "mariadb_db" }}
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: {{ $.Values.database.password | quote }}
+            - name: MYSQL_DATABASE
+              value: {{ $.Values.database.name | quote }}
+            - name: MYSQL_USER
+              value: {{ $.Values.database.user | quote }}
+            - name: MYSQL_PASSWORD
+              value: {{ $.Values.database.password | quote }}
+          {{- end }}
+          {{- if eq $key "php_fpm" }}
+          env:
+            - name: DB_HOST
+              value: "mariadb_db"
+            - name: DB_DATABASE
+              value: {{ $.Values.database.name | quote }}
+            - name: DB_USERNAME
+              value: {{ $.Values.database.user | quote }}
+            - name: DB_PASSWORD
+              value: {{ $.Values.database.password | quote }}
+            - name: REDIS_HOST
+              value: "redis_cache"
+          {{- end }}
+{{- end }}

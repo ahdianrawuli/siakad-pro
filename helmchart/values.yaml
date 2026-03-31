@@ -1,0 +1,24 @@
+global:
+  ingress:
+    enabled: false
+    host: ""
+    tlsSecret: ""
+
+database:
+  name: siakad_db
+  user: siakad_user
+  password: secret_password_secure_123
+
+services:
+  webserver:
+    image: "nginx:alpine"
+    port: 80
+  php_fpm:
+    image: "siakad-app:latest"
+    port: 9000
+  mariadb_db:
+    image: "mariadb:10.6"
+    port: 3306
+  redis_cache:
+    image: "redis:alpine"
+    port: 6379
