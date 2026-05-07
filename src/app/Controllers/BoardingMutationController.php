@@ -12,34 +12,38 @@ class BoardingMutationController {
     public function index() {
         $db = Database::getInstance();
         $search = $_GET['search'] ?? '';
-        
-        // Ambil History Mutasi
-        $sql = "SELECT dm.*, s.full_name, s.nis, 
-                       old.name as old_dorm, new.name as new_dorm,
-                       u.name as admin_name
-                FROM dorm_mutations dm
-                JOIN students s ON dm.student_id = s.id
-                LEFT JOIN dorms old ON dm.old_dorm_id = old.id
-                JOIN dorms new ON dm.new_dorm_id = new.id
-                LEFT JOIN users u ON dm.created_by = u.id
-                WHERE s.full_name LIKE ?
-                ORDER BY dm.mutation_date DESC, dm.created_at DESC";
-        
-        $mutations = $db->query($sql, ["%$search%"])->fetchAll();
+        $page   = (int)($_GET['page'] ?? 1);
+        $limit  = (int)($_GET['limit'] ?? 10);
+        $offset = ($page - 1) * $limit;
 
-        // Data untuk Form
-        $students = $db->query("SELECT s.id, s.full_name, s.dorm_id, d.name as current_dorm 
-                                FROM students s 
-                                LEFT JOIN dorms d ON s.dorm_id = d.id 
-                                WHERE s.status='ACTIVE' ORDER BY s.full_name")->fetchAll();
-        $dorms = $db->query("SELECT * FROM dorms ORDER BY name ASC")->fetchAll();
+        $totalData  = $db->query("SELECT COUNT(*) FROM dorm_mutations dm JOIN students s ON dm.student_id = s.id WHERE s.full_name LIKE ?", ["%$search%"])->fetchColumn();
+        $totalPages = ceil($totalData / $limit);
+
+        $mutations = $db->query("
+            SELECT dm.*, s.full_name, s.nis,
+                   old.name as old_dorm, new.name as new_dorm, u.name as admin_name
+            FROM dorm_mutations dm
+            JOIN students s ON dm.student_id = s.id
+            LEFT JOIN dorms old ON dm.old_dorm_id = old.id
+            JOIN dorms new ON dm.new_dorm_id = new.id
+            LEFT JOIN users u ON dm.created_by = u.id
+            WHERE s.full_name LIKE ?
+            ORDER BY dm.mutation_date DESC, dm.created_at DESC LIMIT $limit OFFSET $offset
+        ", ["%$search%"])->fetchAll();
+
+        $students = $db->query("SELECT s.id, s.full_name, s.dorm_id, d.name as current_dorm FROM students s LEFT JOIN dorms d ON s.dorm_id = d.id WHERE s.status='ACTIVE' ORDER BY s.full_name")->fetchAll();
+        $dorms    = $db->query("SELECT * FROM dorms ORDER BY name ASC")->fetchAll();
 
         View::render('boarding/mutations/index', [
-            'title' => 'Mutasi Kamar Santri',
-            'mutations' => $mutations,
-            'students' => $students,
-            'dorms' => $dorms,
-            'search' => $search
+            'title'       => 'Mutasi Kamar Santri',
+            'mutations'   => $mutations,
+            'students'    => $students,
+            'dorms'       => $dorms,
+            'search'      => $search,
+            'totalData'   => $totalData,
+            'totalPages'  => $totalPages,
+            'currentPage' => $page,
+            'limit'       => $limit,
         ]);
     }
 
@@ -56,7 +60,7 @@ class BoardingMutationController {
 
         if ($oldDormId == $newDormId) {
             Session::setFlash('error', 'Asrama tujuan sama dengan asrama asal.');
-            header('Location: /boarding/mutations');
+            header('Location: /discipline/dorm-mutations');
             exit;
         }
 
@@ -81,7 +85,7 @@ class BoardingMutationController {
             Session::setFlash('error', 'Gagal memproses mutasi: ' . $e->getMessage());
         }
 
-        header('Location: /boarding/mutations');
+        header('Location: /discipline/dorm-mutations');
     }
 }
 

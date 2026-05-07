@@ -10,7 +10,62 @@ class DisciplineController {
     public function __construct() { Middleware::auth(); }
 
     // ==========================================================
-    // 1. MODUL PELANGGARAN (DISIPLIN)
+    // 1. MASTER PELANGGARAN
+    // ==========================================================
+    public function master() {
+        $db = Database::getInstance();
+        $search = $_GET['search'] ?? '';
+
+        $sql = "SELECT * FROM master_violations WHERE 1=1";
+        $params = [];
+
+        if (!empty($search)) {
+            $sql .= " AND (name LIKE ? OR code LIKE ?)";
+            $params[] = "%$search%";
+            $params[] = "%$search%";
+        }
+
+        $sql .= " ORDER BY severity DESC, name ASC";
+
+        try {
+            $violations = $db->query($sql, $params)->fetchAll();
+        } catch (\Exception $e) {
+            // Setup master table if not exists (fallback for UI testing)
+            $db->query("CREATE TABLE IF NOT EXISTS `master_violations` (
+                `id` int(11) NOT NULL AUTO_INCREMENT,
+                `code` varchar(50) NOT NULL,
+                `name` varchar(255) NOT NULL,
+                `points` int(11) NOT NULL DEFAULT 0,
+                `severity` enum('RINGAN','SEDANG','BERAT') DEFAULT 'RINGAN',
+                `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+                PRIMARY KEY (`id`)
+            )");
+            $violations = $db->query($sql, $params)->fetchAll();
+        }
+
+        View::render('discipline/master', [
+            'title' => 'Master Pelanggaran',
+            'violations' => $violations,
+            'search' => $search
+        ]);
+    }
+
+    public function storeMaster() {
+        $db = Database::getInstance();
+        try {
+            $db->query("INSERT INTO master_violations (code, name, points, severity) VALUES (?, ?, ?, ?)", [
+                $_POST['code'], $_POST['name'], $_POST['points'], $_POST['severity']
+            ]);
+            Session::setFlash('success', 'Master Pelanggaran berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            Session::setFlash('error', 'Gagal menambah Master Pelanggaran: ' . $e->getMessage());
+        }
+        header('Location: /discipline/master-violations');
+    }
+
+
+    // ==========================================================
+    // 2. MODUL PELANGGARAN SANTRI (DISIPLIN)
     // ==========================================================
     public function index() {
         $db = Database::getInstance();
@@ -85,7 +140,7 @@ class DisciplineController {
         }
 
         Session::setFlash('success', 'Pelanggaran berhasil dicatat.');
-        header('Location: /student-affairs/discipline');
+        header('Location: /discipline/student-violations');
     }
 
     public function deleteViolation() {
@@ -95,7 +150,7 @@ class DisciplineController {
             $db->query("DELETE FROM student_violations WHERE id = ?", [$id]);
             Session::setFlash('success', 'Data pelanggaran dihapus.');
         }
-        header('Location: /student-affairs/discipline');
+        header('Location: /discipline/student-violations');
     }
 
 

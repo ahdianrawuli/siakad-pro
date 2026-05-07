@@ -2,29 +2,109 @@
 namespace App\Controllers;
 use App\Models\Menu;
 
+use App\Core\View;
+use App\Core\Session;
+use App\Core\Middleware;
+use App\Core\Database;
+
 class MenuController {
+    public function __construct() {
+        Middleware::auth();
+    }
+
     public function index() {
-        $menus = Menu::getAll();
+        $db = Database::getInstance();
+        $search = $_GET['search'] ?? '';
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $offset = ($page - 1) * $limit;
+
+        $sql = "SELECT m.*, p.title as parent_name FROM menus m LEFT JOIN menus p ON m.parent_id = p.id WHERE 1=1";
+        $params = [];
         
-        // Return JSON dulu untuk testing fase ini
-        header('Content-Type: application/json');
-        echo json_encode([
-            'status' => 'success', 
-            'message' => 'Real Data from Database',
-            'data' => $menus
+        if (!empty($search)) {
+            $sql .= " AND (m.title LIKE ? OR m.url LIKE ?)";
+            $params[] = "%$search%";
+            $params[] = "%$search%";
+        }
+
+        $totalData = $db->query("SELECT COUNT(*) FROM (" . $sql . ") as t", $params)->fetchColumn();
+        $sql .= " ORDER BY m.parent_id ASC, m.order_num ASC LIMIT $limit OFFSET $offset";
+        $menus = $db->query($sql, $params)->fetchAll();
+        $parents = $db->query("SELECT id, title FROM menus WHERE parent_id IS NULL ORDER BY order_num ASC")->fetchAll();
+
+        View::render('settings/menus/index', [
+            'title' => 'Manajemen Menu',
+            'menus' => $menus,
+            'parents' => $parents,
+            'totalData' => $totalData,
+            'totalPages' => ceil($totalData / $limit),
+            'currentPage' => $page,
+            'limit' => $limit,
+            'search' => $search
         ]);
     }
 
     public function store() {
-        // Logika simpan menu baru
+        $db = Database::getInstance();
         $data = [
-            'parent_id' => $_POST['parent_id'] ?? null,
-            'title' => $_POST['title'],
-            'url' => $_POST['url'],
-            'icon' => $_POST['icon'] ?? 'circle',
-            'order_num' => $_POST['order_num'] ?? 0
+            $_POST['parent_id'] ?: null,
+            $_POST['title'],
+            $_POST['url'] ?: '#',
+            $_POST['icon'] ?: 'circle',
+            $_POST['order_num'] ?: 0,
+            isset($_POST['is_active']) ? 1 : 0
         ];
-        Menu::create($data);
-        echo json_encode(['status' => 'success', 'message' => 'Menu created']);
+
+        try {
+            $db->query("INSERT INTO menus (parent_id, title, url, icon, order_num, is_active) VALUES (?, ?, ?, ?, ?, ?)", $data);
+            Session::setFlash('success', 'Menu berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            Session::setFlash('error', 'Gagal menambah menu.');
+        }
+        header('Location: /settings/menus');
+    }
+
+    public function update() {
+        $db = Database::getInstance();
+        $data = [
+            $_POST['parent_id'] ?: null,
+            $_POST['title'],
+            $_POST['url'] ?: '#',
+            $_POST['icon'] ?: 'circle',
+            $_POST['order_num'] ?: 0,
+            $_POST['id']
+        ];
+
+        try {
+            $db->query("UPDATE menus SET parent_id = ?, title = ?, url = ?, icon = ?, order_num = ? WHERE id = ?", $data);
+            Session::setFlash('success', 'Menu berhasil diperbarui.');
+        } catch (\Exception $e) {
+            Session::setFlash('error', 'Gagal memperbarui menu.');
+        }
+        header('Location: /settings/menus');
+    }
+
+    public function toggle() {
+        $db = Database::getInstance();
+        $id = $_POST['id'];
+        $menu = $db->query("SELECT is_active FROM menus WHERE id = ?", [$id])->fetch();
+        if ($menu) {
+            $newStatus = $menu['is_active'] ? 0 : 1;
+            $db->query("UPDATE menus SET is_active = ? WHERE id = ?", [$newStatus, $id]);
+            Session::setFlash('success', 'Status menu diperbarui.');
+        }
+        header('Location: /settings/menus');
+    }
+
+    public function delete() {
+        $db = Database::getInstance();
+        try {
+            $db->query("DELETE FROM menus WHERE id = ?", [$_POST['id']]);
+            Session::setFlash('success', 'Menu berhasil dihapus.');
+        } catch (\Exception $e) {
+            Session::setFlash('error', 'Gagal menghapus menu.');
+        }
+        header('Location: /settings/menus');
     }
 }

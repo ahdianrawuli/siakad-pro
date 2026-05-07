@@ -85,7 +85,12 @@ class BoardingReportController {
     public function print() {
         $db = Database::getInstance();
         $studentId = $_GET['student_id'];
-        $yearId = $_GET['year_id'];
+        $yearId = $_GET['year_id'] ?? null;
+
+        if (!$yearId) {
+            $activeYear = $db->query("SELECT id FROM academic_years WHERE is_active = 1 LIMIT 1")->fetch();
+            $yearId = $activeYear['id'] ?? null;
+        }
 
         // Data Siswa
         $student = $db->query("SELECT s.*, c.name as class_name, d.name as dorm_name 

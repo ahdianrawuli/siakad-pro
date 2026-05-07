@@ -12,21 +12,32 @@ class BoardingController {
     // --- 1. MANAJEMEN ASRAMA (DORMS) ---
     public function dorms() {
         $db = Database::getInstance();
-        
-        // Ambil Data Kamar + Jumlah Penghuni saat ini
-        $dorms = $db->query("
-            SELECT d.*, 
-            (SELECT COUNT(*) FROM students WHERE dorm_id = d.id) as occupied
-            FROM dorms d ORDER BY d.name
-        ")->fetchAll();
 
-        // Ambil Siswa yg belum punya kamar (untuk assign)
-        $students = $db->query("SELECT id, full_name, nis FROM students WHERE dorm_id IS NULL AND status='ACTIVE'")->fetchAll();
+        $search = $_GET['search'] ?? '';
+        $gender = $_GET['gender'] ?? '';
+        $unit   = $_GET['unit'] ?? '';
+
+        $where = "WHERE 1=1";
+        $params = [];
+        if (!empty($search)) { $where .= " AND d.name LIKE ?"; $params[] = "%$search%"; }
+        if (!empty($gender))  { $where .= " AND d.gender = ?"; $params[] = $gender; }
+        if (!empty($unit))    { $where .= " AND d.unit = ?";   $params[] = $unit; }
+
+        $dorms = $db->query("
+            SELECT d.*, (SELECT COUNT(*) FROM students WHERE dorm_id = d.id) as occupied
+            FROM dorms d $where ORDER BY d.unit, d.gender, d.name
+        ", $params)->fetchAll();
+
+        $students = $db->query("SELECT id, full_name, nis FROM students WHERE dorm_id IS NULL AND status='ACTIVE' ORDER BY full_name")->fetchAll();
 
         View::render('boarding/dorms', [
-            'title' => 'Manajemen Asrama',
-            'dorms' => $dorms,
-            'students' => $students
+            'title'        => 'Manajemen Asrama',
+            'dorms'        => $dorms,
+            'students'     => $students,
+            'search'       => $search,
+            'genderFilter' => $gender,
+            'unitFilter'   => $unit,
+            'totalDorms'   => $db->query("SELECT COUNT(*) FROM dorms")->fetchColumn(),
         ]);
     }
 
@@ -37,7 +48,71 @@ class BoardingController {
         
         $db->query("UPDATE students SET dorm_id = ? WHERE id = ?", [$dormId, $studentId]);
         Session::setFlash('success', 'Santri berhasil ditempatkan di asrama.');
-        header('Location: /boarding/dorms');
+        header('Location: /asrama/dorms');
+    }
+
+    public function dormStudents() {
+        $dormId = $_GET['id'] ?? null;
+        if (!$dormId) { header('Location: /asrama/dorms'); exit; }
+
+        $db = Database::getInstance();
+        $dorm = $db->query("SELECT * FROM dorms WHERE id = ?", [$dormId])->fetch();
+        if (!$dorm) { header('Location: /asrama/dorms'); exit; }
+
+        $search = trim($_GET['search'] ?? '');
+        $limit  = (int)($_GET['limit'] ?? 10);
+        $page   = max(1, (int)($_GET['page'] ?? 1));
+        $offset = ($page - 1) * $limit;
+
+        $where  = "s.dorm_id = ? AND s.status = 'ACTIVE'";
+        $params = [$dormId];
+        if ($search !== '') {
+            $where   .= " AND (s.full_name LIKE ? OR s.nis LIKE ?)";
+            $params[] = "%$search%";
+            $params[] = "%$search%";
+        }
+
+        $total = $db->query("SELECT COUNT(*) FROM students s WHERE $where", $params)->fetchColumn();
+
+        $students = $db->query(
+            "SELECT s.*, c.name as class_name FROM students s
+             LEFT JOIN classrooms c ON s.classroom_id = c.id
+             WHERE $where ORDER BY s.full_name LIMIT $limit OFFSET $offset",
+            $params
+        )->fetchAll();
+
+        $allDorms = $db->query("SELECT * FROM dorms WHERE id != ? ORDER BY name", [$dormId])->fetchAll();
+
+        View::render('boarding/dorm_students', [
+            'title'       => 'Santri Asrama: ' . $dorm['name'],
+            'dorm'        => $dorm,
+            'students'    => $students,
+            'allDorms'    => $allDorms,
+            'search'      => $search,
+            'limit'       => $limit,
+            'currentPage' => $page,
+            'totalPages'  => $limit > 0 ? (int)ceil($total / $limit) : 1,
+            'totalData'   => $total,
+        ]);
+    }
+
+    public function moveDorm() {
+        $studentId = $_POST['student_id'];
+        $newDormId = ($_POST['new_dorm_id'] === 'null' || $_POST['new_dorm_id'] === '') ? null : $_POST['new_dorm_id'];
+        $fromDormId = $_POST['from_dorm_id'];
+
+        $db = Database::getInstance();
+        $db->query("UPDATE students SET dorm_id = ? WHERE id = ?", [$newDormId, $studentId]);
+        Session::setFlash('success', 'Santri berhasil dipindahkan.');
+        header("Location: /asrama/dorms/students?id=$fromDormId");
+    }
+
+    public function units() {
+        View::render('boarding/units', ['title' => 'Unit Asrama']);
+    }
+
+    public function tilawah() {
+        View::render('boarding/tilawah', ['title' => 'Absen Tilawah']);
     }
 
     public function storeDorm() {
@@ -46,12 +121,12 @@ class BoardingController {
         $capacity = $_POST['capacity'];
         $gender = $_POST['gender'];
 
-        $db->query("INSERT INTO dorms (name, capacity, gender) VALUES (?, ?, ?)", [
-            $name, $capacity, $gender
+        $db->query("INSERT INTO dorms (name, capacity, gender, unit) VALUES (?, ?, ?, ?)", [
+            $_POST['name'], $_POST['capacity'], $_POST['gender'], $_POST['unit'] ?? 'MTS'
         ]);
 
         Session::setFlash('success', 'Gedung/Kamar asrama berhasil ditambahkan.');
-        header('Location: /boarding/dorms');
+        header('Location: /asrama/dorms');
     }
 
     public function deleteDorm() {
@@ -68,29 +143,47 @@ class BoardingController {
             Session::setFlash('success', 'Data asrama berhasil dihapus.');
         }
 
-        header('Location: /boarding/dorms');
+        header('Location: /asrama/dorms');
     }
 
     // --- 2. PERIZINAN (IZIN KELUAR) ---
     public function permits() {
         $db = Database::getInstance();
-        
-        // List Perizinan
+
+        $search = $_GET['search'] ?? '';
+        $status = $_GET['status'] ?? '';
+        $page   = (int)($_GET['page'] ?? 1);
+        $limit  = (int)($_GET['limit'] ?? 10);
+        $offset = ($page - 1) * $limit;
+
+        $where = "WHERE 1=1";
+        $params = [];
+        if (!empty($search)) { $where .= " AND (s.full_name LIKE ? OR s.nis LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
+        if (!empty($status))  { $where .= " AND p.status = ?"; $params[] = $status; }
+
+        $totalData  = $db->query("SELECT COUNT(*) FROM permits p JOIN students s ON p.student_id = s.id $where", $params)->fetchColumn();
+        $totalPages = ceil($totalData / $limit);
+
         $permits = $db->query("
             SELECT p.*, s.full_name, s.nis, d.name as dorm_name
             FROM permits p
             JOIN students s ON p.student_id = s.id
             LEFT JOIN dorms d ON s.dorm_id = d.id
-            ORDER BY p.created_at DESC
-        ")->fetchAll();
+            $where ORDER BY p.created_at DESC LIMIT $limit OFFSET $offset
+        ", $params)->fetchAll();
 
-        // Data Siswa untuk Form Izin Baru
-        $students = $db->query("SELECT id, full_name, nis FROM students WHERE status='ACTIVE'")->fetchAll();
+        $students = $db->query("SELECT id, full_name, nis FROM students WHERE status='ACTIVE' ORDER BY full_name")->fetchAll();
 
         View::render('boarding/permits', [
-            'title' => 'Perizinan Santri',
-            'permits' => $permits,
-            'students' => $students
+            'title'        => 'Perizinan Santri',
+            'permits'      => $permits,
+            'students'     => $students,
+            'search'       => $search,
+            'statusFilter' => $status,
+            'totalData'    => $totalData,
+            'totalPages'   => $totalPages,
+            'currentPage'  => $page,
+            'limit'        => $limit,
         ]);
     }
 
@@ -122,20 +215,47 @@ class BoardingController {
     // --- 3. POSKESTREN (KESEHATAN) ---
     public function health() {
         $db = Database::getInstance();
-        
-        // List Pasien (Hari ini & Riwayat Terakhir)
+
+        $search = trim($_GET['search'] ?? '');
+        $status = $_GET['status'] ?? '';
+        $limit  = (int)($_GET['limit'] ?? 10);
+        $page   = max(1, (int)($_GET['page'] ?? 1));
+        $offset = ($page - 1) * $limit;
+
+        $where  = "1=1";
+        $params = [];
+        if ($search !== '') {
+            $where   .= " AND (s.full_name LIKE ? OR s.nis LIKE ?)";
+            $params[] = "%$search%"; $params[] = "%$search%";
+        }
+        if ($status !== '') {
+            $where   .= " AND hr.status = ?";
+            $params[] = $status;
+        }
+
+        $total = $db->query("SELECT COUNT(*) FROM health_records hr JOIN students s ON hr.student_id = s.id WHERE $where", $params)->fetchColumn();
+
         $records = $db->query("
             SELECT hr.*, s.full_name, s.nis, u.name as officer_name
             FROM health_records hr
             JOIN students s ON hr.student_id = s.id
             JOIN users u ON hr.officer_id = u.id
-            ORDER BY hr.date DESC LIMIT 50
-        ")->fetchAll();
+            WHERE $where ORDER BY hr.date DESC LIMIT $limit OFFSET $offset
+        ", $params)->fetchAll();
 
-        // Data untuk dropdown input
-        $students = $db->query("SELECT id, full_name, nis FROM students WHERE status='ACTIVE'")->fetchAll();
+        $students = $db->query("SELECT id, full_name, nis FROM students WHERE status='ACTIVE' ORDER BY full_name")->fetchAll();
 
-        View::render('boarding/health', ['title' => 'Poskestren', 'records' => $records, 'students' => $students]);
+        View::render('boarding/health', [
+            'title'       => 'Poskestren',
+            'records'     => $records,
+            'students'    => $students,
+            'search'      => $search,
+            'status'      => $status,
+            'limit'       => $limit,
+            'currentPage' => $page,
+            'totalPages'  => $limit > 0 ? (int)ceil($total / $limit) : 1,
+            'totalData'   => $total,
+        ]);
     }
 
     public function storeHealth() {
@@ -154,26 +274,37 @@ class BoardingController {
     // --- 4. MONITORING TAHFIDZ ---
     public function tahfidz() {
         $db = Database::getInstance();
-        $userId = Session::get('user_id'); // Perbaikan Session
-        $userRole = Session::get('user_role'); // Perbaikan Session
+        $userId   = Session::get('user_id');
+        $userRole = Session::get('user_role');
+        $search   = $_GET['search'] ?? '';
+        $type     = $_GET['type'] ?? '';
+        $page     = (int)($_GET['page'] ?? 1);
+        $limit    = (int)($_GET['limit'] ?? 10);
+        $offset   = ($page - 1) * $limit;
 
-        // List Setoran (Guru hanya lihat inputan dia sendiri agar tidak pusing, Admin lihat semua)
-        $sql = "
-            SELECT wl.*, s.full_name, s.nis 
-            FROM worship_logs wl
-            JOIN students s ON wl.student_id = s.id
-        ";
-        
-        if ($userRole == 'guru') {
-            $sql .= " WHERE wl.teacher_id = $userId";
-        }
-        
-        $sql .= " ORDER BY wl.date DESC LIMIT 50";
-        $logs = $db->query($sql)->fetchAll();
+        $where = "WHERE 1=1";
+        $params = [];
+        if ($userRole == 'guru') { $where .= " AND wl.teacher_id = ?"; $params[] = $userId; }
+        if (!empty($search)) { $where .= " AND (s.full_name LIKE ? OR wl.surah_name LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
+        if (!empty($type))   { $where .= " AND wl.type = ?"; $params[] = $type; }
 
-        $students = $db->query("SELECT id, full_name, nis FROM students WHERE status='ACTIVE'")->fetchAll();
+        $totalData  = $db->query("SELECT COUNT(*) FROM worship_logs wl JOIN students s ON wl.student_id = s.id $where", $params)->fetchColumn();
+        $totalPages = ceil($totalData / $limit);
 
-        View::render('boarding/tahfidz', ['title' => 'Setoran Hafalan', 'logs' => $logs, 'students' => $students]);
+        $logs = $db->query("SELECT wl.*, s.full_name, s.nis FROM worship_logs wl JOIN students s ON wl.student_id = s.id $where ORDER BY wl.date DESC LIMIT $limit OFFSET $offset", $params)->fetchAll();
+        $students = $db->query("SELECT id, full_name, nis FROM students WHERE status='ACTIVE' ORDER BY full_name")->fetchAll();
+
+        View::render('boarding/tahfidz', [
+            'title'       => 'Setoran Hafalan',
+            'logs'        => $logs,
+            'students'    => $students,
+            'search'      => $search,
+            'typeFilter'  => $type,
+            'totalData'   => $totalData,
+            'totalPages'  => $totalPages,
+            'currentPage' => $page,
+            'limit'       => $limit,
+        ]);
     }
 
     public function storeTahfidz() {

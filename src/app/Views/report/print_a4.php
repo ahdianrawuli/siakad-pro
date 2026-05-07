@@ -79,7 +79,7 @@
                 <td><?= $year['name'] ?? date('Y') ?></td>
                 <td>Jurusan</td>
                 <td>:</td>
-                <td><?= $student['major'] ?></td>
+                <td><?= $student['major'] ?? '-' ?></td>
             </tr>
         </table>
 

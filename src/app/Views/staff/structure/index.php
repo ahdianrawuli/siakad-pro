@@ -71,20 +71,30 @@
 .tree-node:hover .btn-del-node { opacity: 1; }
 </style>
 
-<main class="flex-1 overflow-y-auto bg-gray-100 p-6">
-    <div class="mb-6 flex justify-between items-center">
+<main class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
+
+    <!-- Header -->
+    <div class="mb-8 flex flex-col md:flex-row md:justify-between md:items-end gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div>
-            <h3 class="text-3xl font-medium text-gray-700">Struktur Organisasi</h3>
-            <p class="text-sm text-gray-500">Diagram hierarki kepengurusan sekolah.</p>
+            <h3 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Struktur Organisasi</h3>
+            <p class="text-slate-500 text-sm mt-1 font-medium">Diagram hierarki kepengurusan Pesantren Thawalib Parabek.</p>
+            <div class="mt-3 flex items-center gap-2">
+                <button onclick="document.getElementById('infoModal').classList.remove('hidden')"
+                    class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-colors border border-slate-200" title="Panduan Penggunaan">
+                    <i class="fa-solid fa-circle-info text-sm"></i>
+                </button>
+            </div>
         </div>
-        <button onclick="document.getElementById('addModal').classList.remove('hidden')" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 shadow-sm flex items-center gap-2">
-            <i class="fa fa-plus"></i> Tambah Node / Jabatan
+        <button onclick="document.getElementById('addModal').classList.remove('hidden')"
+            class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-2 w-fit">
+            <i class="fa-solid fa-plus"></i> Tambah Node / Jabatan
         </button>
     </div>
     
     <?php \App\Core\Session::flash(); ?>
 
-    <div class="bg-white rounded shadow-sm border border-gray-200 p-8 overflow-x-auto min-h-[500px] flex justify-center items-start">
+    <div class="bg-white rounded shadow-sm border border-gray-200 p-8 min-h-[500px]" style="overflow-x:auto; overflow-y:auto;">
+        <div style="min-width: max-content; display: flex; justify-content: center; padding: 1rem;">
         <?php if(empty($tree)): ?>
             <div class="text-center py-20">
                 <div class="text-gray-300 text-6xl mb-4"><i class="fa fa-sitemap"></i></div>
@@ -102,7 +112,7 @@
                             echo "<div class='tree-node'>";
                             
                             // Tombol Hapus (Muncul saat hover)
-                            echo "<a href='/staff/structure/delete?id={$node['id']}' class='btn-del-node' onclick=\"return confirm('Hapus jabatan ini beserta bawahannya?')\"><i class='fa fa-times'></i></a>";
+                            echo "<a href='/school/structure/delete?id={$node['id']}' class='btn-del-node' onclick=\"return confirm('Hapus jabatan ini beserta bawahannya?')\"><i class='fa fa-times'></i></a>";
 
                             // Isi Node
                             echo "<span class='node-title'>{$node['title']}</span>";
@@ -129,14 +139,15 @@
                     ?>
                 </ul>
             </div>
-            <?php endif; ?>
+        <?php endif; ?>
+        </div>
     </div>
 </main>
 
 <div id="addModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white p-6 rounded-lg w-full max-w-lg shadow-xl">
         <h3 class="text-xl font-bold mb-4">Tambah Jabatan / Node</h3>
-        <form action="/staff/structure/store" method="POST">
+        <form action="/school/structure/store" method="POST">
             <?= \App\Core\Csrf::input() ?>
             
             <div class="mb-4">
@@ -158,12 +169,19 @@
                     <p class="text-[10px] text-gray-400 mt-1">* Kosongkan jika ini adalah posisi tertinggi.</p>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Pejabat (Staff)</label>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Pejabat (Staff / Guru)</label>
                     <select name="staff_id" class="w-full p-2 border rounded text-sm">
-                        <option value="">-- Pilih Staff --</option>
-                        <?php foreach($staffs as $st): ?>
-                            <option value="<?= $st['id'] ?>"><?= $st['full_name'] ?></option>
+                        <option value="">-- Pilih --</option>
+                        <optgroup label="── Staff Kepegawaian ──">
+                        <?php foreach($staffs as $st): if($st['sumber'] !== 'staff') continue; ?>
+                            <option value="<?= $st['id'] ?>"><?= htmlspecialchars($st['full_name']) ?></option>
                         <?php endforeach; ?>
+                        </optgroup>
+                        <optgroup label="── Guru / Pengajar ──">
+                        <?php foreach($staffs as $st): if($st['sumber'] !== 'guru') continue; ?>
+                            <option value="<?= $st['id'] ?>"><?= htmlspecialchars($st['full_name']) ?></option>
+                        <?php endforeach; ?>
+                        </optgroup>
                     </select>
                 </div>
             </div>
@@ -180,6 +198,51 @@
         </form>
     </div>
 </div>
+
+<!-- Modal Info -->
+<div id="infoModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+        <div class="p-5 border-b border-slate-100 bg-blue-50 flex justify-between items-center">
+            <h3 class="font-bold text-blue-800 flex items-center gap-2"><i class="fa-solid fa-circle-info text-blue-500"></i> Panduan Struktur Organisasi</h3>
+            <button onclick="document.getElementById('infoModal').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-blue-100 text-blue-500 hover:bg-blue-200 flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="p-6 space-y-5 text-sm text-slate-600">
+            <div>
+                <h4 class="font-bold text-slate-800 mb-2 flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">1</span> Cara Penggunaan</h4>
+                <ol class="list-decimal list-inside space-y-1.5 text-slate-500">
+                    <li>Klik <strong class="text-slate-700">Tambah Node</strong> untuk menambahkan jabatan baru ke bagan.</li>
+                    <li>Pilih <strong class="text-slate-700">Induk (Atasan)</strong> untuk menentukan posisi hierarki.</li>
+                    <li>Pilih <strong class="text-slate-700">Pejabat</strong> dari daftar staff atau guru yang tersedia.</li>
+                    <li>Arahkan kursor ke node untuk menampilkan tombol <strong class="text-slate-700">hapus</strong>.</li>
+                </ol>
+            </div>
+            <div>
+                <h4 class="font-bold text-slate-800 mb-2 flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">2</span> Relasi ke Menu Lain</h4>
+                <div class="space-y-2">
+                    <div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                        <i class="fa-solid fa-users text-blue-400 w-5 text-center"></i>
+                        <div><div class="font-semibold text-slate-700 text-xs">Data Staff</div><div class="text-[11px] text-slate-400">Pejabat diambil dari <strong>Kepegawaian → Data Staff</strong> dan daftar guru.</div></div>
+                    </div>
+                    <div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                        <i class="fa-solid fa-id-card text-purple-400 w-5 text-center"></i>
+                        <div><div class="font-semibold text-slate-700 text-xs">Master Jabatan</div><div class="text-[11px] text-slate-400">Jabatan dikelola di <strong>Kepegawaian → Master Jabatan</strong>.</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+            <button onclick="document.getElementById('infoModal').classList.add('hidden')" class="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition">Mengerti</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.onclick = function(e) {
+        ['infoModal','addModal'].forEach(function(id) {
+            if (e.target == document.getElementById(id)) document.getElementById(id).classList.add('hidden');
+        });
+    }
+</script>
 
 <?php require __DIR__ . '/../../layouts/footer.php'; ?>
 

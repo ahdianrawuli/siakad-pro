@@ -9,13 +9,39 @@ class KitabController {
     public function __construct() { Middleware::auth(); }
 
     public function index() {
-        $db = Database::getInstance();
+        $db     = Database::getInstance();
         $userId = Session::get('user_id');
-        
-        // Hanya tampilkan jurnal user tersebut
-        $journals = $db->query("SELECT * FROM kitab_journals WHERE teacher_id = ? ORDER BY date DESC", [$userId])->fetchAll();
-        
-        View::render('academic/kitab', ['title' => 'Jurnal Kitab', 'journals' => $journals]);
+        $role   = Session::get('user_role');
+        $search = $_GET['kitab'] ?? '';
+        $teacherFilter = $_GET['teacher_id'] ?? '';
+        $page   = (int)($_GET['page'] ?? 1);
+        $limit  = (int)($_GET['limit'] ?? 10);
+        $offset = ($page - 1) * $limit;
+
+        $where = "WHERE 1=1";
+        $params = [];
+        if ($role == 'guru') { $where .= " AND j.teacher_id = ?"; $params[] = $userId; }
+        if (!empty($search))        { $where .= " AND j.kitab_name LIKE ?"; $params[] = "%$search%"; }
+        if (!empty($teacherFilter)) { $where .= " AND j.teacher_id = ?";   $params[] = $teacherFilter; }
+
+        $totalData  = $db->query("SELECT COUNT(*) FROM kitab_journals j $where", $params)->fetchColumn();
+        $totalPages = ceil($totalData / $limit);
+
+        $journals = $db->query("SELECT j.*, u.name as teacher_name FROM kitab_journals j LEFT JOIN users u ON j.teacher_id = u.id $where ORDER BY j.date DESC LIMIT $limit OFFSET $offset", $params)->fetchAll();
+        $teachers = $db->query("SELECT id, name FROM users WHERE role_id = 3 ORDER BY name")->fetchAll();
+
+        View::render('academic/kitab', [
+            'title'          => 'Jurnal Kitab',
+            'journals'       => $journals,
+            'teachers'       => $teachers,
+            'role'           => $role,
+            'search'         => $search,
+            'teacherFilter'  => $teacherFilter,
+            'totalData'      => $totalData,
+            'totalPages'     => $totalPages,
+            'currentPage'    => $page,
+            'limit'          => $limit,
+        ]);
     }
 
     public function store() {

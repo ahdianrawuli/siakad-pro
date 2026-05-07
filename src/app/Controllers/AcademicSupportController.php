@@ -24,24 +24,56 @@ class AcademicSupportController {
         $db->query("INSERT INTO academic_calendar (academic_year_id, title, start_date, end_date, type, color) VALUES (?, ?, ?, ?, ?, ?)", [
             $activeYear['id'], $_POST['title'], $_POST['start_date'], $_POST['end_date'], $_POST['type'], $_POST['color']
         ]);
+        Session::setFlash('success', 'Event berhasil ditambahkan.');
+        header('Location: /academic/calendar');
+    }
+
+    public function deleteEvent() {
+        $db = Database::getInstance();
+        $db->query("DELETE FROM academic_calendar WHERE id = ?", [(int)$_POST['id']]);
+        Session::setFlash('success', 'Event berhasil dihapus.');
         header('Location: /academic/calendar');
     }
 
     // --- BANK SOAL ---
     public function examBank() {
         $db = Database::getInstance();
+
+        $page   = (int)($_GET['page'] ?? 1);
+        $limit  = (int)($_GET['limit'] ?? 10);
+        $offset = ($page - 1) * $limit;
+        $search = $_GET['search'] ?? '';
+        $type   = $_GET['type'] ?? '';
+
+        $where = "WHERE 1=1";
+        $params = [];
+        if (!empty($search)) { $where .= " AND (e.title LIKE ? OR s.name LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
+        if (!empty($type))   { $where .= " AND e.type = ?"; $params[] = $type; }
+
+        $totalData  = $db->query("SELECT COUNT(*) FROM exam_banks e JOIN subjects s ON e.subject_id = s.id $where", $params)->fetchColumn();
+        $totalPages = ceil($totalData / $limit);
+
         $exams = $db->query("
             SELECT e.*, s.name as subject_name, u.name as teacher_name 
             FROM exam_banks e
             JOIN subjects s ON e.subject_id = s.id
             JOIN users u ON e.teacher_id = u.id
-            ORDER BY e.created_at DESC
-        ")->fetchAll();
-        
-        // Data untuk form
+            $where ORDER BY e.created_at DESC LIMIT $limit OFFSET $offset
+        ", $params)->fetchAll();
+
         $subjects = $db->query("SELECT * FROM subjects")->fetchAll();
-        
-        View::render('academic/exams', ['title' => 'Bank Soal', 'exams' => $exams, 'subjects' => $subjects]);
+
+        View::render('academic/exams', [
+            'title'       => 'Bank Soal',
+            'exams'       => $exams,
+            'subjects'    => $subjects,
+            'totalData'   => $totalData,
+            'totalPages'  => $totalPages,
+            'currentPage' => $page,
+            'limit'       => $limit,
+            'search'      => $search,
+            'typeFilter'  => $type,
+        ]);
     }
 
     public function storeExam() {

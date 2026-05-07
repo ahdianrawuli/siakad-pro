@@ -23,6 +23,19 @@ services:
       - ./src:/var/www/html
       - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
     environment:
+      - WA_API_KEY=${WA_API_KEY:-}
+      - WA_SERVICE_URL=http://wa_service:3000
+      - WA_SERVICE_KEY=${WA_SERVICE_KEY:-siakad-wa-secret}
+      - VA_PREFIX_ALIYAH=988
+      - VA_CLIENT_ID_ALIYAH=19104
+      - VA_SECRET_KEY_ALIYAH=${VA_SECRET_KEY_ALIYAH:-}
+      - VA_PREFIX_TSANAWIYAH=988
+      - VA_CLIENT_ID_TSANAWIYAH=60109
+      - VA_SECRET_KEY_TSANAWIYAH=${VA_SECRET_KEY_TSANAWIYAH:-}
+      - VA_PREFIX_MAHAD_ALY=988
+      - VA_CLIENT_ID_MAHAD_ALY=80109
+      - VA_SECRET_KEY_MAHAD_ALY=${VA_SECRET_KEY_MAHAD_ALY:-}
+      - VA_HOST_URL=https://api.bni-ecollection.com/
       - DB_HOST=mariadb_db
       - REDIS_HOST=redis_cache
       - DB_DATABASE=${DB_DATABASE:-siakad_db}
@@ -53,8 +66,25 @@ services:
     networks:
       - autodev-net
 
+  # 5. WhatsApp Gateway Service (Node.js + whatsapp-web.js)
+  wa_service:
+    build:
+      context: .
+      dockerfile: docker/whatsapp/Dockerfile
+    container_name: siakad-wa-service
+    restart: unless-stopped
+    environment:
+      - WA_SERVICE_KEY=${WA_SERVICE_KEY:-siakad-wa-secret}
+    volumes:
+      - wa_auth_data:/app/.wwebjs_auth
+    networks:
+      - autodev-net
+
 # Network Isolation
 networks:
   autodev-net:
     external: true
+
+volumes:
+  wa_auth_data:
 

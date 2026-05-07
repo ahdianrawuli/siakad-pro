@@ -1,43 +1,217 @@
 <?php require __DIR__ . '/../layouts/header.php'; ?>
 <?php require __DIR__ . '/../layouts/sidebar.php'; ?>
-<main class="flex-1 overflow-y-auto bg-gray-100 p-6">
-    <h3 class="text-2xl font-bold mb-6">Jurnal Ngaji Kitab (Sorogan/Bandongan)</h3>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white p-6 rounded shadow h-fit">
-            <form action="/academic/kitab/store" method="POST">
-                <?= \App\Core\Csrf::input() ?>
-                <input type="date" name="date" value="<?= date('Y-m-d') ?>" class="w-full mb-3 p-2 border rounded">
-                <input type="text" name="class_name" placeholder="Nama Halaqah (Misal: Ulya 1)" class="w-full mb-3 p-2 border rounded" required>
-                <input type="text" name="kitab_name" placeholder="Nama Kitab (Misal: Fathul Qorib)" class="w-full mb-3 p-2 border rounded" required>
-                <div class="flex gap-2 mb-3">
-                    <input type="number" name="start_page" placeholder="Hal Awal" class="w-1/2 p-2 border rounded">
-                    <input type="number" name="end_page" placeholder="Hal Akhir" class="w-1/2 p-2 border rounded">
+
+<main class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
+
+    <!-- Header -->
+    <div class="mb-8 flex flex-col md:flex-row md:justify-between md:items-end gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <div>
+            <h3 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Jurnal Ngaji Kitab</h3>
+            <p class="text-slate-500 text-sm mt-1 font-medium">Sorogan / Bandongan — pencatatan kajian kitab harian.</p>
+            <div class="mt-3 flex items-center gap-2">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-bold border border-green-100">
+                    <i class="fa-solid fa-book-quran"></i> Total Jurnal: <?= $totalData ?>
                 </div>
-                <input type="text" name="chapter" placeholder="Bab / Fashl" class="w-full mb-3 p-2 border rounded">
-                <textarea name="notes" placeholder="Catatan..." class="w-full mb-3 p-2 border rounded"></textarea>
-                <button type="submit" class="w-full bg-green-600 text-white py-2 rounded font-bold">Simpan</button>
+                <button onclick="document.getElementById('infoModal').classList.remove('hidden')"
+                    class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-colors border border-slate-200" title="Panduan Penggunaan">
+                    <i class="fa-solid fa-circle-info text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <?php \App\Core\Session::flash(); ?>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Form Tambah -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit">
+            <h4 class="font-bold text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-4 mb-5">
+                <i class="fa-solid fa-plus-circle text-slate-400"></i> Tambah Jurnal
+            </h4>
+            <form action="/academic/kitab/store" method="POST" class="space-y-3">
+                <?= \App\Core\Csrf::input() ?>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-1.5">Tanggal</label>
+                    <input type="date" name="date" value="<?= date('Y-m-d') ?>"
+                        class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-1.5">Nama Halaqah</label>
+                    <input type="text" name="class_name" placeholder="cth: Ulya 1, Wustho 2"
+                        class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-1.5">Nama Kitab</label>
+                    <input type="text" name="kitab_name" placeholder="cth: Fathul Qorib"
+                        class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all" required>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1.5">Hal Awal</label>
+                        <input type="number" name="start_page" placeholder="1"
+                            class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1.5">Hal Akhir</label>
+                        <input type="number" name="end_page" placeholder="5"
+                            class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-1.5">Bab / Fashl</label>
+                    <input type="text" name="chapter" placeholder="cth: Bab Thaharah"
+                        class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-1.5">Catatan <span class="text-slate-400 font-normal">(Opsional)</span></label>
+                    <textarea name="notes" rows="2" placeholder="cth: Santri aktif bertanya..."
+                        class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all resize-none"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-green-600 text-white py-2.5 rounded-xl font-bold hover:bg-green-700 shadow-md shadow-green-500/20 transition-all text-sm">
+                    <i class="fa-solid fa-save mr-2"></i> Simpan Jurnal
+                </button>
             </form>
         </div>
-        <div class="md:col-span-2 bg-white shadow rounded overflow-hidden">
-            <table class="min-w-full leading-normal">
-                <thead>
-                    <tr class="bg-gray-100 text-left text-xs font-bold uppercase text-gray-600"><th class="px-5 py-3">Tgl</th><th class="px-5 py-3">Halaqah</th><th class="px-5 py-3">Kitab & Bahasan</th></tr>
-                </thead>
-                <tbody>
-                    <?php foreach($journals as $j): ?>
-                    <tr class="border-b">
-                        <td class="px-5 py-4"><?= date('d/m', strtotime($j['date'])) ?></td>
-                        <td class="px-5 py-4 font-bold"><?= $j['class_name'] ?></td>
-                        <td class="px-5 py-4">
-                            <span class="text-blue-600 font-bold"><?= $j['kitab_name'] ?></span>
-                            <div class="text-sm">Hal: <?= $j['start_page'] ?> - <?= $j['end_page'] ?></div>
-                            <div class="text-xs text-gray-500">Bab: <?= $j['chapter'] ?></div>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+
+        <!-- Tabel -->
+        <div class="lg:col-span-2 flex flex-col gap-6">
+
+            <!-- Filter -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <form method="GET" class="flex flex-wrap items-center gap-3">
+                    <input type="hidden" name="limit" value="<?= $limit ?>">
+                    <div class="flex-1 min-w-[180px] relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        <input type="text" name="kitab" value="<?= htmlspecialchars($search) ?>" placeholder="Cari nama kitab..."
+                            class="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all">
+                    </div>
+                    <?php if ($role !== 'guru'): ?>
+                    <select name="teacher_id" class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
+                        <option value="">Semua Guru</option>
+                        <?php foreach ($teachers as $t): ?>
+                            <option value="<?= $t['id'] ?>" <?= $teacherFilter == $t['id'] ? 'selected' : '' ?>><?= htmlspecialchars($t['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php endif; ?>
+                    <button type="submit" class="bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-900 transition-colors">Terapkan</button>
+                    <?php if (!empty($search) || !empty($teacherFilter)): ?>
+                        <a href="/academic/kitab" class="flex items-center justify-center w-10 h-10 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition" title="Reset">
+                            <i class="fa-solid fa-rotate-left"></i>
+                        </a>
+                    <?php endif; ?>
+                </form>
+            </div>
+
+            <!-- Table Card -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full whitespace-nowrap text-left">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200">
+                                <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Tgl</th>
+                                <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Halaqah</th>
+                                <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Kitab & Bahasan</th>
+                                <?php if ($role !== 'guru'): ?>
+                                <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Guru</th>
+                                <?php endif; ?>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                            <?php if (empty($journals)): ?>
+                                <tr><td colspan="4" class="px-5 py-16 text-center text-slate-400 text-sm font-medium">Belum ada data jurnal.</td></tr>
+                            <?php endif; ?>
+                            <?php foreach ($journals as $j): ?>
+                            <tr class="hover:bg-slate-50/80 transition-colors text-sm">
+                                <td class="px-5 py-4 font-mono text-xs text-slate-500 whitespace-nowrap"><?= date('d/m/Y', strtotime($j['date'])) ?></td>
+                                <td class="px-5 py-4 font-extrabold text-slate-800"><?= htmlspecialchars($j['class_name']) ?></td>
+                                <td class="px-5 py-4">
+                                    <div class="font-bold text-blue-600"><?= htmlspecialchars($j['kitab_name']) ?></div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Hal: <?= $j['start_page'] ?>–<?= $j['end_page'] ?> | <?= htmlspecialchars($j['chapter'] ?? '-') ?></div>
+                                    <?php if ($j['notes']): ?>
+                                        <div class="text-[10px] text-slate-400 italic mt-0.5"><?= htmlspecialchars($j['notes']) ?></div>
+                                    <?php endif; ?>
+                                </td>
+                                <?php if ($role !== 'guru'): ?>
+                                <td class="px-5 py-4 text-slate-600 text-xs"><?= htmlspecialchars($j['teacher_name'] ?? '-') ?></td>
+                                <?php endif; ?>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination Footer -->
+                <div class="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Show:</span>
+                        <select onchange="window.location.href=updateQS(window.location.href,'limit',this.value)"
+                            class="border border-slate-300 rounded-lg px-2 py-1 text-sm outline-none bg-white font-medium">
+                            <option value="10" <?= $limit == 10 ? 'selected' : '' ?>>10 entries</option>
+                            <option value="50" <?= $limit == 50 ? 'selected' : '' ?>>50 entries</option>
+                        </select>
+                    </div>
+                    <?php if ($totalPages > 1): ?>
+                    <div class="flex items-center gap-1.5">
+                        <?php $qs = "&limit=$limit&kitab=" . urlencode($search) . "&teacher_id=$teacherFilter"; ?>
+                        <?php if ($currentPage > 1): ?>
+                            <a href="?page=<?= $currentPage - 1 . $qs ?>" class="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm"><i class="fa-solid fa-chevron-left"></i></a>
+                        <?php endif; ?>
+                        <span class="text-xs font-bold text-slate-600 px-2">Hal <?= $currentPage ?> / <?= $totalPages ?></span>
+                        <?php if ($currentPage < $totalPages): ?>
+                            <a href="?page=<?= $currentPage + 1 . $qs ?>" class="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm"><i class="fa-solid fa-chevron-right"></i></a>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
     </div>
 </main>
+
+<!-- Modal Info -->
+<div id="infoModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+        <div class="p-5 border-b border-slate-100 bg-blue-50 flex justify-between items-center">
+            <h3 class="font-bold text-blue-800 flex items-center gap-2"><i class="fa-solid fa-circle-info text-blue-500"></i> Panduan Jurnal Kitab</h3>
+            <button onclick="document.getElementById('infoModal').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-blue-100 text-blue-500 hover:bg-blue-200 flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="p-6 space-y-5 text-sm text-slate-600">
+            <div>
+                <h4 class="font-bold text-slate-800 mb-2 flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">1</span> Cara Penggunaan</h4>
+                <ol class="list-decimal list-inside space-y-1.5 text-slate-500">
+                    <li>Isi form di kiri: tanggal, nama halaqah, kitab, halaman, bab, dan catatan.</li>
+                    <li>Klik <strong class="text-slate-700">Simpan Jurnal</strong> untuk mencatat.</li>
+                    <li>Gunakan filter <strong class="text-slate-700">Nama Kitab</strong> atau <strong class="text-slate-700">Guru</strong> untuk menyaring data.</li>
+                </ol>
+            </div>
+            <div>
+                <h4 class="font-bold text-slate-800 mb-2 flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">2</span> Relasi ke Menu Lain</h4>
+                <div class="space-y-2">
+                    <div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                        <i class="fa-solid fa-book-open text-green-400 w-5 text-center"></i>
+                        <div><div class="font-semibold text-slate-700 text-xs">Jurnal Guru (KBM)</div><div class="text-[11px] text-slate-400">Jurnal kitab melengkapi jurnal KBM formal di <strong>Akademik → Jurnal Guru</strong>.</div></div>
+                    </div>
+                    <div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                        <i class="fa-solid fa-book-quran text-blue-400 w-5 text-center"></i>
+                        <div><div class="font-semibold text-slate-700 text-xs">Monitoring Tahfidz</div><div class="text-[11px] text-slate-400">Kegiatan tilawah berkaitan dengan <strong>Asrama → Monitoring Tahfidz</strong>.</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+            <button onclick="document.getElementById('infoModal').classList.add('hidden')" class="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition">Mengerti</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateQS(uri, key, value) {
+        var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+        var sep = uri.indexOf('?') !== -1 ? "&" : "?";
+        return uri.match(re) ? uri.replace(re, '$1' + key + "=" + value + '$2') : uri + sep + key + "=" + value;
+    }
+    window.onclick = function(e) { if (e.target == document.getElementById('infoModal')) document.getElementById('infoModal').classList.add('hidden'); }
+</script>
+
 <?php require __DIR__ . '/../layouts/footer.php'; ?>

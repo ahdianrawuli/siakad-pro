@@ -11,28 +11,41 @@ class BoardingSupervisorController {
 
     public function index() {
         $db = Database::getInstance();
-        
-        // Ambil Data Wali Asrama
+
+        $search = $_GET['search'] ?? '';
+        $page   = (int)($_GET['page'] ?? 1);
+        $limit  = (int)($_GET['limit'] ?? 10);
+        $offset = ($page - 1) * $limit;
+
+        $where = "WHERE ds.status = 'ACTIVE'";
+        $params = [];
+        if (!empty($search)) { $where .= " AND (u.name LIKE ? OR d.name LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
+
+        $totalData  = $db->query("SELECT COUNT(*) FROM dorm_supervisors ds JOIN dorms d ON ds.dorm_id = d.id JOIN users u ON ds.user_id = u.id $where", $params)->fetchColumn();
+        $totalPages = ceil($totalData / $limit);
+
         $supervisors = $db->query("
-            SELECT ds.*, d.name as dorm_name, u.name as user_name, r.slug as role_name 
+            SELECT ds.*, d.name as dorm_name, u.name as user_name, r.slug as role_name
             FROM dorm_supervisors ds
             JOIN dorms d ON ds.dorm_id = d.id
             JOIN users u ON ds.user_id = u.id
             JOIN roles r ON u.role_id = r.id
-            WHERE ds.status = 'ACTIVE'
-            ORDER BY d.name ASC
-        ")->fetchAll();
+            $where ORDER BY d.name ASC LIMIT $limit OFFSET $offset
+        ", $params)->fetchAll();
 
-        // Data Master untuk Modal
         $dorms = $db->query("SELECT * FROM dorms ORDER BY name")->fetchAll();
-        // Ambil User Guru (3) & Staff (7)
         $users = $db->query("SELECT u.id, u.name, r.slug FROM users u JOIN roles r ON u.role_id = r.id WHERE r.slug IN ('guru', 'staff') AND u.status='active' ORDER BY u.name")->fetchAll();
 
         View::render('boarding/supervisors/index', [
-            'title' => 'Data Wali Asrama',
+            'title'       => 'Data Wali Asrama',
             'supervisors' => $supervisors,
-            'dorms' => $dorms,
-            'users' => $users
+            'dorms'       => $dorms,
+            'users'       => $users,
+            'search'      => $search,
+            'totalData'   => $totalData,
+            'totalPages'  => $totalPages,
+            'currentPage' => $page,
+            'limit'       => $limit,
         ]);
     }
 
@@ -53,7 +66,7 @@ class BoardingSupervisorController {
             Session::setFlash('success', 'Wali Asrama berhasil ditugaskan.');
         }
 
-        header('Location: /boarding/supervisors');
+        header('Location: /asrama/supervisors');
     }
 
     public function delete() {
@@ -61,6 +74,6 @@ class BoardingSupervisorController {
         // Hard delete untuk membersihkan data
         $db->query("DELETE FROM dorm_supervisors WHERE id = ?", [$_GET['id']]);
         Session::setFlash('success', 'Penugasan dihapus.');
-        header('Location: /boarding/supervisors');
+        header('Location: /asrama/supervisors');
     }
 }

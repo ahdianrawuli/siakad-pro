@@ -11,49 +11,47 @@ class SyllabusController {
 
     public function index() {
         $db = Database::getInstance();
-        
-        // FIX: Ambil data user dari Session wrapper satu per satu
         $userId = Session::get('user_id');
-        $roleId = Session::get('role_id'); // atau user_role_id
-        
-        // Jika Guru (Role ID 3), hanya lihat punya sendiri
-        $where = "1=1";
-        $params = [];
-        
-        if ($roleId == 3) { // Guru
-            $where .= " AND sd.teacher_id = ?";
-            $params[] = $userId;
-        }
+        $roleId = Session::get('role_id');
 
         $search = $_GET['search'] ?? '';
-        if ($search) {
-            $where .= " AND (sd.title LIKE ? OR s.name LIKE ?)";
-            $params[] = "%$search%"; $params[] = "%$search%";
-        }
+        $type   = $_GET['type'] ?? '';
+        $page   = (int)($_GET['page'] ?? 1);
+        $limit  = (int)($_GET['limit'] ?? 10);
+        $offset = ($page - 1) * $limit;
+
+        $where = "1=1";
+        $params = [];
+        if ($roleId == 3) { $where .= " AND sd.teacher_id = ?"; $params[] = $userId; }
+        if ($search) { $where .= " AND (sd.title LIKE ? OR s.name LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
+        if ($type)   { $where .= " AND sd.type = ?"; $params[] = $type; }
+
+        $totalData  = $db->query("SELECT COUNT(*) FROM syllabus_documents sd JOIN subjects s ON sd.subject_id = s.id WHERE $where", $params)->fetchColumn();
+        $totalPages = ceil($totalData / $limit);
 
         $sql = "SELECT sd.*, s.name as subject_name, ay.name as year_name, u.name as teacher_name
                 FROM syllabus_documents sd
                 JOIN subjects s ON sd.subject_id = s.id
                 JOIN academic_years ay ON sd.academic_year_id = ay.id
                 JOIN users u ON sd.teacher_id = u.id
-                WHERE $where
-                ORDER BY sd.created_at DESC";
-                
-        $documents = $db->query($sql, $params)->fetchAll();
-        
-        $subjects = $db->query("SELECT id, name FROM subjects ORDER BY name")->fetchAll();
-        $years = $db->query("SELECT id, name FROM academic_years ORDER BY id DESC")->fetchAll();
+                WHERE $where ORDER BY sd.created_at DESC LIMIT $limit OFFSET $offset";
 
-        // Pass 'user' array manual ke View agar kompatibel dengan view sebelumnya
-        $userSession = ['id' => $userId, 'role_id' => $roleId];
+        $documents = $db->query($sql, $params)->fetchAll();
+        $subjects  = $db->query("SELECT id, name FROM subjects ORDER BY name")->fetchAll();
+        $years     = $db->query("SELECT id, name FROM academic_years ORDER BY id DESC")->fetchAll();
 
         View::render('academic/syllabus/index', [
-            'title' => 'Silabus & RPP',
-            'documents' => $documents,
-            'subjects' => $subjects,
-            'years' => $years,
-            'user' => $userSession, // FIX
-            'search' => $search
+            'title'       => 'Silabus & RPP',
+            'documents'   => $documents,
+            'subjects'    => $subjects,
+            'years'       => $years,
+            'user'        => ['id' => $userId, 'role_id' => $roleId],
+            'search'      => $search,
+            'typeFilter'  => $type,
+            'totalData'   => $totalData,
+            'totalPages'  => $totalPages,
+            'currentPage' => $page,
+            'limit'       => $limit,
         ]);
     }
 
@@ -87,7 +85,7 @@ class SyllabusController {
             Session::setFlash('error', 'Pilih file terlebih dahulu.');
         }
 
-        header('Location: /academic/syllabus');
+        header('Location: /finance/spp');
     }
 
     public function delete() {
@@ -102,7 +100,7 @@ class SyllabusController {
 
         $db->query("DELETE FROM syllabus_documents WHERE id=?", [$id]);
         Session::setFlash('success', 'Dokumen dihapus.');
-        header('Location: /academic/syllabus');
+        header('Location: /finance/spp');
     }
 
     public function download() {

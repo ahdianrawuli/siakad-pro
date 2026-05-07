@@ -9,41 +9,62 @@ use App\Core\Database;
 class StaffAttendanceController {
     public function __construct() { Middleware::auth(); }
 
-    public function index() {
+    private function processAttendance($roleFilter, $title, $redirectUrl) {
         $db = Database::getInstance();
-        $date = $_GET['date'] ?? date('Y-m-d');
-        $roleFilter = $_GET['role'] ?? ''; // 'guru' or 'staff'
-        
-        // 1. Ambil Data Pegawai (Guru & Staff)
-        $sqlUsers = "SELECT u.id, u.name, r.slug as role_slug, sp.name as position_name 
-                     FROM users u
-                     JOIN roles r ON u.role_id = r.id
-                     LEFT JOIN staff_members sm ON u.id = sm.user_id
-                     LEFT JOIN staff_positions sp ON sm.position_id = sp.id
-                     WHERE r.slug IN ('guru', 'staff') AND u.status = 'active'";
-        
-        if ($roleFilter) {
-            $sqlUsers .= " AND r.slug = '$roleFilter'";
-        }
-        $sqlUsers .= " ORDER BY u.name ASC";
-        $users = $db->query($sqlUsers)->fetchAll();
+        $date   = $_GET['date']   ?? date('Y-m-d');
+        $search = trim($_GET['search'] ?? '');
+        $limit  = (int)($_GET['limit'] ?? 10);
+        $page   = max(1, (int)($_GET['page'] ?? 1));
+        $offset = ($page - 1) * $limit;
 
-        // 2. Ambil Data Absensi pada Tanggal Terpilih
-        $attendances = $db->query("SELECT * FROM staff_attendances WHERE date = ?", [$date])->fetchAll();
-        
-        // Mapping Absensi ke User ID agar mudah ditampilkan
-        $attMap = [];
-        foreach ($attendances as $att) {
-            $attMap[$att['user_id']] = $att;
+        $where  = "r.slug = ? AND u.status = 'active'";
+        $params = [$roleFilter];
+        if ($search !== '') {
+            $where   .= " AND u.name LIKE ?";
+            $params[] = "%$search%";
         }
+
+        $total = $db->query(
+            "SELECT COUNT(*) as c FROM users u
+             JOIN roles r ON u.role_id = r.id
+             WHERE $where", $params
+        )->fetch()['c'];
+
+        $users = $db->query(
+            "SELECT u.id, u.name, r.slug as role_slug, sp.name as position_name
+             FROM users u
+             JOIN roles r ON u.role_id = r.id
+             LEFT JOIN staff_members sm ON u.id = sm.user_id
+             LEFT JOIN staff_positions sp ON sm.position_id = sp.id
+             WHERE $where ORDER BY u.name ASC LIMIT $limit OFFSET $offset",
+            $params
+        )->fetchAll();
+
+        $attendances = $db->query("SELECT * FROM staff_attendances WHERE date = ?", [$date])->fetchAll();
+        $attMap = [];
+        foreach ($attendances as $att) { $attMap[$att['user_id']] = $att; }
 
         View::render('staff/attendance/index', [
-            'title' => 'Absensi Guru & Staff',
-            'users' => $users,
-            'attMap' => $attMap,
-            'date' => $date,
-            'roleFilter' => $roleFilter
+            'title'       => $title,
+            'users'       => $users,
+            'attMap'      => $attMap,
+            'date'        => $date,
+            'roleFilter'  => $roleFilter,
+            'redirectUrl' => $redirectUrl,
+            'search'      => $search,
+            'limit'       => $limit,
+            'currentPage' => $page,
+            'totalPages'  => $limit > 0 ? (int)ceil($total / $limit) : 1,
+            'totalData'   => $total,
         ]);
+    }
+
+    public function teachers() {
+        $this->processAttendance('guru', 'Absensi Guru', '/attendance/teachers');
+    }
+
+    public function staff() {
+        $this->processAttendance('staff', 'Absensi Staff Sekolah', '/attendance/staff');
     }
 
     public function store() {
@@ -83,7 +104,7 @@ class StaffAttendanceController {
             Session::setFlash('error', 'Gagal menyimpan: ' . $e->getMessage());
         }
 
-        header("Location: /staff/attendance?date=$date");
+        header("Location: " . $_SERVER['HTTP_REFERER']);
     }
 
     public function delete() {
@@ -94,7 +115,7 @@ class StaffAttendanceController {
         
         $db->query("DELETE FROM staff_attendances WHERE user_id = ? AND date = ?", [$userId, $date]);
         Session::setFlash('success', 'Absensi user tersebut di-reset.');
-        header("Location: /staff/attendance?date=$date");
+        header("Location: " . $_SERVER['HTTP_REFERER']);
     }
 }
 

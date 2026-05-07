@@ -42,5 +42,27 @@ spec:
               value: {{ $.Values.database.password | quote }}
             - name: REDIS_HOST
               value: "redis_cache"
+            - name: WA_API_KEY
+              value: {{ $.Values.waApiKey | default "" | quote }}
+            - name: VA_PREFIX_ALIYAH
+              value: "988"
+            - name: VA_CLIENT_ID_ALIYAH
+              value: "19104"
+            - name: VA_SECRET_KEY_ALIYAH
+              value: {{ $.Values.vaSecretKeyAliyah | default "" | quote }}
+            - name: VA_PREFIX_TSANAWIYAH
+              value: "988"
+            - name: VA_CLIENT_ID_TSANAWIYAH
+              value: "60109"
+            - name: VA_SECRET_KEY_TSANAWIYAH
+              value: {{ $.Values.vaSecretKeyTsanawiyah | default "" | quote }}
+            - name: VA_PREFIX_MAHAD_ALY
+              value: "988"
+            - name: VA_CLIENT_ID_MAHAD_ALY
+              value: "80109"
+            - name: VA_SECRET_KEY_MAHAD_ALY
+              value: {{ $.Values.vaSecretKeyMahadAly | default "" | quote }}
+            - name: VA_HOST_URL
+              value: "https://api.bni-ecollection.com/"
           {{- end }}
 {{- end }}

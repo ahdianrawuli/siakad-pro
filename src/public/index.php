@@ -16,10 +16,11 @@ spl_autoload_register(function ($class) {
 // Import All Controllers
 use App\Core\Router;
 use App\Controllers\{
-    AuthController, DashboardController, MenuController, UserController, SettingsController,
+    AuthController, DashboardController, MenuController, UserController, RoleController, SettingsController,
     ScopeController, WhatsappController, LetterController, SupportController,
     PpdbPublicController, PpdbAdminController, PpdbSettingsController,
-    StudentController, StudentAffairsController, ParentsController, AlumniController,
+    StudentController, StudentAffairsController, ParentsController, GuardianController, AlumniController,
+    LibraryController,
     AcademicController, CurriculumController, SyllabusController, KbmPermitController,
     TeachingAssignmentController, AcademicSupportController, KitabController, ClassroomManageController,
     HomeroomController, HomeroomReportController,
@@ -27,7 +28,8 @@ use App\Controllers\{
     BoardingController, BoardingActivityController, BoardingSupervisorController,
     BoardingMutationController, BoardingReportController,
     StaffController, StaffPositionController, StaffAttendanceController, SchoolStructureController,
-    FinanceController, InventoryController, ReportController, TeacherController
+    FinanceController, InventoryController, ReportController, PoskestrenController, AnnouncementController, TeacherController,
+    PasswordResetController
 };
 
 $router = new Router();
@@ -42,7 +44,11 @@ $router->get('/register',           [PpdbPublicController::class, 'register']);
 $router->post('/register/process',  [PpdbPublicController::class, 'processRegister']);
 $router->post('/register/store',    [PpdbPublicController::class, 'store']);
 $router->get('/register/success',   [PpdbPublicController::class, 'success']);
-$router->get('/prosedur',           function() { echo "Halaman Prosedur (Coming Soon)"; });
+$router->get('/prosedur',           [PpdbPublicController::class, 'prosedur']);
+
+$router->post('/payment/va/create',   [\App\Controllers\PaymentController::class, 'createVa']);
+$router->post('/payment/va/inquiry',  [\App\Controllers\PaymentController::class, 'inquiry']);
+$router->post('/payment/va/callback', [\App\Controllers\PaymentController::class, 'callback']);
 $router->get('/cek-status',         [PpdbPublicController::class, 'checkStatus']);
 $router->post('/cek-status',        [PpdbPublicController::class, 'checkStatus']);
 
@@ -50,6 +56,14 @@ $router->post('/cek-status',        [PpdbPublicController::class, 'checkStatus']
 $router->get('/login',              [AuthController::class, 'login']);
 $router->post('/login',             [AuthController::class, 'authenticate']);
 $router->get('/logout',             [AuthController::class, 'logout']);
+
+// Password Reset via OTP WhatsApp
+$router->get('/forgot-password',          [PasswordResetController::class, 'form']);
+$router->post('/forgot-password/send',    [PasswordResetController::class, 'sendOtp']);
+$router->get('/forgot-password/verify',   [PasswordResetController::class, 'verifyForm']);
+$router->post('/forgot-password/verify',  [PasswordResetController::class, 'verifyOtp']);
+$router->get('/forgot-password/reset',    [PasswordResetController::class, 'resetForm']);
+$router->post('/forgot-password/reset',   [PasswordResetController::class, 'resetPassword']);
 
 // Dashboard
 $router->get('/dashboard',          [DashboardController::class, 'index']);
@@ -60,31 +74,49 @@ $router->post('/change-scope',      [ScopeController::class, 'change']);
 // 2. SYSTEM SETTINGS (ADMINISTRATOR)
 // ============================================================================
 
-// School Identity
-$router->get('/settings/school',            [SettingsController::class, 'school']);
-$router->post('/settings/school/update',    [SettingsController::class, 'updateSchool']);
+// School Identity (Dipindahkan ke Menu Sekolah)
+$router->get('/school/profile',            [SettingsController::class, 'school']);
+$router->post('/school/profile/update',    [SettingsController::class, 'updateSchool']);
 
 // User Management
 $router->get('/settings/users',             [UserController::class, 'index']);
 $router->get('/settings/users/create',      [UserController::class, 'create']);
 $router->post('/settings/users/store',      [UserController::class, 'store']);
 $router->get('/settings/users/edit',        [UserController::class, 'edit']);
-$router->post('/settings/users/update',     [UserController::class, 'update']);
+$router->post('/settings/users/update-role',     [UserController::class, 'updateRole']);
 $router->get('/settings/users/delete',      [UserController::class, 'delete']);
 $router->post('/settings/users/reset',      [SettingsController::class, 'resetPassword']);
+
+$router->post('/settings/users/toggle',     [UserController::class, 'toggle']);
+
+// Roles & Permissions
+$router->get('/settings/roles',                    [RoleController::class, 'index']);
+$router->post('/settings/roles/store',             [RoleController::class, 'store']);
+$router->post('/settings/roles/update',            [RoleController::class, 'update']);
+$router->post('/settings/roles/delete',            [RoleController::class, 'delete']);
+$router->post('/settings/roles/toggle',            [RoleController::class, 'toggle']);
+$router->get('/settings/roles/permissions',        [RoleController::class, 'permissions']);
+$router->post('/settings/roles/permissions/update',[RoleController::class, 'updatePermissions']);
 
 // Menus
 $router->get('/settings/menus',             [MenuController::class, 'index']);
 $router->post('/settings/menus/store',      [MenuController::class, 'store']);
+$router->post('/settings/menus/update',     [MenuController::class, 'update']);
+$router->post('/settings/menus/toggle',     [MenuController::class, 'toggle']);
+$router->post('/settings/menus/delete',     [MenuController::class, 'delete']);
 
 // Notifications & Letters
-$router->get('/settings/whatsapp',          [WhatsappController::class, 'index']);
-$router->post('/settings/whatsapp/update',  [WhatsappController::class, 'update']);
-$router->post('/settings/whatsapp/test',    [WhatsappController::class, 'test']);
+$router->get('/settings/whatsapp',           [WhatsappController::class, 'index']);
+$router->get('/settings/whatsapp/status',    [WhatsappController::class, 'status']);
+$router->post('/settings/whatsapp/send',     [WhatsappController::class, 'sendManual']);
+$router->post('/settings/whatsapp/blast',    [WhatsappController::class, 'blast']);
+$router->post('/settings/whatsapp/logout',   [WhatsappController::class, 'logout']);
 
 $router->get('/settings/letters',           [LetterController::class, 'index']);
+$router->post('/settings/letters/store',    [LetterController::class, 'store']);
 $router->get('/settings/letters/edit',      [LetterController::class, 'edit']);
 $router->post('/settings/letters/update',   [LetterController::class, 'update']);
+$router->get('/settings/letters/delete',    [LetterController::class, 'delete']);
 $router->get('/settings/letters/print',     [LetterController::class, 'print']);
 
 
@@ -99,6 +131,13 @@ $router->post('/ppdb/settings/period/update',   [PpdbSettingsController::class, 
 $router->get('/ppdb/settings/period/activate',  [PpdbSettingsController::class, 'activatePeriod']);
 $router->post('/ppdb/settings/track/store',     [PpdbSettingsController::class, 'storeTrack']);
 $router->post('/ppdb/settings/track/update',    [PpdbSettingsController::class, 'updateTrack']);
+
+// New School PPDB Routes
+$router->get('/school/ppdb',                   [PpdbAdminController::class, 'settings']);
+$router->post('/school/ppdb/path/store',       [PpdbAdminController::class, 'storePath']);
+$router->post('/school/ppdb/path/toggle/(.*)', [PpdbAdminController::class, 'togglePath']);
+$router->post('/school/ppdb/batch/store',      [PpdbAdminController::class, 'storeBatch']);
+$router->post('/school/ppdb/batch/activate/(.*)', [PpdbAdminController::class, 'activateBatch']);
 
 // PPDB Master Data (Admin)
 $router->get('/ppdb/periods',           [PpdbAdminController::class, 'periods']);
@@ -127,48 +166,99 @@ $router->post('/ppdb/promote',              [PpdbAdminController::class, 'promot
 // ============================================================================
 
 // Data Siswa & Wali
-$router->get('/student-affairs/students',       [StudentAffairsController::class, 'index']);
-$router->post('/student-affairs/assign-class',  [StudentAffairsController::class, 'assignClass']);
+$router->get('/students',                           [StudentAffairsController::class, 'index']);
+$router->post('/students/assign-class',             [StudentAffairsController::class, 'assignClass']);
+$router->get('/student-affairs/students',           [StudentAffairsController::class, 'index']);
+$router->get('/student-affairs/students/print',     [StudentAffairsController::class, 'printBiodata']);
+
+$router->get('/parents',                        [ParentsController::class, 'index']);
+$router->get('/parents/edit',                   [ParentsController::class, 'edit']);
+$router->post('/parents/update',                [ParentsController::class, 'update']);
 $router->get('/student-affairs/parents',        [ParentsController::class, 'index']);
 $router->get('/student-affairs/parents/edit',   [ParentsController::class, 'edit']);
 $router->post('/student-affairs/parents/update',[ParentsController::class, 'update']);
 
-// Data Alumni
-$router->get('/student-affairs/alumni',         [AlumniController::class, 'index']);
-$router->get('/student-affairs/alumni/create',  [AlumniController::class, 'create']);
-$router->post('/student-affairs/alumni/store',  [AlumniController::class, 'store']);
-$router->get('/student-affairs/alumni/edit',    [AlumniController::class, 'edit']);
-$router->post('/student-affairs/alumni/update', [AlumniController::class, 'update']);
-$router->get('/student-affairs/alumni/delete',  [AlumniController::class, 'delete']);
+$router->get('/guardians',      [GuardianController::class, 'index']);
 
-// Absensi Siswa
-$router->get('/student-affairs/attendance',         [StudentAffairsController::class, 'attendance']);
-$router->get('/student-affairs/attendance/create',  [StudentAffairsController::class, 'createAttendance']);
-$router->post('/student-affairs/attendance/store',  [StudentAffairsController::class, 'storeAttendance']);
-$router->get('/student-affairs/attendance/delete',  [StudentAffairsController::class, 'deleteAttendance']);
+// Data Alumni (Dipindahkan ke Menu Sekolah)
+$router->get('/school/alumni',              [AlumniController::class, 'index']);
+$router->get('/library',                    [LibraryController::class, 'index']);
+$router->post('/library/store',             [LibraryController::class, 'store']);
+$router->post('/library/return',            [LibraryController::class, 'returnBook']);
+$router->get('/school/alumni/create',       [AlumniController::class, 'create']);
+$router->post('/school/alumni/store',       [AlumniController::class, 'store']);
+$router->get('/school/alumni/edit',         [AlumniController::class, 'edit']);
+$router->post('/school/alumni/update',      [AlumniController::class, 'update']);
+$router->get('/school/alumni/delete',       [AlumniController::class, 'delete']);
+$router->get('/school/alumni/print-letter', [AlumniController::class, 'printLetter']);
 
-// Kedisiplinan: Pelanggaran
-$router->get('/student-affairs/discipline',         [DisciplineController::class, 'index']);
-$router->post('/student-affairs/discipline/store',  [DisciplineController::class, 'storeViolation']);
-$router->get('/student-affairs/discipline/delete',  [DisciplineController::class, 'deleteViolation']);
+// Absensi (Dipindahkan ke Menu Absensi)
+$router->get('/attendance/students',         [StudentAffairsController::class, 'attendance']);
+$router->get('/attendance/students/create',  [StudentAffairsController::class, 'createAttendance']);
+$router->post('/attendance/students/store',  [StudentAffairsController::class, 'storeAttendance']);
+$router->get('/attendance/students/delete',  [StudentAffairsController::class, 'deleteAttendance']);
 
-// Kedisiplinan: Prestasi
-$router->get('/student-affairs/achievements',           [DisciplineController::class, 'achievements']);
-$router->post('/student-affairs/achievements/store',    [DisciplineController::class, 'storeAchievement']);
-$router->post('/student-affairs/achievements/update',   [DisciplineController::class, 'updateAchievement']);
-$router->get('/student-affairs/achievements/delete',    [DisciplineController::class, 'deleteAchievement']);
+$router->get('/attendance/teachers',         [StaffAttendanceController::class, 'teachers']);
+$router->get('/attendance/staff',            [StaffAttendanceController::class, 'staff']);
+$router->post('/attendance/staff/store',     [StaffAttendanceController::class, 'store']);
+$router->get('/attendance/staff/delete',     [StaffAttendanceController::class, 'delete']);
 
-// Kedisiplinan: Bimbingan Konseling (BK)
-$router->get('/student-affairs/counseling',         [DisciplineController::class, 'counseling']);
-$router->post('/student-affairs/counseling/store',  [DisciplineController::class, 'storeCounseling']);
-$router->post('/student-affairs/counseling/update', [DisciplineController::class, 'updateCounseling']);
-$router->get('/student-affairs/counseling/delete',  [DisciplineController::class, 'deleteCounseling']);
+$router->get('/attendance/kbm-permits',      [KbmPermitController::class, 'index']);
+$router->post('/attendance/kbm-permits/store',[KbmPermitController::class, 'store']);
+$router->get('/attendance/kbm-permits/delete',[KbmPermitController::class, 'delete']);
+$router->get('/academic/kbm-permits',        [KbmPermitController::class, 'index']);
+$router->post('/academic/kbm-permits/store', [KbmPermitController::class, 'store']);
+$router->get('/academic/kbm-permits/delete', [KbmPermitController::class, 'delete']);
 
-// Kedisiplinan: Pelacakan Santri
-$router->get('/discipline/tracking',        [StudentTrackingController::class, 'index']);
-$router->post('/discipline/tracking/store', [StudentTrackingController::class, 'store']);
-$router->post('/discipline/tracking/update',[StudentTrackingController::class, 'update']);
-$router->get('/discipline/tracking/delete', [StudentTrackingController::class, 'delete']);
+// Kedisiplinan (Dipindahkan ke Menu Kedisiplinan Khusus)
+$router->get('/discipline/master-violations',       [DisciplineController::class, 'master']);
+$router->post('/discipline/master-violations/store',[DisciplineController::class, 'storeMaster']);
+$router->get('/discipline/student-violations',      [DisciplineController::class, 'index']);
+$router->post('/discipline/student-violations/store',[DisciplineController::class, 'storeViolation']);
+$router->get('/discipline/student-violations/delete',[DisciplineController::class, 'deleteViolation']);
+
+$router->get('/discipline/dorm-mutations',          [BoardingMutationController::class, 'index']);
+$router->post('/discipline/dorm-mutations/store',   [BoardingMutationController::class, 'store']);
+
+$router->get('/discipline/tracking',                [StudentTrackingController::class, 'index']);
+$router->post('/discipline/tracking/store',         [StudentTrackingController::class, 'store']);
+$router->post('/discipline/tracking/update',        [StudentTrackingController::class, 'update']);
+$router->get('/discipline/tracking/delete',         [StudentTrackingController::class, 'delete']);
+
+$router->get('/discipline/homeroom-reports',        [HomeroomReportController::class, 'index']);
+
+// Kedisiplinan Lainnya (Prestasi & BK)
+$router->get('/achievements',           [DisciplineController::class, 'achievements']);
+$router->post('/achievements/store',    [DisciplineController::class, 'storeAchievement']);
+$router->post('/achievements/update',   [DisciplineController::class, 'updateAchievement']);
+$router->get('/achievements/delete',    [DisciplineController::class, 'deleteAchievement']);
+
+$router->get('/counseling',             [DisciplineController::class, 'counseling']);
+$router->post('/counseling/store',      [DisciplineController::class, 'storeCounseling']);
+$router->post('/counseling/update',     [DisciplineController::class, 'updateCounseling']);
+$router->get('/counseling/delete',      [DisciplineController::class, 'deleteCounseling']);
+
+// ============================================================================
+// X. RAPOR (REPORTS)
+// ============================================================================
+$router->get('/reports/students', [ReportController::class, 'students']);
+$router->get('/reports/boarding', [BoardingReportController::class, 'index']);
+
+// ============================================================================
+// Y. POSKESTREN (HEALTH)
+// ============================================================================
+$router->get('/poskestren/patients',        [PoskestrenController::class, 'patients']);
+$router->post('/poskestren/patients/store', [PoskestrenController::class, 'storePatient']);
+$router->post('/poskestren/patients/delete',[PoskestrenController::class, 'deletePatient']);
+$router->get('/poskestren/staff',           [PoskestrenController::class, 'staff']);
+
+// ============================================================================
+// Z. LAIN-LAIN (OTHERS)
+// ============================================================================
+$router->get('/announcements',           [AnnouncementController::class, 'index']);
+$router->post('/announcements/store',    [AnnouncementController::class, 'store']);
+$router->post('/announcements/update',   [AnnouncementController::class, 'update']);
+$router->post('/announcements/delete',   [AnnouncementController::class, 'delete']);
 
 
 // ============================================================================
@@ -180,10 +270,16 @@ $router->get('/academic/years',             [AcademicController::class, 'years']
 $router->post('/academic/years/store',      [AcademicController::class, 'storeYear']);
 $router->get('/academic/years/activate',    [AcademicController::class, 'activateYear']);
 
-$router->get('/master/classrooms',          [ClassroomManageController::class, 'index']);
-$router->post('/master/classrooms/store',   [ClassroomManageController::class, 'store']);
-$router->post('/master/classrooms/update',  [ClassroomManageController::class, 'update']);
-$router->get('/master/classrooms/delete',   [ClassroomManageController::class, 'delete']);
+$router->get('/academic/classrooms',          [ClassroomManageController::class, 'index']);
+$router->post('/academic/classrooms/store',   [ClassroomManageController::class, 'store']);
+$router->post('/academic/classrooms/update',  [ClassroomManageController::class, 'update']);
+$router->get('/academic/classrooms/delete',   [ClassroomManageController::class, 'delete']);
+
+// Skeleton Akademik Baru
+$router->get('/academic/subject-teachers',  [AcademicController::class, 'subjectTeachers']);
+$router->get('/academic/homeroom-teachers', [AcademicController::class, 'homeroomTeachers']);
+$router->get('/academic/calendar-view',     [AcademicController::class, 'calendarView']);
+$router->get('/academic/syllabus-view',     [AcademicController::class, 'syllabusView']);
 
 // Mata Pelajaran (Subjects)
 $router->get('/academic/subjects',          [AcademicController::class, 'subjects']);
@@ -228,12 +324,9 @@ $router->get('/academic/assignments',       [TeachingAssignmentController::class
 $router->post('/academic/assignments/store',[TeachingAssignmentController::class, 'store']);
 $router->get('/academic/assignments/delete',[TeachingAssignmentController::class, 'delete']);
 
-$router->get('/academic/kbm-permits',       [KbmPermitController::class, 'index']);
-$router->post('/academic/kbm-permits/store',[KbmPermitController::class, 'store']);
-$router->get('/academic/kbm-permits/delete',[KbmPermitController::class, 'delete']);
-
 $router->get('/academic/calendar',          [AcademicSupportController::class, 'calendar']);
 $router->post('/academic/calendar/store',   [AcademicSupportController::class, 'storeEvent']);
+$router->post('/academic/calendar/delete',  [AcademicSupportController::class, 'deleteEvent']);
 $router->get('/academic/exams',             [AcademicSupportController::class, 'examBank']);
 $router->post('/academic/exams/store',      [AcademicSupportController::class, 'storeExam']);
 $router->get('/academic/kitab',             [KitabController::class, 'index']);
@@ -249,7 +342,6 @@ $router->post('/academic/homeroom-assign/update',   [ClassroomManageController::
 // 6. WALI KELAS (HOMEROOM)
 // ============================================================================
 $router->get('/homeroom',               [HomeroomController::class, 'index']);
-$router->get('/homeroom/report-all',    [HomeroomReportController::class, 'index']);
 $router->get('/homeroom/print-recap',   [HomeroomReportController::class, 'printRecap']);
 
 
@@ -257,41 +349,50 @@ $router->get('/homeroom/print-recap',   [HomeroomReportController::class, 'print
 // 7. KEPEGAWAIAN (STAFF & TEACHERS)
 // ============================================================================
 
-// Data Guru
-$router->get('/student-affairs/teachers',       [TeacherController::class, 'index']);
-$router->get('/student-affairs/teachers/create',[TeacherController::class, 'create']);
-$router->post('/student-affairs/teachers/store',[TeacherController::class, 'store']);
-$router->get('/student-affairs/teachers/edit',  [TeacherController::class, 'edit']);
-$router->post('/student-affairs/teachers/update',[TeacherController::class, 'update']);
-$router->get('/student-affairs/teachers/toggle',[TeacherController::class, 'toggleStatus']);
-$router->get('/student-affairs/teachers/detail',[TeacherController::class, 'detail']);
+// Data Guru (Dipindahkan ke Menu Sekolah)
+$router->get('/school/teachers',       [TeacherController::class, 'index']);
+$router->get('/school/teachers/create',[TeacherController::class, 'create']);
+$router->post('/school/teachers/store',[TeacherController::class, 'store']);
+$router->get('/school/teachers/edit',  [TeacherController::class, 'edit']);
+$router->post('/school/teachers/update',[TeacherController::class, 'update']);
+$router->get('/school/teachers/toggle',[TeacherController::class, 'toggleStatus']);
+$router->get('/school/teachers/detail',[TeacherController::class, 'detail']);
 
-// Data Staff
-$router->get('/staff/members',          [StaffController::class, 'index']);
-$router->post('/staff/members/store',   [StaffController::class, 'store']);
-$router->post('/staff/members/update',  [StaffController::class, 'update']);
-$router->get('/staff/members/delete',   [StaffController::class, 'delete']);
+// Data Staff (Dipindahkan ke Menu Sekolah)
+$router->get('/school/staff',          [StaffController::class, 'index']);
+$router->post('/school/staff/store',   [StaffController::class, 'store']);
+$router->post('/school/staff/update',  [StaffController::class, 'update']);
+$router->get('/school/staff/delete',   [StaffController::class, 'delete']);
 
-$router->get('/staff/positions',        [StaffPositionController::class, 'index']);
-$router->post('/staff/positions/store', [StaffPositionController::class, 'store']);
-$router->post('/staff/positions/update',[StaffPositionController::class, 'update']);
-$router->get('/staff/positions/delete', [StaffPositionController::class, 'delete']);
+$router->get('/school/staff-positions',        [StaffPositionController::class, 'index']);
+$router->post('/school/staff-positions/store', [StaffPositionController::class, 'store']);
+$router->post('/school/staff-positions/update',[StaffPositionController::class, 'update']);
+$router->get('/school/staff-positions/delete', [StaffPositionController::class, 'delete']);
 
-$router->get('/staff/structure',        [SchoolStructureController::class, 'index']);
-$router->post('/staff/structure/store', [SchoolStructureController::class, 'store']);
-$router->get('/staff/structure/delete', [SchoolStructureController::class, 'delete']);
-
-// Absensi Pegawai
-$router->get('/staff/attendance',       [StaffAttendanceController::class, 'index']);
-$router->post('/staff/attendance/store',[StaffAttendanceController::class, 'store']);
-$router->get('/staff/attendance/delete',[StaffAttendanceController::class, 'delete']);
+$router->get('/school/structure',        [SchoolStructureController::class, 'index']);
+$router->get('/staff/structure',         [SchoolStructureController::class, 'index']);
+$router->post('/school/structure/store', [SchoolStructureController::class, 'store']);
+$router->post('/staff/structure/store',  [SchoolStructureController::class, 'store']);
+$router->get('/school/structure/delete', [SchoolStructureController::class, 'delete']);
+$router->get('/staff/structure/delete',  [SchoolStructureController::class, 'delete']);
 
 
 // ============================================================================
 // 8. KEUANGAN & INVENTARIS (FINANCE)
 // ============================================================================
 
-// Keuangan
+// Keuangan (Updated)
+$router->get('/finance/spp',                [SyllabusController::class, 'index']);
+$router->post('/finance/spp/store',         [SyllabusController::class, 'store']);
+$router->get('/finance/spp/delete',         [SyllabusController::class, 'delete']);
+$router->get('/finance/spp/download',       [SyllabusController::class, 'download']);
+
+$router->get('/finance/other-fees',         [FinanceController::class, 'otherFees']);
+$router->get('/finance/treasurer-reports',  [FinanceController::class, 'treasurerReports']);
+$router->post('/finance/notify-bills',      [FinanceController::class, 'notifyBills']);
+$router->get('/finance/facilities',         [FinanceController::class, 'facilities']);
+
+// Keuangan Legacy (Still needed for system logic/redirects but removed from sidebar)
 $router->get('/finance',                    [FinanceController::class, 'index']);
 $router->get('/finance/fee-types',          [FinanceController::class, 'feeTypes']);
 $router->post('/finance/fee-types/store',   [FinanceController::class, 'storeFeeType']);
@@ -300,10 +401,11 @@ $router->get('/finance/billing',            [FinanceController::class, 'billing'
 $router->post('/finance/billing/create',    [FinanceController::class, 'createBill']);
 $router->post('/finance/generate-bill',     [FinanceController::class, 'generateBill']); 
 $router->get('/finance/reports',            [FinanceController::class, 'reports']);
+$router->get('/finance/reports/export',     [FinanceController::class, 'exportReports']);
 $router->get('/finance/receipt',            [FinanceController::class, 'printReceipt']);
 $router->post('/finance/pay',               [FinanceController::class, 'pay']);
 
-// Inventaris
+// Inventaris Legacy
 $router->get('/finance/inventory',          [InventoryController::class, 'index']);
 $router->post('/finance/inventory/store',   [InventoryController::class, 'store']);
 $router->post('/finance/inventory/update',  [InventoryController::class, 'update']);
@@ -314,21 +416,27 @@ $router->get('/finance/inventory/delete',   [InventoryController::class, 'delete
 // 9. KEPESANTRENAN (BOARDING SCHOOL)
 // ============================================================================
 
-// Asrama
-$router->get('/boarding/dorms',         [BoardingController::class, 'dorms']);
-$router->post('/boarding/dorms/store',  [BoardingController::class, 'storeDorm']);
-$router->post('/boarding/dorms/delete', [BoardingController::class, 'deleteDorm']);
-$router->post('/boarding/assign',       [BoardingController::class, 'assignDorm']);
-$router->get('/boarding/mutations',     [BoardingMutationController::class, 'index']);
-$router->post('/boarding/mutations/store',[BoardingMutationController::class, 'store']);
+// Asrama (Dipindahkan ke Menu Asrama)
+$router->get('/asrama/dorms',               [BoardingController::class, 'dorms']);
+$router->post('/asrama/dorms/store',        [BoardingController::class, 'storeDorm']);
+$router->post('/asrama/dorms/delete',       [BoardingController::class, 'deleteDorm']);
+$router->get('/asrama/dorms/students',      [BoardingController::class, 'dormStudents']);
+$router->post('/asrama/assign',             [BoardingController::class, 'assignDorm']);
+$router->post('/asrama/move',               [BoardingController::class, 'moveDorm']);
 
-// Program & Kesehatan
-$router->get('/boarding/activities',        [BoardingActivityController::class, 'index']);
-$router->post('/boarding/activities/store', [BoardingActivityController::class, 'store']);
-$router->get('/boarding/activities/delete', [BoardingActivityController::class, 'delete']);
-$router->get('/boarding/supervisors',       [BoardingSupervisorController::class, 'index']);
-$router->post('/boarding/supervisors/store',[BoardingSupervisorController::class, 'store']);
-$router->get('/boarding/supervisors/delete',[BoardingSupervisorController::class, 'delete']);
+$router->get('/asrama/activities',          [BoardingActivityController::class, 'index']);
+$router->post('/asrama/activities/store',   [BoardingActivityController::class, 'store']);
+$router->get('/asrama/activities/delete',   [BoardingActivityController::class, 'delete']);
+
+$router->get('/asrama/supervisors',         [BoardingSupervisorController::class, 'index']);
+$router->post('/asrama/supervisors/store',  [BoardingSupervisorController::class, 'store']);
+$router->get('/asrama/supervisors/delete',  [BoardingSupervisorController::class, 'delete']);
+
+// Routing Baru untuk Menu Asrama
+$router->get('/asrama/units',               [BoardingController::class, 'units']);
+$router->get('/asrama/tilawah-attendance',  [BoardingController::class, 'tilawah']);
+
+// Program & Kesehatan (Kepesantrenan)
 
 $router->get('/boarding/health',        [BoardingController::class, 'health']);
 $router->post('/boarding/health/store', [BoardingController::class, 'storeHealth']);
@@ -348,11 +456,15 @@ $router->get('/report/boarding/print',      [BoardingReportController::class, 'p
 // 10. EKSTRAKURIKULER
 // ============================================================================
 $router->get('/extracurricular',                [ExtracurricularController::class, 'index']);
+$router->get('/extracurricular/report',         [ExtracurricularController::class, 'report']);
 $router->get('/extracurricular/master',         [ExtracurricularController::class, 'index']);
 $router->post('/extracurricular/store',         [ExtracurricularController::class, 'store']);
-$router->post('/extracurricular/schedule/store',[ExtracurricularController::class, 'storeSchedule']);
-$router->post('/extracurricular/coach/store',   [ExtracurricularController::class, 'storeCoach']);
-$router->get('/extracurricular/delete',         [ExtracurricularController::class, 'delete']);
+$router->post('/extracurricular/schedule/store', [ExtracurricularController::class, 'storeSchedule']);
+$router->post('/extracurricular/schedule/update',[ExtracurricularController::class, 'updateSchedule']);
+$router->get('/extracurricular/schedule/delete', [ExtracurricularController::class, 'deleteSchedule']);
+$router->post('/extracurricular/coach/store',    [ExtracurricularController::class, 'storeCoach']);
+$router->get('/extracurricular/coach/delete',    [ExtracurricularController::class, 'deleteCoach']);
+$router->get('/extracurricular/delete',          [ExtracurricularController::class, 'delete']);
 
 $router->get('/extracurricular/members',        [ExtracurricularController::class, 'members']);
 $router->post('/extracurricular/members/add',   [ExtracurricularController::class, 'addMember']);
@@ -371,7 +483,7 @@ $router->post('/support/create',[SupportController::class, 'create']);
 $router->get('/support/detail', [SupportController::class, 'detail']);
 $router->post('/support/reply', [SupportController::class, 'reply']);
 
-$router->get('/report/print',   [ReportController::class, 'print']);
+$router->get('/report/print',   [ReportController::class, 'printReport']);
 
 
 // ============================================================================
@@ -379,7 +491,11 @@ $router->get('/report/print',   [ReportController::class, 'print']);
 // ============================================================================
 $router->get('/student/dashboard',      [StudentController::class, 'index']);
 $router->get('/student/profile',        [StudentController::class, 'profile']);
-$router->get('/student/biodata',        function() { echo "Halaman Biodata (Coming Soon)"; });
+$router->get('/student/biodata',        [StudentController::class, 'biodata']);
+$router->get('/student/resume',         [StudentController::class, 'resume']);
+$router->get('/student/schedule',       [StudentController::class, 'schedule']);
+$router->get('/student/attendance',     [StudentController::class, 'attendance']);
+$router->get('/student/grades',         [StudentController::class, 'grades']);
 
 $router->get('/student/payment',        [StudentController::class, 'payment']);
 $router->post('/student/payment/store', [StudentController::class, 'storePayment']);
@@ -388,6 +504,14 @@ $router->get('/student/billing',        [StudentController::class, 'billing']);
 $router->get('/student/documents',      [StudentController::class, 'documents']);
 $router->post('/student/documents/store',[StudentController::class, 'storeDocument']);
 $router->get('/student/exam-card',      [StudentController::class, 'printExamCard']);
+
+$router->get('/student/announcements',  [StudentController::class, 'announcements']);
+$router->get('/student/extracurricular',[StudentController::class, 'extracurricular']);
+$router->get('/student/boarding',       [StudentController::class, 'boarding']);
+$router->get('/student/discipline',     [StudentController::class, 'discipline']);
+$router->get('/student/letter',         [StudentController::class, 'letter']);
+$router->get('/student/letter/print',   [StudentController::class, 'printLetter']);
+$router->get('/student/health',         [StudentController::class, 'health']);
 
 
 // ============================================================================
@@ -398,6 +522,64 @@ $router->get('/api/wilayah/regencies', [\App\Controllers\Api\WilayahController::
 $router->get('/api/wilayah/districts', [\App\Controllers\Api\WilayahController::class, 'getDistricts']);
 $router->get('/api/wilayah/villages',  [\App\Controllers\Api\WilayahController::class, 'getVillages']);
 
+
+// ============================================================================
+// 14. ALIAS ROUTES (URL dari database menu → controller yang benar)
+// ============================================================================
+$router->get('/settings/school',                [SettingsController::class, 'school']);
+$router->post('/settings/school/update',        [SettingsController::class, 'updateSchool']);
+
+$router->get('/master/classrooms',              [ClassroomManageController::class, 'index']);
+$router->post('/master/classrooms/store',       [ClassroomManageController::class, 'store']);
+$router->post('/master/classrooms/update',      [ClassroomManageController::class, 'update']);
+$router->get('/master/classrooms/delete',       [ClassroomManageController::class, 'delete']);
+
+$router->get('/student-affairs/teachers',       [TeacherController::class, 'index']);
+$router->get('/student-affairs/attendance',     [StudentAffairsController::class, 'attendance']);
+$router->get('/student-affairs/discipline',     [DisciplineController::class, 'index']);
+$router->get('/student-affairs/achievements',   [DisciplineController::class, 'achievements']);
+$router->post('/student-affairs/achievements/store',  [DisciplineController::class, 'storeAchievement']);
+$router->post('/student-affairs/achievements/update', [DisciplineController::class, 'updateAchievement']);
+$router->get('/student-affairs/achievements/delete',  [DisciplineController::class, 'deleteAchievement']);
+$router->get('/student-affairs/counseling',     [DisciplineController::class, 'counseling']);
+$router->post('/student-affairs/counseling/store',    [DisciplineController::class, 'storeCounseling']);
+$router->post('/student-affairs/counseling/update',   [DisciplineController::class, 'updateCounseling']);
+$router->get('/student-affairs/counseling/delete',    [DisciplineController::class, 'deleteCounseling']);
+$router->get('/student-affairs/alumni',         [AlumniController::class, 'index']);
+
+$router->get('/homeroom/report-all',            [HomeroomReportController::class, 'index']);
+
+$router->get('/boarding/dorms',                 [BoardingController::class, 'dorms']);
+$router->post('/boarding/dorms/store',          [BoardingController::class, 'storeDorm']);
+$router->get('/boarding/dorms/students',        [BoardingController::class, 'dormStudents']);
+$router->post('/boarding/assign',               [BoardingController::class, 'assignDorm']);
+$router->get('/boarding/supervisors',           [BoardingSupervisorController::class, 'index']);
+$router->post('/boarding/supervisors/store',    [BoardingSupervisorController::class, 'store']);
+$router->get('/boarding/supervisors/delete',    [BoardingSupervisorController::class, 'delete']);
+$router->get('/boarding/activities',            [BoardingActivityController::class, 'index']);
+$router->post('/boarding/activities/store',     [BoardingActivityController::class, 'store']);
+$router->get('/boarding/activities/delete',     [BoardingActivityController::class, 'delete']);
+$router->get('/boarding/mutations',             [BoardingMutationController::class, 'index']);
+$router->post('/boarding/mutations/store',      [BoardingMutationController::class, 'store']);
+
+$router->get('/staff/positions',                [StaffPositionController::class, 'index']);
+$router->post('/staff/positions/store',         [StaffPositionController::class, 'store']);
+$router->post('/staff/positions/update',        [StaffPositionController::class, 'update']);
+$router->get('/staff/positions/delete',         [StaffPositionController::class, 'delete']);
+$router->get('/staff/members',                  [StaffController::class, 'index']);
+$router->post('/staff/members/store',           [StaffController::class, 'store']);
+$router->post('/staff/members/update',          [StaffController::class, 'update']);
+$router->post('/staff/members/reset-password',  [StaffController::class, 'resetPassword']);
+$router->post('/staff/members/toggle-status',   [StaffController::class, 'toggleStatus']);
+$router->get('/staff/members/delete',           [StaffController::class, 'delete']);
+$router->get('/staff/attendance',               [StaffAttendanceController::class, 'staff']);
+$router->post('/staff/attendance/store',        [StaffAttendanceController::class, 'store']);
+
+$router->get('/student/profile',                [StudentController::class, 'profile']);
+
+// Portal Orang Tua
+$router->get('/portal/orangtua',            [ParentsController::class, 'portalIndex']);
+$router->get('/portal/orangtua/anak',       [ParentsController::class, 'portalChild']);
 
 // Execute Router
 $router->resolve();

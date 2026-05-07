@@ -58,6 +58,8 @@ class TeachingAssignmentController {
             'years' => $years,
             'currentPage' => $page,
             'totalPages' => ceil($total / $limit),
+            'totalData' => $total,
+            'limit' => $limit,
             'search' => $search
         ]);
     }

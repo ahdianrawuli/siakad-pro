@@ -13,138 +13,101 @@ class DashboardController {
 
     public function index() {
         $db = Database::getInstance();
-        $scope = Session::get('active_scope', 'GLOBAL'); 
 
-        // ==========================================
-        // 1. FILTER QUERY (SCOPE LOGIC)
-        // ==========================================
-        
-        // Filter PPDB (berdasarkan ppdb_tracks.level)
-        $joinPpdb = "";
-        $wherePpdb = "";
-        if ($scope != 'GLOBAL') {
-            $joinPpdb = " JOIN ppdb_tracks t ON sc.ppdb_track_id = t.id ";
-            $wherePpdb = " WHERE t.level = '$scope' ";
-        }
+        // Statistik Utama
+        $totalStudents  = $db->query("SELECT COUNT(*) FROM students WHERE status='ACTIVE'")->fetchColumn();
+        $totalStaff     = $db->query("SELECT COUNT(*) FROM staff_members WHERE status='ACTIVE'")->fetchColumn();
+        $totalTeachers  = $db->query("SELECT COUNT(*) FROM teachers WHERE status='ACTIVE'")->fetchColumn();
+        $totalClasses   = $db->query("SELECT COUNT(*) FROM classrooms")->fetchColumn();
 
-        // Filter Siswa & Keuangan (berdasarkan classrooms.major)
-        // PERBAIKAN: Menggunakan 'major' (MTS/MA/PDF) bukan 'level' (7/8/10)
-        $joinClass = "";
-        $whereClass = "";
-        if ($scope != 'GLOBAL') {
-            $joinClass = " JOIN classrooms c ON s.classroom_id = c.id ";
-            $whereClass = " AND c.major = '$scope' ";
-        }
-
-        // ==========================================
-        // 2. DATA PPDB
-        // ==========================================
-        $sqlGlobal = "SELECT
-            COUNT(sc.id) as total,
-            SUM(CASE WHEN sc.registration_status = 'PENDING' THEN 1 ELSE 0 END) as pending,
-            SUM(CASE WHEN sc.registration_status IN ('PAID', 'VERIFIED', 'ACCEPTED') THEN 1 ELSE 0 END) as active,
-            SUM(CASE WHEN sc.registration_status = 'REJECTED' THEN 1 ELSE 0 END) as rejected
-        FROM student_candidates sc 
-        $joinPpdb 
-        $wherePpdb";
-
-        $ppdbStats = $db->query($sqlGlobal)->fetch();
-        $ppdbSummary = [
-            'total'   => $ppdbStats['total'] ?? 0,
-            'pending' => $ppdbStats['pending'] ?? 0,
-            'active'  => $ppdbStats['active'] ?? 0,
-            'failed'  => $ppdbStats['rejected'] ?? 0
-        ];
-
-        // List Jalur
-        $trackFilter = ($scope != 'GLOBAL') ? " WHERE t.level = '$scope' " : "";
-        $sqlTracks = "SELECT t.name, t.level, t.quota, t.code,
-                             COUNT(c.id) as registered_count,
-                             SUM(CASE WHEN c.registration_status = 'ACCEPTED' THEN 1 ELSE 0 END) as accepted_count
-                      FROM ppdb_tracks t
-                      LEFT JOIN student_candidates c ON t.id = c.ppdb_track_id
-                      $trackFilter
-                      GROUP BY t.id
-                      ORDER BY t.level ASC, t.name ASC";
-        $tracksData = $db->query($sqlTracks)->fetchAll();
-
-        // ==========================================
-        // 3. DATA KESISWAAN (SISWA AKTIF)
-        // ==========================================
-        
-        // Total Siswa
-        $sqlTotalStudents = "SELECT COUNT(s.id) FROM students s $joinClass WHERE s.status = 'ACTIVE' $whereClass";
-        $totalStudents = $db->query($sqlTotalStudents)->fetchColumn();
-
-        // Statistik Per Jenjang (Group by MAJOR)
-        // PERBAIKAN: Group by 'major' untuk mendapatkan key 'MTS', 'MA', 'PDF'
-        $sqlLevel = "SELECT c.major, COUNT(s.id) as total 
-                     FROM students s 
-                     JOIN classrooms c ON s.classroom_id = c.id 
-                     WHERE s.status = 'ACTIVE' $whereClass
-                     GROUP BY c.major";
-        
-        $levelStatsRaw = $db->query($sqlLevel)->fetchAll();
-        $levelStats = [];
-        foreach($levelStatsRaw as $row) {
-            $levelStats[$row['major']] = $row['total'];
-        }
+        // Siswa per unit
+        $unitRaw = $db->query("
+            SELECT c.major as unit, COUNT(s.id) as total
+            FROM students s JOIN classrooms c ON s.classroom_id = c.id
+            WHERE s.status='ACTIVE' GROUP BY c.major
+        ")->fetchAll();
+        $unitStats = [];
+        foreach ($unitRaw as $r) $unitStats[$r['unit']] = $r['total'];
 
         // Gender
-        $sqlGender = "SELECT s.gender, COUNT(s.id) as total 
-                      FROM students s 
-                      $joinClass 
-                      WHERE s.status = 'ACTIVE' $whereClass
-                      GROUP BY s.gender";
-        $genderStatsRaw = $db->query($sqlGender)->fetchAll();
+        $genderRaw = $db->query("
+            SELECT gender, COUNT(*) as total FROM students WHERE status='ACTIVE' GROUP BY gender
+        ")->fetchAll();
         $genderStats = ['L' => 0, 'P' => 0];
-        foreach($genderStatsRaw as $row) {
-            $genderStats[$row['gender']] = $row['total'];
+        foreach ($genderRaw as $r) $genderStats[$r['gender']] = $r['total'];
+
+        // PPDB
+        $ppdbStats = $db->query("
+            SELECT
+              COUNT(*) as total,
+              SUM(registration_status='PENDING') as pending,
+              SUM(registration_status IN ('PAID','VERIFIED','ACCEPTED')) as active,
+              SUM(registration_status='REJECTED') as rejected
+            FROM student_candidates
+        ")->fetch();
+
+        // Ekskul
+        $totalEkskul = $db->query("SELECT COUNT(*) FROM extracurriculars WHERE status='ACTIVE'")->fetchColumn();
+
+        // Asrama
+        $dormStats = $db->query("
+            SELECT d.name, d.capacity, d.gender, COUNT(s.id) as occupied
+            FROM dorms d LEFT JOIN students s ON s.dorm_id = d.id AND s.status='ACTIVE'
+            GROUP BY d.id ORDER BY d.gender, d.name
+        ")->fetchAll();
+
+        // Jadwal hari ini
+        $today = strtoupper(['Ahad','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][date('w')]);
+        $todaySchedules = $db->query("
+            SELECT s.day, s.start_time, s.end_time, sub.name as subject, c.name as class_name, u.name as teacher_name
+            FROM schedules s
+            JOIN subjects sub ON s.subject_id = sub.id
+            JOIN classrooms c ON s.classroom_id = c.id
+            JOIN users u ON s.teacher_id = u.id
+            WHERE s.day = ? AND s.academic_year_id = (SELECT id FROM academic_years WHERE is_active=1 LIMIT 1)
+            ORDER BY s.start_time LIMIT 8
+        ", [$today])->fetchAll();
+
+        // Aktivitas terbaru (dari student_candidates)
+        $recentActivities = $db->query("
+            SELECT sc.full_name, sc.registration_status, sc.created_at, t.name as track_name
+            FROM student_candidates sc
+            LEFT JOIN ppdb_tracks t ON sc.ppdb_track_id = t.id
+            ORDER BY sc.created_at DESC LIMIT 6
+        ")->fetchAll();
+
+        $activities = [];
+        foreach ($recentActivities as $r) {
+            $diff = time() - strtotime($r['created_at']);
+            if ($diff < 3600) $time = round($diff/60) . ' menit lalu';
+            elseif ($diff < 86400) $time = round($diff/3600) . ' jam lalu';
+            else $time = round($diff/86400) . ' hari lalu';
+            $statusMap = [
+                'PENDING'  => ['icon' => 'fa-user-plus',     'color' => 'blue',   'label' => 'Mendaftar'],
+                'PAID'     => ['icon' => 'fa-check-circle',  'color' => 'green',  'label' => 'Pembayaran dikonfirmasi'],
+                'VERIFIED' => ['icon' => 'fa-file-shield',   'color' => 'teal',   'label' => 'Dokumen diverifikasi'],
+                'ACCEPTED' => ['icon' => 'fa-graduation-cap','color' => 'purple', 'label' => 'Diterima'],
+                'REJECTED' => ['icon' => 'fa-circle-xmark',  'color' => 'red',    'label' => 'Ditolak'],
+            ];
+            $s = $statusMap[$r['registration_status']] ?? ['icon' => 'fa-pen', 'color' => 'gray', 'label' => 'Update'];
+            $activities[] = ['time' => $time, 'user' => $r['full_name'], 'track' => $r['track_name'] ?? '-', 'icon' => $s['icon'], 'color' => $s['color'], 'label' => $s['label']];
         }
 
-        // ==========================================
-        // 4. DATA KEUANGAN
-        // ==========================================
-        // Pemasukan Hari Ini
-        $sqlIncome = "SELECT SUM(t.amount_paid) 
-                      FROM transactions t
-                      JOIN bills b ON t.bill_id = b.id
-                      JOIN students s ON b.student_id = s.id
-                      JOIN classrooms c ON s.classroom_id = c.id
-                      WHERE date(t.created_at) = CURDATE() 
-                      $whereClass"; 
-        $incomeToday = $db->query($sqlIncome)->fetchColumn();
-        
-        // Tagihan Unpaid
-        $sqlUnpaid = "SELECT COUNT(b.id) 
-                      FROM bills b
-                      JOIN students s ON b.student_id = s.id
-                      JOIN classrooms c ON s.classroom_id = c.id
-                      WHERE b.status = 'UNPAID' 
-                      $whereClass";
-        $unpaidBills = $db->query($sqlUnpaid)->fetchColumn();
-
         View::render('dashboard/index', [
-            'title'         => 'Dashboard Utama',
-            'user'          => Session::get('user_name'),
-            'active_scope'  => $scope,
-            
-            'ppdb_summary'  => $ppdbSummary,
-            'tracks_data'   => $tracksData,
-            
-            'student_stats' => [
-                'total' => $totalStudents,
-                'mts'   => $levelStats['MTS'] ?? 0,
-                'ma'    => $levelStats['MA'] ?? 0,
-                'pdf'   => $levelStats['PDF'] ?? 0, // Ditambahkan stats PDF
-                'putra' => $genderStats['L'],
-                'putri' => $genderStats['P']
-            ],
-            
-            'finance_stats' => [
-                'income_today' => $incomeToday ?? 0,
-                'unpaid_count' => $unpaidBills
-            ]
+            'title'          => 'Dashboard',
+            'user'           => Session::get('user_name'),
+            'totalStudents'  => $totalStudents,
+            'totalStaff'     => $totalStaff,
+            'totalTeachers'  => $totalTeachers,
+            'totalClasses'   => $totalClasses,
+            'unitStats'      => $unitStats,
+            'genderStats'    => $genderStats,
+            'ppdbStats'      => $ppdbStats,
+            'totalEkskul'    => $totalEkskul,
+            'dormStats'      => $dormStats,
+            'todaySchedules' => $todaySchedules,
+            'todayName'      => $today,
+            'activities'     => $activities,
         ]);
     }
 }

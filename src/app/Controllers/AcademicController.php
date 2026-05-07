@@ -11,6 +11,22 @@ class AcademicController {
         Middleware::auth();
     }
 
+    public function subjectTeachers() {
+        View::render('academic/subject_teachers', ['title' => 'Guru Mata Pelajaran']);
+    }
+
+    public function homeroomTeachers() {
+        View::render('academic/homeroom_teachers', ['title' => 'Wali Kelas']);
+    }
+
+    public function calendarView() {
+        View::render('academic/calendar_view', ['title' => 'Kalender Akademik']);
+    }
+
+    public function syllabusView() {
+        View::render('academic/syllabus_view', ['title' => 'Silabus']);
+    }
+
     // ==========================================================
     // 1. MANAJEMEN MATA PELAJARAN (SUBJECTS)
     // ==========================================================
@@ -495,6 +511,12 @@ class AcademicController {
         $scheduleId = $_GET['schedule_id'];
         $db = Database::getInstance();
 
+        $page   = (int)($_GET['page'] ?? 1);
+        $limit  = (int)($_GET['limit'] ?? 10);
+        $offset = ($page - 1) * $limit;
+        $search = $_GET['search'] ?? '';
+        $dateFilter = $_GET['date'] ?? '';
+
         $schedule = $db->query("
             SELECT sch.*, s.name as subject_name, c.name as class_name 
             FROM schedules sch
@@ -503,22 +525,35 @@ class AcademicController {
             WHERE sch.id = ?
         ", [$scheduleId])->fetch();
 
+        $where = "WHERE schedule_id = ?";
+        $params = [$scheduleId];
+        if (!empty($search)) { $where .= " AND topic LIKE ?"; $params[] = "%$search%"; }
+        if (!empty($dateFilter)) { $where .= " AND date = ?"; $params[] = $dateFilter; }
+
+        $totalData  = $db->query("SELECT COUNT(*) FROM teaching_journals $where", $params)->fetchColumn();
+        $totalPages = ceil($totalData / $limit);
+
+        $journals = $db->query("SELECT * FROM teaching_journals $where ORDER BY date DESC, created_at DESC LIMIT $limit OFFSET $offset", $params)->fetchAll();
+
         $students = $db->query("SELECT * FROM students WHERE classroom_id = ? AND status='ACTIVE' ORDER BY full_name", [$schedule['classroom_id']])->fetchAll();
-        $journals = $db->query("SELECT * FROM teaching_journals WHERE schedule_id = ? ORDER BY date DESC, created_at DESC", [$scheduleId])->fetchAll();
 
         $attendanceData = [];
-        foreach($journals as $j) {
+        foreach ($journals as $j) {
             $att = $db->query("SELECT student_id, status FROM journal_attendance WHERE journal_id = ?", [$j['id']])->fetchAll();
-            foreach($att as $a) {
-                $attendanceData[$j['id']][$a['student_id']] = $a['status'];
-            }
+            foreach ($att as $a) { $attendanceData[$j['id']][$a['student_id']] = $a['status']; }
         }
 
         View::render('academic/journal_history', [
-            'schedule' => $schedule,
-            'journals' => $journals,
-            'students' => $students,
-            'attendanceData' => $attendanceData
+            'schedule'       => $schedule,
+            'journals'       => $journals,
+            'students'       => $students,
+            'attendanceData' => $attendanceData,
+            'totalData'      => $totalData,
+            'totalPages'     => $totalPages,
+            'currentPage'    => $page,
+            'limit'          => $limit,
+            'search'         => $search,
+            'dateFilter'     => $dateFilter,
         ]);
     }
 

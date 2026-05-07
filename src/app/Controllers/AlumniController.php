@@ -70,7 +70,7 @@ class AlumniController {
         $check = $db->query("SELECT id FROM alumni WHERE nis = ?", [$_POST['nis']])->fetch();
         if ($check) {
             Session::setFlash('error', 'NIS Alumni sudah terdaftar.');
-            header('Location: /student-affairs/alumni');
+            header('Location: /school/alumni');
             exit;
         }
 
@@ -81,7 +81,7 @@ class AlumniController {
         ]);
         
         Session::setFlash('success', 'Data alumni berhasil ditambahkan.');
-        header('Location: /student-affairs/alumni');
+        header('Location: /school/alumni');
     }
 
     public function update() {
@@ -93,7 +93,7 @@ class AlumniController {
         ]);
         
         Session::setFlash('success', 'Data alumni berhasil diperbarui.');
-        header('Location: /student-affairs/alumni');
+        header('Location: /school/alumni');
     }
 
     public function delete() {
@@ -103,6 +103,26 @@ class AlumniController {
             $db->query("DELETE FROM alumni WHERE id = ?", [$id]);
             Session::setFlash('success', 'Data alumni berhasil dihapus.');
         }
-        header('Location: /student-affairs/alumni');
+        header('Location: /school/alumni');
+    }
+
+    public function printLetter() {
+        $id = $_GET['id'] ?? null;
+        if (!$id) { header('Location: /school/alumni'); exit; }
+
+        $db = Database::getInstance();
+        $alumni = $db->query("SELECT * FROM alumni WHERE id = ?", [$id])->fetch();
+        if (!$alumni) { header('Location: /school/alumni'); exit; }
+
+        $school = \App\Models\AppConfig::get('school_name', 'Pondok Pesantren Sumatera Thawalib Parabek');
+        $principal = \App\Models\AppConfig::get('principal_name', '');
+
+        View::render('alumni/print_letter', [
+            'title'     => 'Surat Keterangan Alumni',
+            'alumni'    => $alumni,
+            'school'    => $school,
+            'principal' => $principal,
+            'date'      => date('d F Y'),
+        ]);
     }
 }

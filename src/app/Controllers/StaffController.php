@@ -31,7 +31,7 @@ class StaffController {
 
         $totalData = $db->query("SELECT COUNT(*) FROM staff_members sm WHERE $where", $params)->fetchColumn();
         
-        $sql = "SELECT sm.*, sp.name as position_name, u.username 
+        $sql = "SELECT sm.*, sp.name as position_name, u.username, u.status as user_status
                 FROM staff_members sm 
                 LEFT JOIN staff_positions sp ON sm.position_id = sp.id
                 LEFT JOIN users u ON sm.user_id = u.id
@@ -58,43 +58,35 @@ class StaffController {
     public function store() {
         $db = Database::getInstance();
         try {
-            // Optional: Create User Login
-            $userId = null;
-            if (!empty($_POST['create_user'])) {
-                $password = password_hash('123456', PASSWORD_BCRYPT);
-                $username = $_POST['nip'];
-                
-                // Cek username duplicate
-                $check = $db->query("SELECT id FROM users WHERE username = ?", [$username])->fetch();
-                if ($check) {
-                    throw new \Exception("NIP/Username $username sudah digunakan.");
-                }
+            $db->getConnection()->beginTransaction();
 
-                $db->query("INSERT INTO users (name, username, email, password, role_id, status) VALUES (?, ?, ?, ?, 7, 'active')", 
-                    [
-                        $_POST['full_name'], 
-                        $username, 
-                        !empty($_POST['email']) ? $_POST['email'] : null, 
-                        $password
-                    ]);
-                $userId = $db->getConnection()->lastInsertId();
-            }
+            // Ambil role_id dari jabatan yang dipilih
+            $position = $db->query("SELECT role_id FROM staff_positions WHERE id=?", [$_POST['position_id']])->fetch();
+            $roleId = $position['role_id'] ?? 7;
 
-            // PERBAIKAN UTAMA DI SINI (Menggunakan ?? null agar tidak error)
-            $db->query("INSERT INTO staff_members (user_id, position_id, nip, full_name, gender, phone, email, address) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
-                [
-                    $userId, 
-                    $_POST['position_id'], 
-                    $_POST['nip'], 
-                    $_POST['full_name'], 
-                    $_POST['gender'], 
-                    $_POST['phone'] ?? null,   
-                    $_POST['email'] ?? null,   
-                    $_POST['address'] ?? null  // Ini yang menyebabkan error sebelumnya
-                ]);
-            
-            Session::setFlash('success', 'Staff berhasil ditambahkan. (Pass Default: 123456)');
+            // Buat akun login otomatis
+            $username = $_POST['nip'];
+            $check = $db->query("SELECT id FROM users WHERE username=?", [$username])->fetch();
+            if ($check) throw new \Exception("NIP/Username $username sudah digunakan.");
+
+            $db->query("INSERT INTO users (name, username, email, password, role_id, status) VALUES (?,?,?,?,?,'active')", [
+                $_POST['full_name'],
+                $username,
+                !empty($_POST['email']) ? $_POST['email'] : null,
+                password_hash('123456', PASSWORD_BCRYPT),
+                $roleId
+            ]);
+            $userId = $db->getConnection()->lastInsertId();
+
+            $db->query("INSERT INTO staff_members (user_id, position_id, nip, full_name, gender, phone, email, address) VALUES (?,?,?,?,?,?,?,?)", [
+                $userId, $_POST['position_id'], $_POST['nip'], $_POST['full_name'],
+                $_POST['gender'], $_POST['phone'] ?? null, $_POST['email'] ?? null, $_POST['address'] ?? null
+            ]);
+
+            $db->getConnection()->commit();
+            Session::setFlash('success', 'Staff berhasil ditambahkan. Password default: 123456');
         } catch (\Exception $e) {
+            $db->getConnection()->rollBack();
             Session::setFlash('error', $e->getMessage());
         }
         header('Location: /staff/members');
@@ -102,37 +94,72 @@ class StaffController {
 
     public function update() {
         $db = Database::getInstance();
-        
-        $phone = !empty($_POST['phone']) ? $_POST['phone'] : null;
-        $email = !empty($_POST['email']) ? $_POST['email'] : null;
-        $address = !empty($_POST['address']) ? $_POST['address'] : null;
+        try {
+            $db->getConnection()->beginTransaction();
 
-        $db->query("UPDATE staff_members SET position_id=?, nip=?, full_name=?, gender=?, phone=?, email=?, address=?, status=? WHERE id=?", 
-            [
-                $_POST['position_id'], 
-                $_POST['nip'], 
-                $_POST['full_name'], 
-                $_POST['gender'], 
-                $phone, 
-                $email, 
-                $address, 
-                $_POST['status'], 
-                $_POST['id']
+            // Ambil role_id dari jabatan baru
+            $position = $db->query("SELECT role_id FROM staff_positions WHERE id=?", [$_POST['position_id']])->fetch();
+            $roleId = $position['role_id'] ?? 7;
+
+            $db->query("UPDATE staff_members SET position_id=?, nip=?, full_name=?, gender=?, phone=?, email=?, address=?, status=? WHERE id=?", [
+                $_POST['position_id'], $_POST['nip'], $_POST['full_name'], $_POST['gender'],
+                $_POST['phone'] ?: null, $_POST['email'] ?: null, $_POST['address'] ?: null,
+                $_POST['status'], $_POST['id']
             ]);
-            
-        Session::setFlash('success', 'Data staff diperbarui.');
+
+            // Sync role user jika ada akun login
+            $staff = $db->query("SELECT user_id FROM staff_members WHERE id=?", [$_POST['id']])->fetch();
+            if ($staff['user_id']) {
+                $db->query("UPDATE users SET name=?, email=?, role_id=? WHERE id=?", [
+                    $_POST['full_name'], $_POST['email'] ?: null, $roleId, $staff['user_id']
+                ]);
+            }
+
+            $db->getConnection()->commit();
+            Session::setFlash('success', 'Data staff diperbarui.');
+        } catch (\Exception $e) {
+            $db->getConnection()->rollBack();
+            Session::setFlash('error', $e->getMessage());
+        }
+        header('Location: /staff/members');
+    }
+
+    public function resetPassword() {
+        $db = Database::getInstance();
+        $staffId = $_POST['staff_id'];
+        $staff = $db->query("SELECT user_id FROM staff_members WHERE id=?", [$staffId])->fetch();
+        if ($staff && $staff['user_id']) {
+            $db->query("UPDATE users SET password=? WHERE id=?", [
+                password_hash('123456', PASSWORD_BCRYPT), $staff['user_id']
+            ]);
+            Session::setFlash('success', 'Password direset ke 123456.');
+        } else {
+            Session::setFlash('error', 'Staff ini belum memiliki akun login.');
+        }
+        header('Location: /staff/members');
+    }
+
+    public function toggleStatus() {
+        $db = Database::getInstance();
+        $staffId = $_POST['staff_id'];
+        $staff = $db->query("SELECT user_id FROM staff_members WHERE id=?", [$staffId])->fetch();
+        if ($staff && $staff['user_id']) {
+            $current = $db->query("SELECT status FROM users WHERE id=?", [$staff['user_id']])->fetchColumn();
+            $new = $current === 'active' ? 'inactive' : 'active';
+            $db->query("UPDATE users SET status=? WHERE id=?", [$new, $staff['user_id']]);
+            Session::setFlash('success', 'Status akun diubah ke ' . strtoupper($new) . '.');
+        }
         header('Location: /staff/members');
     }
 
     public function delete() {
         $db = Database::getInstance();
         $id = $_GET['id'];
-        // Hapus User Login jika ada
-        $staff = $db->query("SELECT user_id FROM staff_members WHERE id = ?", [$id])->fetch();
+        $staff = $db->query("SELECT user_id FROM staff_members WHERE id=?", [$id])->fetch();
         if ($staff && $staff['user_id']) {
-            $db->query("DELETE FROM users WHERE id = ?", [$staff['user_id']]);
+            $db->query("DELETE FROM users WHERE id=?", [$staff['user_id']]);
         }
-        $db->query("DELETE FROM staff_members WHERE id = ?", [$id]);
+        $db->query("DELETE FROM staff_members WHERE id=?", [$id]);
         Session::setFlash('success', 'Staff dihapus.');
         header('Location: /staff/members');
     }

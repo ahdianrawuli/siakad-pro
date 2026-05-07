@@ -1,10 +1,34 @@
 <?php require __DIR__ . '/../../layouts/header.php'; ?>
 <?php require __DIR__ . '/../../layouts/sidebar.php'; ?>
 
-<main class="flex-1 overflow-y-auto bg-gray-100 p-6">
-    <div class="flex justify-between items-center mb-6">
-        <a href="/ppdb/registrations" class="text-gray-600 hover:text-blue-600"><i class="fa-solid fa-arrow-left"></i> Kembali</a>
-        <h3 class="text-2xl font-bold text-gray-700">Detail Pendaftar</h3>
+<main class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
+
+    <!-- Header -->
+    <div class="mb-8 flex flex-col md:flex-row md:justify-between md:items-end gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <div class="flex items-center gap-4">
+            <a href="/ppdb/registrations" class="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition shrink-0">
+                <i class="fa-solid fa-arrow-left text-sm"></i>
+            </a>
+            <div>
+                <h3 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Detail Pendaftar</h3>
+                <p class="text-slate-500 text-sm mt-0.5 font-medium">
+                    <?= htmlspecialchars($candidate['full_name']) ?>
+                    &bull; <span class="font-mono text-xs"><?= $candidate['registration_no'] ?></span>
+                </p>
+            </div>
+        </div>
+        <?php
+        $statusBadge = match($candidate['registration_status']) {
+            'ACCEPTED' => 'bg-green-50 text-green-700 border-green-200',
+            'REJECTED' => 'bg-red-50 text-red-700 border-red-200',
+            'PAID'     => 'bg-blue-50 text-blue-700 border-blue-200',
+            'VERIFIED' => 'bg-teal-50 text-teal-700 border-teal-200',
+            default    => 'bg-yellow-50 text-yellow-700 border-yellow-200',
+        };
+        ?>
+        <span class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-bold border <?= $statusBadge ?>">
+            <?= $candidate['registration_status'] ?>
+        </span>
     </div>
 
     <?php \App\Core\Session::flash(); ?>

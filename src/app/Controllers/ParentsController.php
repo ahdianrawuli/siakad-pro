@@ -107,4 +107,106 @@ class ParentsController {
         Session::setFlash('success', 'Data Orang Tua & Wali berhasil diperbarui.');
         header('Location: /student-affairs/parents');
     }
+
+    // =========================================================================
+    // PORTAL ORANG TUA (role: orangtua)
+    // =========================================================================
+
+    /** Dashboard orang tua: lihat data anak */
+    public function portalIndex() {
+        $userId = Session::get('user_id');
+        $db = Database::getInstance();
+
+        // Cari siswa yang terhubung ke akun orang tua ini
+        $students = $db->query(
+            "SELECT s.*, c.name as class_name
+             FROM students s
+             LEFT JOIN classrooms c ON s.classroom_id = c.id
+             WHERE s.parent_user_id = ? AND s.status = 'ACTIVE'
+             ORDER BY s.full_name",
+            [$userId]
+        )->fetchAll();
+
+        // Jika tidak ada relasi parent_user_id, coba cari via nomor HP
+        if (empty($students)) {
+            $user = $db->query("SELECT phone FROM users WHERE id = ?", [$userId])->fetch();
+            if ($user && $user['phone']) {
+                $students = $db->query(
+                    "SELECT s.*, c.name as class_name
+                     FROM students s LEFT JOIN classrooms c ON s.classroom_id = c.id
+                     WHERE (s.father_phone = ? OR s.mother_phone = ? OR s.guardian_phone = ?)
+                     AND s.status = 'ACTIVE'",
+                    [$user['phone'], $user['phone'], $user['phone']]
+                )->fetchAll();
+            }
+        }
+
+        View::render('parents/portal_index', [
+            'title'    => 'Portal Orang Tua',
+            'students' => $students,
+        ]);
+    }
+
+    /** Detail anak: nilai, absensi, tagihan */
+    public function portalChild() {
+        $studentId = $_GET['id'] ?? null;
+        if (!$studentId) { header('Location: /portal/orangtua'); exit; }
+
+        $db = Database::getInstance();
+        $student = $db->query(
+            "SELECT s.*, c.name as class_name FROM students s
+             LEFT JOIN classrooms c ON s.classroom_id = c.id
+             WHERE s.id = ? AND s.status = 'ACTIVE'",
+            [$studentId]
+        )->fetch();
+        if (!$student) { header('Location: /portal/orangtua'); exit; }
+
+        $activeYear = $db->query("SELECT id, name FROM academic_years WHERE is_active = 1 LIMIT 1")->fetch();
+
+        // Nilai
+        $grades = $activeYear ? $db->query(
+            "SELECT g.*, s.name as subject_name, s.kkm FROM grades g
+             JOIN subjects s ON g.subject_id = s.id
+             WHERE g.student_id = ? AND g.academic_year_id = ?
+             ORDER BY s.name",
+            [$studentId, $activeYear['id']]
+        )->fetchAll() : [];
+
+        // Absensi bulan ini
+        $month = date('Y-m');
+        $attendance = $db->query(
+            "SELECT date, status, notes FROM attendances
+             WHERE student_id = ? AND DATE_FORMAT(date,'%Y-%m') = ?
+             ORDER BY date DESC",
+            [$studentId, $month]
+        )->fetchAll();
+        $recap = ['H' => 0, 'S' => 0, 'I' => 0, 'A' => 0];
+        foreach ($attendance as $a) { if (isset($recap[$a['status']])) $recap[$a['status']]++; }
+
+        // Tagihan
+        $bills = $db->query(
+            "SELECT * FROM bills WHERE student_id = ? ORDER BY created_at DESC LIMIT 10",
+            [$studentId]
+        )->fetchAll();
+
+        // Pelanggaran terbaru
+        $violations = $db->query(
+            "SELECT dv.*, mv.name as violation_name, mv.points
+             FROM discipline_violations dv
+             JOIN master_violations mv ON dv.violation_id = mv.id
+             WHERE dv.student_id = ? ORDER BY dv.date DESC LIMIT 5",
+            [$studentId]
+        )->fetchAll();
+
+        View::render('parents/portal_child', [
+            'title'      => 'Detail Anak: ' . $student['full_name'],
+            'student'    => $student,
+            'grades'     => $grades,
+            'activeYear' => $activeYear,
+            'attendance' => $attendance,
+            'recap'      => $recap,
+            'bills'      => $bills,
+            'violations' => $violations,
+        ]);
+    }
 }

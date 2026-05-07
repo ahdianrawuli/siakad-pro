@@ -37,7 +37,7 @@ class SettingsController {
         }
 
         Session::setFlash('success', 'Identitas Sekolah diperbarui.');
-        header('Location: /settings/school');
+        header('Location: /school/profile');
     }
 
     // --- 2. MANAJEMEN USER ---

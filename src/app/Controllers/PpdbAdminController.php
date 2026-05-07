@@ -22,28 +22,39 @@ class PpdbAdminController {
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $offset = ($page - 1) * $limit;
 
-        $sql = "SELECT sc.*, t.name as track_name, t.level, 
+        $sql = "SELECT sc.*, t.name as track_name, t.level as track_level,
                 (SELECT status FROM ppdb_payments WHERE candidate_id = sc.id ORDER BY id DESC LIMIT 1) as payment_status
                 FROM student_candidates sc
-                JOIN ppdb_tracks t ON sc.ppdb_track_id = t.id
+                LEFT JOIN ppdb_tracks t ON sc.ppdb_track_id = t.id
                 WHERE 1=1";
-        
+
         $params = [];
         if (!empty($search)) {
-            $sql .= " AND (sc.full_name LIKE ? OR sc.registration_no LIKE ?)";
-            $params[] = "%$search%"; $params[] = "%$search%";
+            $sql .= " AND (sc.full_name LIKE ? OR sc.registration_no LIKE ? OR sc.nisn LIKE ?)";
+            $params[] = "%$search%"; $params[] = "%$search%"; $params[] = "%$search%";
         }
         if (!empty($status)) { $sql .= " AND sc.registration_status = ?"; $params[] = $status; }
         if (!empty($trackId)) { $sql .= " AND sc.ppdb_track_id = ?"; $params[] = $trackId; }
 
         $totalData = $db->query("SELECT COUNT(*) FROM (" . $sql . ") as t", $params)->fetchColumn();
         $sql .= " ORDER BY sc.created_at DESC LIMIT $limit OFFSET $offset";
-        $candidates = $db->query($sql, $params)->fetchAll();
+
+        try {
+            $candidates = $db->query($sql, $params)->fetchAll();
+        } catch (\Exception $e) {
+            $candidates = [];
+        }
+
+        try {
+            $tracks = $db->query("SELECT * FROM ppdb_tracks WHERE is_active = 1")->fetchAll();
+        } catch (\Exception $e) {
+            $tracks = [];
+        }
 
         View::render('ppdb/admin/index', [
             'title' => 'Data Pendaftar PPDB',
             'candidates' => $candidates,
-            'tracks' => $db->query("SELECT * FROM ppdb_tracks WHERE is_active = 1")->fetchAll(),
+            'tracks' => $tracks,
             'totalData' => $totalData,
             'totalPages' => ceil($totalData / $limit),
             'currentPage' => $page,
@@ -92,6 +103,114 @@ class PpdbAdminController {
         $db->query("UPDATE student_candidates SET registration_status = ? WHERE id = ?", [$_POST['status'], $_POST['candidate_id']]);
         Session::setFlash('success', 'Status kelulusan diperbarui.');
         header("Location: /ppdb/registrations/detail?id=" . $_POST['candidate_id']);
+    }
+
+    public function promoteToStudent() {
+        $db = Database::getInstance();
+        $candidateId = $_POST['candidate_id'] ?? null;
+
+        if (!$candidateId) {
+            Session::setFlash('error', 'Data kandidat tidak valid.');
+            header("Location: /ppdb/registrations");
+            exit;
+        }
+
+        $candidate = $db->query("SELECT * FROM student_candidates WHERE id = ? AND registration_status = 'ACCEPTED'", [$candidateId])->fetch();
+
+        if (!$candidate) {
+            Session::setFlash('error', 'Kandidat tidak ditemukan atau belum diterima.');
+            header("Location: /ppdb/registrations/detail?id=" . $candidateId);
+            exit;
+        }
+
+        // Cek apakah sudah pernah di-promote
+        $existing = $db->query("SELECT id FROM students WHERE candidate_id = ?", [$candidateId])->fetch();
+        if ($existing) {
+            Session::setFlash('error', 'Siswa ini sudah pernah di-generate sebelumnya.');
+            header("Location: /ppdb/registrations/detail?id=" . $candidateId);
+            exit;
+        }
+
+        $db->getConnection()->beginTransaction();
+
+        // Generate NIS: format YYYYXXXX
+        $year = date('Y');
+        $lastNis = $db->query("SELECT nis FROM students WHERE nis LIKE ? ORDER BY id DESC LIMIT 1", [$year . '%'])->fetchColumn();
+        $seq = $lastNis ? (intval(substr($lastNis, 4)) + 1) : 1;
+        $nis = $year . str_pad($seq, 4, '0', STR_PAD_LEFT);
+
+        // Buat akun login dengan password = tanggal lahir (ddmmyyyy)
+        $passPlain = date('dmY', strtotime($candidate['birth_date']));
+        $passHash  = password_hash($passPlain, PASSWORD_BCRYPT);
+        $username  = $nis;
+        $email     = $candidate['whatsapp_number'] . '@santri.thawalib.sch.id';
+
+        $db->query("INSERT INTO users (name, username, email, password, role_id, status) VALUES (?,?,?,?,4,'active')",
+            [$candidate['full_name'], $username, $email, $passHash]);
+        $userId = $db->getConnection()->lastInsertId();
+
+        $db->query(
+            "INSERT INTO students (candidate_id, user_id, nis, nisn, full_name, gender, birth_place, birth_date, address, parent_name, parent_phone, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE')",
+            [
+                $candidateId, $userId, $nis,
+                $candidate['nisn'], $candidate['full_name'], $candidate['gender'],
+                $candidate['birth_place'], $candidate['birth_date'], $candidate['address'],
+                $candidate['father_name'], $candidate['father_phone'],
+            ]
+        );
+
+        $db->getConnection()->commit();
+        Session::setFlash('success', "Siswa aktif berhasil dibuat. NIS: $nis | Username: $nis | Password: $passPlain (tanggal lahir)");
+        header("Location: /ppdb/registrations/detail?id=" . $candidateId);
+        exit;
+    }
+
+    // --- PENGELOLAAN SETTINGS PPDB (Jalur & Gelombang) ---
+    public function settings() {
+        $db = Database::getInstance();
+        $paths   = $db->query("SELECT * FROM ppdb_tracks ORDER BY level, name ASC")->fetchAll();
+        $batches = $db->query("SELECT * FROM ppdb_batches ORDER BY start_date DESC")->fetchAll();
+        View::render('ppdb/admin/settings', [
+            'title'   => 'Pengaturan PPDB',
+            'paths'   => $paths,
+            'batches' => $batches
+        ]);
+    }
+
+    public function storePath() {
+        $db = Database::getInstance();
+        $db->query("INSERT INTO ppdb_tracks (name, level, code, quota, is_active) VALUES (?, ?, ?, ?, 1)", [
+            $_POST['name'], $_POST['level'], $_POST['code'], (int)($_POST['quota'] ?? 0)
+        ]);
+        Session::setFlash('success', 'Jalur pendaftaran ditambahkan.');
+        header('Location: /school/ppdb');
+    }
+
+    public function togglePath($id) {
+        $db = Database::getInstance();
+        $path = $db->query("SELECT is_active FROM ppdb_tracks WHERE id = ?", [$id])->fetch();
+        if ($path) {
+            $db->query("UPDATE ppdb_tracks SET is_active = ? WHERE id = ?", [$path['is_active'] ? 0 : 1, $id]);
+        }
+        header('Location: /school/ppdb');
+    }
+
+    public function storeBatch() {
+        $db = Database::getInstance();
+        $db->query("INSERT INTO ppdb_batches (name, start_date, end_date, is_active) VALUES (?, ?, ?, 0)", [
+            $_POST['name'], $_POST['start_date'], $_POST['end_date']
+        ]);
+        Session::setFlash('success', 'Gelombang PPDB ditambahkan.');
+        header('Location: /school/ppdb');
+    }
+
+    public function activateBatch($id) {
+        $db = Database::getInstance();
+        $db->query("UPDATE ppdb_batches SET is_active = 0");
+        $db->query("UPDATE ppdb_batches SET is_active = 1 WHERE id = ?", [$id]);
+        Session::setFlash('success', 'Gelombang berhasil diaktifkan.');
+        header('Location: /school/ppdb');
     }
 
     // --- PENGELOLAAN PERIODE (Agar rute lama /ppdb/periods tetap jalan) ---

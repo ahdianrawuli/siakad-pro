@@ -14,23 +14,43 @@ class ExtracurricularController {
         $db = Database::getInstance();
         
         $ekskuls = $db->query("
-            SELECT e.*, 
-            (SELECT GROUP_CONCAT(u.name SEPARATOR ', ') 
-             FROM extracurricular_coaches ec 
-             JOIN users u ON ec.user_id = u.id 
-             WHERE ec.extracurricular_id = e.id) as coaches,
-            (SELECT GROUP_CONCAT(CONCAT(es.day_name, ' ', es.start_time, '-', es.end_time) SEPARATOR '<br>') 
-             FROM extracurricular_schedules es 
-             WHERE es.extracurricular_id = e.id) as schedules
+            SELECT e.*,
+            (SELECT GROUP_CONCAT(CONCAT(ec.id, '|', u.name) SEPARATOR ';;')
+             FROM extracurricular_coaches ec
+             JOIN users u ON ec.user_id = u.id
+             WHERE ec.extracurricular_id = e.id) as coaches_raw,
+            (SELECT GROUP_CONCAT(CONCAT(es.id, '|', es.day_name, '|', es.start_time, '|', es.end_time, '|', IFNULL(es.location,'')) SEPARATOR ';;')
+             FROM extracurricular_schedules es
+             WHERE es.extracurricular_id = e.id) as schedules_raw
             FROM extracurriculars e
             ORDER BY e.name
         ")->fetchAll();
 
+        // Parse raw strings into structured arrays
+        foreach ($ekskuls as &$e) {
+            $e['coaches'] = [];
+            if ($e['coaches_raw']) {
+                foreach (explode(';;', $e['coaches_raw']) as $c) {
+                    [$id, $name] = explode('|', $c, 2);
+                    $e['coaches'][] = ['id' => $id, 'name' => $name];
+                }
+            }
+            $e['schedules'] = [];
+            if ($e['schedules_raw']) {
+                foreach (explode(';;', $e['schedules_raw']) as $s) {
+                    [$id, $day, $start, $end, $loc] = explode('|', $s, 5);
+                    $e['schedules'][] = ['id' => $id, 'day_name' => $day, 'start_time' => $start, 'end_time' => $end, 'location' => $loc];
+                }
+            }
+            unset($e['coaches_raw'], $e['schedules_raw']);
+        }
+        unset($e);
+
         $teachers = $db->query("SELECT id, name FROM users WHERE role_id IN (1,3) ORDER BY name")->fetchAll();
 
         View::render('extracurricular/master', [
-            'title' => 'Master Ekstrakurikuler',
-            'ekskuls' => $ekskuls,
+            'title'    => 'Master Ekstrakurikuler',
+            'ekskuls'  => $ekskuls,
             'teachers' => $teachers
         ]);
     }
@@ -51,6 +71,13 @@ class ExtracurricularController {
         header("Location: /extracurricular/master");
     }
 
+    public function deleteCoach() {
+        $db = Database::getInstance();
+        $db->query("DELETE FROM extracurricular_coaches WHERE id = ?", [$_GET['id']]);
+        Session::setFlash('success', 'Pembina berhasil dihapus');
+        header("Location: /extracurricular/master");
+    }
+
     public function storeSchedule() {
         $db = Database::getInstance();
         $db->query("INSERT INTO extracurricular_schedules (extracurricular_id, day_name, start_time, end_time, location) VALUES (?, ?, ?, ?, ?)", 
@@ -59,7 +86,73 @@ class ExtracurricularController {
         header("Location: /extracurricular/master");
     }
 
-    // --- HALAMAN 2: ANGGOTA EKSKUL ---
+    public function updateSchedule() {
+        $db = Database::getInstance();
+        $db->query("UPDATE extracurricular_schedules SET day_name=?, start_time=?, end_time=?, location=? WHERE id=?",
+            [$_POST['day_name'], $_POST['start_time'], $_POST['end_time'], $_POST['location'], $_POST['schedule_id']]);
+        Session::setFlash('success', 'Jadwal berhasil diperbarui');
+        header("Location: /extracurricular/master");
+    }
+
+    public function deleteSchedule() {
+        $db = Database::getInstance();
+        $db->query("DELETE FROM extracurricular_schedules WHERE id = ?", [$_GET['id']]);
+        Session::setFlash('success', 'Jadwal berhasil dihapus');
+        header("Location: /extracurricular/master");
+    }
+
+    // --- HALAMAN 4: RAPOR EKSKUL ---
+    public function report() {
+        $db = Database::getInstance();
+        $selectedEkskul = $_GET['id'] ?? '';
+        $month = $_GET['month'] ?? date('Y-m');
+
+        $ekskuls = $db->query("SELECT * FROM extracurriculars WHERE status='ACTIVE' ORDER BY name")->fetchAll();
+
+        $members = [];
+        $summary = [];
+        $ekskulName = '';
+
+        $activeYear = $db->query("SELECT id FROM academic_years WHERE is_active = 1")->fetch();
+        $yearId = $activeYear['id'] ?? null;
+
+        if ($selectedEkskul && $yearId) {
+            $ekskulName = $db->query("SELECT name FROM extracurriculars WHERE id=?", [$selectedEkskul])->fetch()['name'] ?? '';
+
+            $members = $db->query("
+                SELECT s.id as student_id, s.full_name, s.nis, c.name as class_name
+                FROM student_extracurriculars se
+                JOIN students s ON se.student_id = s.id
+                LEFT JOIN classrooms c ON s.classroom_id = c.id
+                WHERE se.extracurricular_id = ? AND se.academic_year_id = ?
+                ORDER BY s.full_name
+            ", [$selectedEkskul, $yearId])->fetchAll();
+
+            foreach ($members as $m) {
+                $counts = $db->query("
+                    SELECT status, COUNT(*) as total
+                    FROM extracurricular_attendances
+                    WHERE extracurricular_id = ? AND student_id = ? AND DATE_FORMAT(date,'%Y-%m') = ?
+                    GROUP BY status
+                ", [$selectedEkskul, $m['student_id'], $month])->fetchAll();
+
+                $row = ['HADIR' => 0, 'IZIN' => 0, 'SAKIT' => 0, 'ALPA' => 0];
+                foreach ($counts as $c) { $row[$c['status']] = $c['total']; }
+                $row['total'] = array_sum($row);
+                $summary[$m['student_id']] = $row;
+            }
+        }
+
+        View::render('extracurricular/report', [
+            'title'         => 'Rapor Ekstrakurikuler',
+            'ekskuls'       => $ekskuls,
+            'selectedEkskul'=> $selectedEkskul,
+            'ekskulName'    => $ekskulName,
+            'month'         => $month,
+            'members'       => $members,
+            'summary'       => $summary,
+        ]);
+    }
     public function members() {
         $db = Database::getInstance();
         $selectedEkskul = $_GET['id'] ?? null;

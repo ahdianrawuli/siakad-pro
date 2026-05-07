@@ -1,160 +1,258 @@
 <?php require __DIR__ . '/../layouts/header.php'; ?>
 <?php require __DIR__ . '/../layouts/sidebar.php'; ?>
 
-<style>
-    .custom-scrollbar::-webkit-scrollbar { height: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-</style>
+<main class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
 
-<main class="flex-1 overflow-y-auto bg-gray-100 p-6">
-    <div class="mb-6 flex justify-between items-end">
+    <!-- Header -->
+    <div class="mb-8 flex flex-col md:flex-row md:justify-between md:items-end gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div>
-            <h3 class="text-3xl font-medium text-gray-700">Periode PPDB</h3>
-            <p class="text-gray-500 text-sm">Total <?= $totalData ?> gelombang pendaftaran.</p>
+            <h3 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Periode PPDB</h3>
+            <p class="text-slate-500 text-sm mt-1 font-medium">Kelola gelombang dan jadwal penerimaan santri baru.</p>
+            <div class="mt-3 flex items-center gap-2">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold border border-blue-100">
+                    <i class="fa-solid fa-calendar-days"></i> Total Gelombang: <?= $totalData ?>
+                </div>
+                <button onclick="document.getElementById('infoModal').classList.remove('hidden')"
+                    class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-colors border border-slate-200" title="Panduan Penggunaan">
+                    <i class="fa-solid fa-circle-info text-sm"></i>
+                </button>
+            </div>
         </div>
     </div>
-    
+
     <?php \App\Core\Session::flash(); ?>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="bg-white p-6 rounded shadow-sm h-fit border border-gray-200">
-            <h4 class="font-bold mb-4 text-gray-700 border-b pb-2 text-[10px] uppercase tracking-wider flex items-center">
-                <i class="fa-solid fa-plus-circle mr-2 text-blue-600"></i> Buat Periode
+
+        <!-- Form Tambah -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit">
+            <h4 class="font-bold text-slate-700 flex items-center gap-2 border-b border-slate-100 pb-4 mb-5">
+                <i class="fa-solid fa-plus-circle text-slate-400"></i> Buat Periode
             </h4>
             <form action="/ppdb/periods/store" method="POST" class="space-y-4">
                 <?= \App\Core\Csrf::input() ?>
                 <div>
-                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Nama Gelombang</label>
-                    <input type="text" name="name" placeholder="Gelombang 1 2025" class="w-full p-2.5 border border-gray-300 rounded text-sm outline-none focus:ring-1 focus:ring-blue-500" required>
+                    <label class="block text-sm font-semibold text-slate-600 mb-1.5">Nama Gelombang</label>
+                    <input type="text" name="name" placeholder="cth: Gelombang 1 2025"
+                        class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all" required>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Tgl Buka</label>
-                        <input type="date" name="start_date" class="w-full p-2.5 border border-gray-300 rounded text-sm" required>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1.5">Tgl Buka</label>
+                        <input type="date" name="start_date"
+                            class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all" required>
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Tgl Tutup</label>
-                        <input type="date" name="end_date" class="w-full p-2.5 border border-gray-300 rounded text-sm" required>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1.5">Tgl Tutup</label>
+                        <input type="date" name="end_date"
+                            class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all" required>
                     </div>
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 shadow-lg transition">Simpan</button>
+                <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-xl font-bold hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all text-sm">
+                    <i class="fa-solid fa-save mr-2"></i> Simpan Periode
+                </button>
             </form>
         </div>
 
-        <div class="lg:col-span-2 space-y-4">
-            <div class="bg-white p-4 rounded shadow-sm border border-gray-200">
+        <!-- Tabel -->
+        <div class="lg:col-span-2 flex flex-col gap-6">
+
+            <!-- Filter -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
                 <form method="GET" class="flex flex-wrap items-center gap-3">
                     <input type="hidden" name="limit" value="<?= $limit ?>">
-                    <div class="flex-1 min-w-[250px]">
-                        <div class="relative">
-                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400"></i>
-                            <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Cari periode..." class="w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none border-gray-300">
-                        </div>
+                    <div class="flex-1 min-w-[220px] relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Cari nama periode..."
+                            class="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all">
                     </div>
-                    <button type="submit" class="bg-gray-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-black transition">Filter</button>
+                    <button type="submit" class="bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-900 transition-colors">Terapkan</button>
+                    <?php if (!empty($search)): ?>
+                        <a href="/ppdb/periods" class="flex items-center justify-center w-10 h-10 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition" title="Reset">
+                            <i class="fa-solid fa-rotate-left"></i>
+                        </a>
+                    <?php endif; ?>
                 </form>
             </div>
 
-            <div class="bg-white rounded shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-                <div class="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-                    <h4 class="font-bold text-gray-700 text-[10px] uppercase">Daftar Gelombang</h4>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] text-gray-500 font-bold uppercase">Show:</span>
-                        <select onchange="window.location.href=updateQueryStringParameter(window.location.href, 'limit', this.value)" class="border rounded p-1 text-xs outline-none bg-white">
-                            <option value="10" <?= $limit == 10 ? 'selected' : '' ?>>10</option>
-                            <option value="50" <?= $limit == 50 ? 'selected' : '' ?>>50</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="overflow-x-auto custom-scrollbar">
-                    <table class="min-w-full whitespace-nowrap">
+            <!-- Table Card -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full whitespace-nowrap text-left">
                         <thead>
-                            <tr class="bg-gray-100 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                                <th class="px-5 py-4 border-b">Nama Periode</th>
-                                <th class="px-5 py-4 border-b text-center">Buka</th>
-                                <th class="px-5 py-4 border-b text-center">Tutup</th>
-                                <th class="px-5 py-4 border-b text-center">Status</th>
-                                <th class="px-5 py-4 border-b text-center">Aksi</th>
+                            <tr class="bg-slate-50 border-b border-slate-200">
+                                <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Periode</th>
+                                <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Tgl Buka</th>
+                                <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Tgl Tutup</th>
+                                <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Status</th>
+                                <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100">
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                            <?php if (empty($batches)): ?>
+                                <tr><td colspan="5" class="px-5 py-16 text-center text-slate-400 text-sm font-medium">Belum ada data periode.</td></tr>
+                            <?php endif; ?>
                             <?php foreach ($batches as $row): ?>
-                            <tr class="hover:bg-blue-50/30 transition text-sm">
-                                <td class="px-5 py-4 font-bold text-blue-900"><?= $row['name'] ?></td>
-                                <td class="px-5 py-4 text-center"><?= date('d/m/Y', strtotime($row['start_date'])) ?></td>
-                                <td class="px-5 py-4 text-center"><?= date('d/m/Y', strtotime($row['end_date'])) ?></td>
+                            <tr class="hover:bg-slate-50/80 transition-colors text-sm">
+                                <td class="px-5 py-4 font-extrabold text-slate-800"><?= $row['name'] ?></td>
+                                <td class="px-5 py-4 text-center text-xs text-slate-600"><?= date('d/m/Y', strtotime($row['start_date'])) ?></td>
+                                <td class="px-5 py-4 text-center text-xs text-slate-600"><?= date('d/m/Y', strtotime($row['end_date'])) ?></td>
                                 <td class="px-5 py-4 text-center">
-                                    <?php if($row['is_active']): ?>
-                                        <span class="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-[10px] font-extrabold border border-green-200 uppercase">Aktif</span>
+                                    <?php if ($row['is_active']): ?>
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 rounded-full text-[10px] font-bold border border-green-200">
+                                            <i class="fa-solid fa-circle-check"></i> AKTIF
+                                        </span>
                                     <?php else: ?>
-                                        <a href="/ppdb/periods/activate?id=<?= $row['id'] ?>" class="text-[10px] text-gray-400 font-bold hover:text-blue-600">Set Aktif</a>
+                                        <a href="/ppdb/periods/activate?id=<?= $row['id'] ?>"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-[10px] font-bold border border-slate-200 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                                            Set Aktif
+                                        </a>
                                     <?php endif; ?>
                                 </td>
-                                <td class="px-5 py-4 text-center flex justify-center gap-3">
-                                    <button onclick="openEditModal(this)" data-id="<?= $row['id'] ?>" data-name="<?= $row['name'] ?>" data-start="<?= $row['start_date'] ?>" data-end="<?= $row['end_date'] ?>" class="text-blue-500 hover:text-blue-700"><i class="fa-solid fa-pen-to-square"></i></button>
-                                    <form action="/ppdb/periods/delete" method="POST" onsubmit="return confirm('Hapus?')">
-                                        <?= \App\Core\Csrf::input() ?>
-                                        <input type="hidden" name="id" value="<?= $row['id'] ?>">
-                                        <button type="submit" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-trash-can"></i></button>
-                                    </form>
+                                <td class="px-5 py-4 text-center">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button onclick="openEditModal(this)"
+                                            data-id="<?= $row['id'] ?>" data-name="<?= $row['name'] ?>"
+                                            data-start="<?= $row['start_date'] ?>" data-end="<?= $row['end_date'] ?>"
+                                            class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white inline-flex items-center justify-center transition-colors shadow-sm" title="Edit">
+                                            <i class="fa-solid fa-pen-to-square text-sm"></i>
+                                        </button>
+                                        <form action="/ppdb/periods/delete" method="POST" onsubmit="return confirm('Hapus periode ini?')" class="inline">
+                                            <?= \App\Core\Csrf::input() ?>
+                                            <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                            <button type="submit" class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white inline-flex items-center justify-center transition-colors shadow-sm" title="Hapus">
+                                                <i class="fa-solid fa-trash-can text-sm"></i>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
-                
-                <?php if($totalPages > 1): ?>
-                <div class="p-4 bg-gray-50 border-t flex justify-between items-center">
-                    <span class="text-[10px] text-gray-500 font-bold uppercase">Hal. <?= $currentPage ?> / <?= $totalPages ?></span>
-                    <div class="flex gap-1">
-                        <?php $qs = "&limit=$limit&search=".urlencode($search); ?>
-                        <?php for($i=1; $i<=$totalPages; $i++): ?>
-                            <a href="?page=<?= $i . $qs ?>" class="px-2.5 py-1 border rounded text-[10px] <?= $i==$currentPage?'bg-blue-600 text-white border-blue-600 shadow':'bg-white hover:bg-gray-100' ?>"><?= $i ?></a>
-                        <?php endfor; ?>
+
+                <!-- Pagination Footer -->
+                <div class="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Show:</span>
+                        <select onchange="window.location.href=updateQueryStringParameter(window.location.href, 'limit', this.value)"
+                            class="border border-slate-300 rounded-lg px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 bg-white font-medium">
+                            <option value="10" <?= $limit == 10 ? 'selected' : '' ?>>10 entries</option>
+                            <option value="50" <?= $limit == 50 ? 'selected' : '' ?>>50 entries</option>
+                        </select>
                     </div>
+                    <?php if ($totalPages > 1): ?>
+                    <div class="flex items-center gap-1.5">
+                        <?php $qs = "&limit=$limit&search=" . urlencode($search); ?>
+                        <?php if ($currentPage > 1): ?>
+                            <a href="?page=<?= $currentPage - 1 . $qs ?>" class="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm"><i class="fa-solid fa-chevron-left"></i></a>
+                        <?php endif; ?>
+                        <span class="text-xs font-bold text-slate-600 px-2">Hal <?= $currentPage ?> / <?= $totalPages ?></span>
+                        <?php if ($currentPage < $totalPages): ?>
+                            <a href="?page=<?= $currentPage + 1 . $qs ?>" class="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm"><i class="fa-solid fa-chevron-right"></i></a>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
                 </div>
-                <?php endif; ?>
             </div>
         </div>
     </div>
 </main>
 
-<div id="editModal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
-            <h3 class="font-bold text-gray-700 text-sm uppercase">Edit Periode</h3>
-            <button onclick="closeEditModal()" class="text-gray-400"><i class="fa-solid fa-xmark"></i></button>
+<!-- Edit Modal -->
+<div id="editModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+            <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                <i class="fa-solid fa-pen-to-square text-slate-400"></i> Edit Periode
+            </h3>
+            <button onclick="closeEditModal()" class="w-8 h-8 rounded-lg bg-slate-200 text-slate-500 hover:bg-slate-300 flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
         <form action="/ppdb/periods/update" method="POST" class="p-6 space-y-4">
             <?= \App\Core\Csrf::input() ?>
             <input type="hidden" name="id" id="edit_id">
-            <input type="text" name="name" id="edit_name" class="w-full p-2.5 border rounded text-sm" required>
-            <div class="grid grid-cols-2 gap-3">
-                <input type="date" name="start_date" id="edit_start" class="p-2.5 border rounded text-sm" required>
-                <input type="date" name="end_date" id="edit_end" class="p-2.5 border rounded text-sm" required>
+            <div>
+                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Nama Gelombang</label>
+                <input type="text" name="name" id="edit_name" placeholder="cth: Gelombang 1 2025"
+                    class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all" required>
             </div>
-            <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow-lg">Perbarui</button>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-1.5">Tgl Buka</label>
+                    <input type="date" name="start_date" id="edit_start"
+                        class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-1.5">Tgl Tutup</label>
+                    <input type="date" name="end_date" id="edit_end"
+                        class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all" required>
+                </div>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="closeEditModal()" class="flex-1 bg-slate-100 text-slate-600 py-2.5 rounded-xl font-bold hover:bg-slate-200 transition text-sm">Batal</button>
+                <button type="submit" class="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-bold hover:bg-blue-700 shadow-md shadow-blue-500/20 transition text-sm">Perbarui</button>
+            </div>
         </form>
     </div>
 </div>
 
 <script>
     function openEditModal(btn) {
-        document.getElementById('edit_id').value = btn.getAttribute('data-id');
-        document.getElementById('edit_name').value = btn.getAttribute('data-name');
-        document.getElementById('edit_start').value = btn.getAttribute('data-start');
-        document.getElementById('edit_end').value = btn.getAttribute('data-end');
+        document.getElementById('edit_id').value = btn.dataset.id;
+        document.getElementById('edit_name').value = btn.dataset.name;
+        document.getElementById('edit_start').value = btn.dataset.start;
+        document.getElementById('edit_end').value = btn.dataset.end;
         document.getElementById('editModal').classList.remove('hidden');
     }
     function closeEditModal() { document.getElementById('editModal').classList.add('hidden'); }
+    window.onclick = function(e) { if (e.target == document.getElementById('editModal')) closeEditModal(); }
     function updateQueryStringParameter(uri, key, value) {
         var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
         var separator = uri.indexOf('?') !== -1 ? "&" : "?";
         return uri.match(re) ? uri.replace(re, '$1' + key + "=" + value + '$2') : uri + separator + key + "=" + value;
     }
+    window.onclick = function(e) {
+        if (e.target == document.getElementById('infoModal')) document.getElementById('infoModal').classList.add('hidden');
+    }
 </script>
+
+<!-- Modal Info -->
+<div id="infoModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+        <div class="p-5 border-b border-slate-100 bg-blue-50 flex justify-between items-center">
+            <h3 class="font-bold text-blue-800 flex items-center gap-2"><i class="fa-solid fa-circle-info text-blue-500"></i> Panduan Periode PPDB</h3>
+            <button onclick="document.getElementById('infoModal').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-blue-100 text-blue-500 hover:bg-blue-200 flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="p-6 space-y-5 text-sm text-slate-600">
+            <div>
+                <h4 class="font-bold text-slate-800 mb-2 flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">1</span> Cara Penggunaan</h4>
+                <ol class="list-decimal list-inside space-y-1.5 text-slate-500">
+                    <li>Klik <strong class="text-slate-700">Tambah Gelombang</strong> untuk membuat periode pendaftaran baru.</li>
+                    <li>Tentukan <strong class="text-slate-700">tanggal mulai dan selesai</strong> setiap gelombang.</li>
+                    <li>Aktifkan gelombang yang sedang berjalan agar pendaftar bisa mendaftar.</li>
+                </ol>
+            </div>
+            <div>
+                <h4 class="font-bold text-slate-800 mb-2 flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">2</span> Relasi ke Menu Lain</h4>
+                <div class="space-y-2">
+                    <div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                        <i class="fa-solid fa-signs-post text-blue-400 w-5 text-center"></i>
+                        <div><div class="font-semibold text-slate-700 text-xs">Jalur PPDB</div><div class="text-[11px] text-slate-400">Jalur pendaftaran dikelola di <strong>PPDB → Atur Jalur</strong>.</div></div>
+                    </div>
+                    <div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                        <i class="fa-solid fa-users text-green-400 w-5 text-center"></i>
+                        <div><div class="font-semibold text-slate-700 text-xs">Data Pendaftar</div><div class="text-[11px] text-slate-400">Pendaftar yang masuk pada gelombang ini tampil di <strong>PPDB → Data Pendaftar</strong>.</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+            <button onclick="document.getElementById('infoModal').classList.add('hidden')" class="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition">Mengerti</button>
+        </div>
+    </div>
+</div>
 
 <?php require __DIR__ . '/../layouts/footer.php'; ?>

@@ -16,35 +16,39 @@ class StaffPositionController {
         $limit = $_GET['limit'] ?? 10;
         $offset = ($page - 1) * $limit;
 
-        $sql = "SELECT * FROM staff_positions WHERE name LIKE ?";
         $totalData = $db->query("SELECT COUNT(*) FROM staff_positions WHERE name LIKE ?", ["%$search%"])->fetchColumn();
-        
-        $sql .= " ORDER BY name ASC LIMIT $limit OFFSET $offset";
-        $positions = $db->query($sql, ["%$search%"])->fetchAll();
+        $positions = $db->query("
+            SELECT sp.*, r.name as role_name FROM staff_positions sp
+            LEFT JOIN roles r ON sp.role_id = r.id
+            WHERE sp.name LIKE ? ORDER BY sp.name ASC LIMIT $limit OFFSET $offset
+        ", ["%$search%"])->fetchAll();
+
+        $roles = $db->query("SELECT id, name FROM roles ORDER BY name")->fetchAll();
 
         View::render('staff/positions/index', [
-            'title' => 'Master Jabatan Staff',
-            'positions' => $positions,
-            'totalData' => $totalData,
-            'totalPages' => ceil($totalData / $limit),
+            'title'       => 'Master Jabatan Staff',
+            'positions'   => $positions,
+            'roles'       => $roles,
+            'totalData'   => $totalData,
+            'totalPages'  => ceil($totalData / $limit),
             'currentPage' => $page,
-            'limit' => $limit,
-            'search' => $search
+            'limit'       => $limit,
+            'search'      => $search
         ]);
     }
 
     public function store() {
         $db = Database::getInstance();
-        $db->query("INSERT INTO staff_positions (name, code, type) VALUES (?, ?, ?)", 
-            [$_POST['name'], strtoupper($_POST['code']), $_POST['type']]);
+        $db->query("INSERT INTO staff_positions (name, code, type, role_id) VALUES (?, ?, ?, ?)", 
+            [$_POST['name'], strtoupper($_POST['code']), $_POST['type'], $_POST['role_id'] ?: null]);
         Session::setFlash('success', 'Jabatan berhasil ditambahkan.');
         header('Location: /staff/positions');
     }
 
     public function update() {
         $db = Database::getInstance();
-        $db->query("UPDATE staff_positions SET name = ?, code = ?, type = ? WHERE id = ?", 
-            [$_POST['name'], strtoupper($_POST['code']), $_POST['type'], $_POST['id']]);
+        $db->query("UPDATE staff_positions SET name=?, code=?, type=?, role_id=? WHERE id=?", 
+            [$_POST['name'], strtoupper($_POST['code']), $_POST['type'], $_POST['role_id'] ?: null, $_POST['id']]);
         Session::setFlash('success', 'Jabatan diperbarui.');
         header('Location: /staff/positions');
     }

@@ -1,59 +1,54 @@
 <?php require __DIR__ . '/../layouts/header.php'; ?>
 <?php require __DIR__ . '/../layouts/sidebar.php'; ?>
 
-<style>
-    .custom-scrollbar::-webkit-scrollbar { height: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    .whitespace-nowrap { white-space: nowrap; }
-</style>
+<main class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
 
-<main class="flex-1 overflow-y-auto bg-gray-100 p-6">
-    <div class="mb-6 flex justify-between items-end">
+    <!-- Header -->
+    <div class="mb-8 flex flex-col md:flex-row md:justify-between md:items-end gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div>
-            <h3 class="text-3xl font-medium text-gray-700">Absensi Siswa</h3>
-            <p class="text-gray-500 text-sm">Riwayat kehadiran siswa.</p>
+            <h3 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Absensi Siswa</h3>
+            <p class="text-slate-500 text-sm mt-1 font-medium">Riwayat kehadiran siswa per kelas dan tanggal.</p>
+            <div class="mt-3 flex items-center gap-2">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold border border-blue-100">
+                    <i class="fa-solid fa-calendar-check"></i> Total Log: <?= $totalData ?>
+                </div>
+                <button onclick="document.getElementById('infoModal').classList.remove('hidden')"
+                    class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-colors border border-slate-200" title="Panduan Penggunaan">
+                    <i class="fa-solid fa-circle-info text-sm"></i>
+                </button>
+            </div>
         </div>
-        
-        <a href="/student-affairs/attendance/create" 
-           class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 shadow-lg transition text-sm flex items-center">
-            <i class="fa-solid fa-calendar-check mr-2"></i> Input Absensi
+        <a href="/attendance/students/create"
+            class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-2 w-fit">
+            <i class="fa-solid fa-calendar-check"></i> Input Absensi
         </a>
     </div>
 
     <?php \App\Core\Session::flash(); ?>
 
-    <div class="space-y-4">
-        
-        <div class="bg-white p-4 rounded shadow-sm border border-gray-200">
-            <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <input type="hidden" name="limit" value="<?= $limit ?>">
-                
-                <div class="relative">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400"></i>
-                    <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" 
-                           placeholder="Cari Nama / NIS..." 
-                           class="w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
+    <div class="flex flex-col gap-6">
 
-                <select name="class_id" class="w-full p-2 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                    <option value="">- Semua Kelas -</option>
+        <!-- Filter -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                <input type="hidden" name="limit" value="<?= $limit ?>">
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Cari Nama / NIS..."
+                        class="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all">
+                </div>
+                <select name="class_id" class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
+                    <option value="">Semua Kelas</option>
                     <?php foreach ($classrooms as $c): ?>
-                        <option value="<?= $c['id'] ?>" <?= $classFilter == $c['id'] ? 'selected' : '' ?>>
-                            <?= $c['name'] ?>
-                        </option>
+                        <option value="<?= $c['id'] ?>" <?= $classFilter == $c['id'] ? 'selected' : '' ?>><?= $c['name'] ?></option>
                     <?php endforeach; ?>
                 </select>
-
-                <input type="date" name="date" value="<?= $dateFilter ?>" 
-                       class="w-full p-2 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-
+                <input type="date" name="date" value="<?= $dateFilter ?>"
+                    class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
                 <div class="flex gap-2">
-                    <button type="submit" class="flex-1 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-black transition">
-                        Filter
-                    </button>
-                    <?php if(!empty($search) || !empty($dateFilter) || !empty($classFilter)): ?>
-                        <a href="/student-affairs/attendance" class="px-3 py-2 bg-red-100 text-red-600 rounded-lg text-sm font-bold hover:bg-red-200 text-center">
+                    <button type="submit" class="flex-1 bg-slate-800 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-slate-900 transition-colors">Terapkan</button>
+                    <?php if (!empty($search) || !empty($dateFilter) || !empty($classFilter)): ?>
+                        <a href="/attendance/students" class="flex items-center justify-center w-10 h-10 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition" title="Reset">
                             <i class="fa-solid fa-rotate-left"></i>
                         </a>
                     <?php endif; ?>
@@ -61,80 +56,57 @@
             </form>
         </div>
 
-        <div class="bg-white rounded shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-            <div class="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-                <h4 class="font-bold text-gray-700 text-xs uppercase">Data Log Kehadiran</h4>
-                <div class="flex items-center gap-2">
-                    <span class="text-[10px] text-gray-500 font-bold uppercase">Show:</span>
-                    <select onchange="window.location.href=updateQueryStringParameter(window.location.href, 'limit', this.value)" class="border rounded p-1 text-xs outline-none cursor-pointer">
-                        <option value="10" <?= $limit == 10 ? 'selected' : '' ?>>10</option>
-                        <option value="50" <?= $limit == 50 ? 'selected' : '' ?>>50</option>
-                        <option value="100" <?= $limit == 100 ? 'selected' : '' ?>>100</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="overflow-x-auto custom-scrollbar">
-                <table class="min-w-full whitespace-nowrap">
+        <!-- Table Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+            <div class="overflow-x-auto">
+                <table class="min-w-full whitespace-nowrap text-left">
                     <thead>
-                        <tr class="bg-gray-100 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                            <th class="px-5 py-4 border-b">Tanggal</th>
-                            <th class="px-5 py-4 border-b">Siswa</th>
-                            <th class="px-5 py-4 border-b">Kelas</th>
-                            <th class="px-5 py-4 border-b text-center">Status</th>
-                            <th class="px-5 py-4 border-b">Keterangan</th>
-                            <th class="px-5 py-4 border-b">Pencatat</th>
-                            <th class="px-5 py-4 border-b text-center">Aksi</th>
+                        <tr class="bg-slate-50 border-b border-slate-200">
+                            <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Tanggal</th>
+                            <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Siswa</th>
+                            <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Kelas</th>
+                            <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Status</th>
+                            <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Keterangan</th>
+                            <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Pencatat</th>
+                            <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
+                    <tbody class="divide-y divide-slate-100 bg-white">
                         <?php if (empty($logs)): ?>
-                        <tr>
-                            <td colspan="7" class="px-5 py-12 text-center text-gray-400 italic text-sm">Belum ada data absensi yang sesuai filter.</td>
-                        </tr>
+                        <tr><td colspan="7" class="px-5 py-16 text-center text-slate-400 text-sm font-medium">Belum ada data absensi yang sesuai filter.</td></tr>
                         <?php endif; ?>
 
+                        <?php
+                        $badges = [
+                            'H' => 'bg-green-50 text-green-700 border-green-200',
+                            'S' => 'bg-yellow-50 text-yellow-700 border-yellow-200',
+                            'I' => 'bg-blue-50 text-blue-700 border-blue-200',
+                            'A' => 'bg-red-50 text-red-700 border-red-200',
+                        ];
+                        $labels = ['H' => 'Hadir', 'S' => 'Sakit', 'I' => 'Izin', 'A' => 'Alpa'];
+                        ?>
                         <?php foreach ($logs as $row): ?>
-                        <tr class="hover:bg-blue-50/30 transition text-sm">
-                            <td class="px-5 py-4 text-gray-600 font-mono text-xs">
-                                <?= date('d/m/Y', strtotime($row['date'])) ?>
+                        <tr class="hover:bg-slate-50/80 transition-colors text-sm">
+                            <td class="px-5 py-4 font-mono text-xs text-slate-500"><?= date('d/m/Y', strtotime($row['date'])) ?></td>
+                            <td class="px-5 py-4">
+                                <div class="font-extrabold text-slate-800"><?= $row['full_name'] ?></div>
+                                <div class="text-[10px] text-slate-400 mt-0.5">NIS: <?= $row['nis'] ?></div>
                             </td>
                             <td class="px-5 py-4">
-                                <div class="font-bold text-gray-800"><?= $row['full_name'] ?></div>
-                                <div class="text-[10px] text-gray-500">NIS: <?= $row['nis'] ?></div>
-                            </td>
-                            <td class="px-5 py-4">
-                                <span class="bg-gray-100 text-gray-600 text-[10px] px-2 py-1 rounded border border-gray-200 font-bold">
-                                    <?= $row['class_name'] ?? '-' ?>
-                                </span>
+                                <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-lg border border-slate-200"><?= $row['class_name'] ?? '-' ?></span>
                             </td>
                             <td class="px-5 py-4 text-center">
-                                <?php
-                                    $badges = [
-                                        'H' => 'bg-green-100 text-green-700 border-green-200',
-                                        'S' => 'bg-yellow-100 text-yellow-700 border-yellow-200',
-                                        'I' => 'bg-blue-100 text-blue-700 border-blue-200',
-                                        'A' => 'bg-red-100 text-red-700 border-red-200'
-                                    ];
-                                    $labels = [
-                                        'H' => 'Hadir', 'S' => 'Sakit', 'I' => 'Izin', 'A' => 'Alpa'
-                                    ];
-                                ?>
-                                <span class="px-2 py-0.5 text-[10px] font-extrabold rounded border <?= $badges[$row['status']] ?? 'bg-gray-100 text-gray-600' ?>">
-                                    <?= strtoupper($labels[$row['status']] ?? $row['status']) ?>
+                                <span class="inline-flex items-center px-2.5 py-1 text-[10px] font-bold rounded-full border <?= $badges[$row['status']] ?? 'bg-slate-100 text-slate-600 border-slate-200' ?>">
+                                    <?= $labels[$row['status']] ?? $row['status'] ?>
                                 </span>
                             </td>
-                            <td class="px-5 py-4 text-xs text-gray-500 italic">
-                                <?= $row['notes'] ?: '-' ?>
-                            </td>
-                            <td class="px-5 py-4 text-xs text-gray-500">
-                                <?= $row['recorder_name'] ?? 'System' ?>
-                            </td>
+                            <td class="px-5 py-4 text-xs text-slate-500 italic"><?= $row['notes'] ?: '-' ?></td>
+                            <td class="px-5 py-4 text-xs text-slate-500"><?= $row['recorder_name'] ?? 'System' ?></td>
                             <td class="px-5 py-4 text-center">
-                                <a href="/student-affairs/attendance/delete?id=<?= $row['id'] ?>" 
-                                   onclick="return confirm('Hapus log absensi ini?')"
-                                   class="text-red-400 hover:text-red-600 transition" title="Hapus">
-                                    <i class="fa-solid fa-trash-can"></i>
+                                <a href="/attendance/students/delete?id=<?= $row['id'] ?>"
+                                    onclick="return confirm('Hapus log absensi ini?')"
+                                    class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white inline-flex items-center justify-center transition-colors shadow-sm" title="Hapus">
+                                    <i class="fa-solid fa-trash-can text-sm"></i>
                                 </a>
                             </td>
                         </tr>
@@ -142,36 +114,31 @@
                     </tbody>
                 </table>
             </div>
-            
-            <?php if($totalPages > 1): ?>
-            <div class="p-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-                <div class="text-xs text-gray-500 font-medium">
-                    Hal. <?= $currentPage ?> / <?= $totalPages ?> (Total <?= $totalData ?> data)
-                </div>
-                <div class="flex gap-1">
-                    <?php 
-                        $queryString = "&limit=$limit&search=" . urlencode($search) . "&date=$dateFilter&class_id=$classFilter"; 
-                    ?>
-                    <?php if($currentPage > 1): ?>
-                        <a href="?page=<?= $currentPage - 1 . $queryString ?>" class="px-3 py-1 bg-white border rounded text-xs hover:bg-gray-100 transition">Prev</a>
-                    <?php endif; ?>
-                    
-                    <?php 
-                    $start = max(1, $currentPage - 2);
-                    $end = min($totalPages, $currentPage + 2);
-                    for($i = $start; $i <= $end; $i++): 
-                    ?>
-                        <a href="?page=<?= $i . $queryString ?>" class="px-3 py-1 border rounded text-xs transition <?= $i == $currentPage ? 'bg-blue-600 text-white border-blue-600 font-bold' : 'bg-white hover:bg-gray-100' ?>">
-                            <?= $i ?>
-                        </a>
-                    <?php endfor; ?>
 
-                    <?php if($currentPage < $totalPages): ?>
-                        <a href="?page=<?= $currentPage + 1 . $queryString ?>" class="px-3 py-1 bg-white border rounded text-xs hover:bg-gray-100 transition">Next</a>
+            <!-- Pagination Footer -->
+            <div class="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Show:</span>
+                    <select onchange="window.location.href=updateQueryStringParameter(window.location.href, 'limit', this.value)"
+                        class="border border-slate-300 rounded-lg px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-blue-500/50 bg-white font-medium">
+                        <option value="10" <?= $limit == 10 ? 'selected' : '' ?>>10 entries</option>
+                        <option value="50" <?= $limit == 50 ? 'selected' : '' ?>>50 entries</option>
+                        <option value="100" <?= $limit == 100 ? 'selected' : '' ?>>100 entries</option>
+                    </select>
+                </div>
+                <?php if ($totalPages > 1): ?>
+                <div class="flex items-center gap-1.5">
+                    <?php $qs = "&limit=$limit&search=" . urlencode($search) . "&date=$dateFilter&class_id=$classFilter"; ?>
+                    <?php if ($currentPage > 1): ?>
+                        <a href="?page=<?= $currentPage - 1 . $qs ?>" class="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm"><i class="fa-solid fa-chevron-left"></i></a>
+                    <?php endif; ?>
+                    <span class="text-xs font-bold text-slate-600 px-2">Hal <?= $currentPage ?> / <?= $totalPages ?></span>
+                    <?php if ($currentPage < $totalPages): ?>
+                        <a href="?page=<?= $currentPage + 1 . $qs ?>" class="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm"><i class="fa-solid fa-chevron-right"></i></a>
                     <?php endif; ?>
                 </div>
+                <?php endif; ?>
             </div>
-            <?php endif; ?>
         </div>
     </div>
 </main>
@@ -180,12 +147,47 @@
     function updateQueryStringParameter(uri, key, value) {
         var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
         var separator = uri.indexOf('?') !== -1 ? "&" : "?";
-        if (uri.match(re)) {
-            return uri.replace(re, '$1' + key + "=" + value + '$2');
-        } else {
-            return uri + separator + key + "=" + value;
-        }
+        return uri.match(re) ? uri.replace(re, '$1' + key + "=" + value + '$2') : uri + separator + key + "=" + value;
+    }
+    window.onclick = function(e) {
+        if (e.target == document.getElementById('infoModal')) document.getElementById('infoModal').classList.add('hidden');
     }
 </script>
+
+<!-- Modal Info -->
+<div id="infoModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+        <div class="p-5 border-b border-slate-100 bg-blue-50 flex justify-between items-center">
+            <h3 class="font-bold text-blue-800 flex items-center gap-2"><i class="fa-solid fa-circle-info text-blue-500"></i> Panduan Absensi Santri</h3>
+            <button onclick="document.getElementById('infoModal').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-blue-100 text-blue-500 hover:bg-blue-200 flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="p-6 space-y-5 text-sm text-slate-600">
+            <div>
+                <h4 class="font-bold text-slate-800 mb-2 flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">1</span> Cara Penggunaan</h4>
+                <ol class="list-decimal list-inside space-y-1.5 text-slate-500">
+                    <li>Klik <strong class="text-slate-700">Catat Absensi</strong> untuk mencatat kehadiran santri per tanggal.</li>
+                    <li>Gunakan filter <strong class="text-slate-700">Tanggal</strong> dan <strong class="text-slate-700">Kelas</strong> untuk menyaring data.</li>
+                    <li>Status: <strong class="text-slate-700">Hadir, Izin, Sakit, Alpa</strong>.</li>
+                </ol>
+            </div>
+            <div>
+                <h4 class="font-bold text-slate-800 mb-2 flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">2</span> Relasi ke Menu Lain</h4>
+                <div class="space-y-2">
+                    <div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                        <i class="fa-solid fa-graduation-cap text-blue-400 w-5 text-center"></i>
+                        <div><div class="font-semibold text-slate-700 text-xs">Data Santri</div><div class="text-[11px] text-slate-400">Daftar santri diambil dari <strong>Kesiswaan → Data Santri</strong>.</div></div>
+                    </div>
+                    <div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                        <i class="fa-solid fa-chart-bar text-green-400 w-5 text-center"></i>
+                        <div><div class="font-semibold text-slate-700 text-xs">Laporan Wali Kelas</div><div class="text-[11px] text-slate-400">Rekap absensi tersedia di <strong>Kesiswaan → Laporan Wali Kelas</strong>.</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+            <button onclick="document.getElementById('infoModal').classList.add('hidden')" class="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition">Mengerti</button>
+        </div>
+    </div>
+</div>
 
 <?php require __DIR__ . '/../layouts/footer.php'; ?>

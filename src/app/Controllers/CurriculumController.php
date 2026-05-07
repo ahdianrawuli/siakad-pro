@@ -12,14 +12,22 @@ class CurriculumController {
     public function index() {
         $db = Database::getInstance();
         $search = $_GET['search'] ?? '';
-        
-        $sql = "SELECT * FROM curriculums WHERE name LIKE ? ORDER BY is_active DESC, name ASC";
-        $curriculums = $db->query($sql, ["%$search%"])->fetchAll();
+        $page   = (int)($_GET['page'] ?? 1);
+        $limit  = (int)($_GET['limit'] ?? 10);
+        $offset = ($page - 1) * $limit;
+
+        $totalData  = $db->query("SELECT COUNT(*) FROM curriculums WHERE name LIKE ?", ["%$search%"])->fetchColumn();
+        $totalPages = ceil($totalData / $limit);
+        $curriculums = $db->query("SELECT * FROM curriculums WHERE name LIKE ? ORDER BY is_active DESC, name ASC LIMIT $limit OFFSET $offset", ["%$search%"])->fetchAll();
 
         View::render('academic/curriculum/index', [
-            'title' => 'Data Kurikulum',
+            'title'       => 'Data Kurikulum',
             'curriculums' => $curriculums,
-            'search' => $search
+            'search'      => $search,
+            'totalData'   => $totalData,
+            'totalPages'  => $totalPages,
+            'currentPage' => $page,
+            'limit'       => $limit,
         ]);
     }
 

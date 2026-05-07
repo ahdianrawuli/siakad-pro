@@ -120,6 +120,24 @@ class StudentAffairsController {
         header('Location: /student-affairs/students');
     }
 
+    public function printBiodata() {
+        $id = $_GET['id'] ?? null;
+        if (!$id) { header('Location: /student-affairs/students'); exit; }
+
+        $db = Database::getInstance();
+        $student = $db->query(
+            "SELECT s.*, c.name as class_name FROM students s LEFT JOIN classrooms c ON s.classroom_id = c.id WHERE s.id = ?",
+            [$id]
+        )->fetch();
+
+        if (!$student) { header('Location: /student-affairs/students'); exit; }
+
+        View::render('student_affairs/print_biodata', [
+            'title' => 'Biodata Siswa',
+            'student' => $student
+        ]);
+    }
+
 // ==========================================================
     // MODUL ABSENSI SISWA (REVISED)
     // ==========================================================
@@ -233,7 +251,7 @@ class StudentAffairsController {
 
         if (empty($classId) || empty($date)) {
             Session::setFlash('error', 'Kelas dan Tanggal wajib diisi.');
-            header('Location: /student-affairs/attendance/create');
+            header('Location: /attendance/students/create');
             exit;
         }
 
@@ -253,6 +271,10 @@ class StudentAffairsController {
             }
 
             $db->getConnection()->commit();
+
+            // Kirim notifikasi WA ke orang tua untuk siswa tidak hadir (A/I/S)
+            $this->notifyAbsences($db, $attendanceData, $notesData, $date);
+
             Session::setFlash('success', 'Data absensi berhasil disimpan.');
         } catch (\Exception $e) {
             $db->getConnection()->rollBack();
@@ -260,7 +282,40 @@ class StudentAffairsController {
         }
 
         // Redirect kembali ke form input (agar bisa lihat hasilnya)
-        header("Location: /student-affairs/attendance/create?class_id=$classId&date=$date");
+        header("Location: /attendance/students/create?class_id=$classId&date=$date");
+    }
+
+    private function notifyAbsences($db, array $attendanceData, array $notesData, string $date): void {
+        $absentStatuses = ['A', 'I', 'S']; // Alpha, Izin, Sakit
+        $statusLabel = ['A' => 'Tanpa Keterangan (Alpha)', 'I' => 'Izin', 'S' => 'Sakit'];
+        $dateFormatted = date('d F Y', strtotime($date));
+
+        foreach ($attendanceData as $studentId => $status) {
+            if (!in_array($status, $absentStatuses)) continue;
+
+            $student = $db->query(
+                "SELECT s.full_name, s.parent_phone, c.name as class_name
+                 FROM students s LEFT JOIN classrooms c ON s.classroom_id = c.id
+                 WHERE s.id = ?", [$studentId]
+            )->fetch();
+
+            if (empty($student['parent_phone'])) continue;
+
+            $note = !empty($notesData[$studentId]) ? "\nKeterangan: " . $notesData[$studentId] : '';
+            $label = $statusLabel[$status] ?? $status;
+
+            $message = "Assalamu'alaikum Wali/Orang Tua,\n\n"
+                . "Kami informasikan bahwa putra/putri Anda:\n"
+                . "*{$student['full_name']}* (Kelas {$student['class_name']})\n\n"
+                . "Tercatat *TIDAK HADIR* pada:\n"
+                . "Tanggal : $dateFormatted\n"
+                . "Status   : $label"
+                . $note . "\n\n"
+                . "Mohon konfirmasi ke pihak sekolah jika ada pertanyaan.\n"
+                . "Terima kasih. — SIAKAD Parabek";
+
+            \App\Models\WhatsappService::send($student['parent_phone'], $message);
+        }
     }
 
     // 4. HAPUS SATU LOG ABSENSI
@@ -271,7 +326,7 @@ class StudentAffairsController {
             $db->query("DELETE FROM attendances WHERE id = ?", [$id]);
             Session::setFlash('success', 'Data absensi berhasil dihapus.');
         }
-        header('Location: /student-affairs/attendance');
+        header('Location: /attendance/students');
     }
 
 }

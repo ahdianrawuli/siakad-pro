@@ -9,6 +9,11 @@ database:
   user: siakad_user
   password: secret_password_secure_123
 
+waApiKey: ""
+vaSecretKeyAliyah: ""
+vaSecretKeyTsanawiyah: ""
+vaSecretKeyMahadAly: ""
+
 services:
   webserver:
     image: "nginx:alpine"

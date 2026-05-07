@@ -1,5 +1,5 @@
 <?php require __DIR__ . '/../layouts/header.php'; ?>
-<?php require __DIR__ . '/../layouts/sidebar.php'; ?>
+<?php require __DIR__ . '/../layouts/student_sidebar.php'; ?>
 
 <main class="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-8 pb-24">
     
@@ -57,6 +57,49 @@
                 <div class="text-2xl md:text-3xl font-extrabold <?= $textStatus ?> mb-4 flex items-center">
                     <?= $judulStatus ?>
                 </div>
+
+                <?php if(isset($progress)): ?>
+                <div class="my-4 bg-white/60 p-4 rounded-lg">
+                    <h4 class="text-sm font-bold text-gray-800 mb-3">Progress Pendaftaran:</h4>
+                    <div class="flex flex-col md:flex-row gap-4 md:gap-8 text-sm">
+                        <div class="flex items-center gap-2">
+                            <?php if($progress['registered']): ?>
+                                <i class="fa-solid fa-circle-check text-green-600 text-lg"></i>
+                            <?php else: ?>
+                                <i class="fa-solid fa-circle-xmark text-red-500 text-lg"></i>
+                            <?php endif; ?>
+                            <span class="text-gray-800 font-medium">1. Pendaftaran</span>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <?php if($progress['paid']): ?>
+                                <i class="fa-solid fa-circle-check text-green-600 text-lg"></i>
+                            <?php else: ?>
+                                <i class="fa-solid fa-circle-xmark text-red-500 text-lg"></i>
+                            <?php endif; ?>
+                            <span class="text-gray-800 font-medium">2. Pembayaran</span>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <?php if($progress['document']): ?>
+                                <i class="fa-solid fa-circle-check text-green-600 text-lg"></i>
+                            <?php else: ?>
+                                <i class="fa-solid fa-circle-xmark text-red-500 text-lg"></i>
+                            <?php endif; ?>
+                            <span class="text-gray-800 font-medium">3. Dokumen</span>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <?php if($progress['verified']): ?>
+                                <i class="fa-solid fa-circle-check text-green-600 text-lg"></i>
+                            <?php else: ?>
+                                <i class="fa-solid fa-circle-xmark text-red-500 text-lg"></i>
+                            <?php endif; ?>
+                            <span class="text-gray-800 font-medium">4. Verifikasi Akhir</span>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <div class="mt-2">
                     <?php if ($rawStatus == 'PENDING' || $rawStatus == ''): ?>
@@ -124,7 +167,7 @@
             <p class="text-sm text-gray-600">Selamat datang, <span class="font-bold text-blue-600"><?= htmlspecialchars($student['full_name']) ?></span></p>
          </div>
          
-         <div class="bg-white p-5 rounded-xl shadow border-l-4 border-blue-500 flex items-start space-x-4">
+         <div class="bg-white p-5 rounded-xl shadow border-l-4 border-blue-500 flex items-start space-x-4 mb-6">
              <div class="bg-blue-100 p-3 rounded-full text-blue-600">
                 <i class="fa-solid fa-user-graduate text-xl"></i>
              </div>
@@ -133,7 +176,45 @@
                  <p class="text-sm text-gray-600 mt-1">
                     Anda tercatat sebagai siswa aktif di kelas <span class="font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs"><?= $student['class_name'] ?? '-' ?></span>
                  </p>
+                 <?php if (!empty($unpaid_bills) && $unpaid_bills > 0): ?>
+                 <p class="text-sm text-red-600 mt-1 font-medium">
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                    Anda memiliki <strong><?= $unpaid_bills ?></strong> tagihan yang belum dibayar.
+                    <a href="/finance/billing?nis=<?= $student['nis'] ?>" class="underline">Bayar sekarang</a>
+                 </p>
+                 <?php endif; ?>
              </div>
+         </div>
+
+         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+             <a href="/student/schedule" class="group bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition text-center">
+                 <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl mx-auto mb-2 group-hover:scale-110 transition">
+                     <i class="fa-solid fa-calendar-days"></i>
+                 </div>
+                 <p class="font-bold text-gray-800 text-sm">Jadwal</p>
+                 <p class="text-xs text-gray-500 mt-0.5">Pelajaran</p>
+             </a>
+             <a href="/student/attendance" class="group bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition text-center">
+                 <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xl mx-auto mb-2 group-hover:scale-110 transition">
+                     <i class="fa-solid fa-calendar-check"></i>
+                 </div>
+                 <p class="font-bold text-gray-800 text-sm">Absensi</p>
+                 <p class="text-xs text-gray-500 mt-0.5">Rekap Kehadiran</p>
+             </a>
+             <a href="/student/grades" class="group bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition text-center">
+                 <div class="w-12 h-12 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center text-xl mx-auto mb-2 group-hover:scale-110 transition">
+                     <i class="fa-solid fa-star"></i>
+                 </div>
+                 <p class="font-bold text-gray-800 text-sm">Nilai</p>
+                 <p class="text-xs text-gray-500 mt-0.5">Akademik</p>
+             </a>
+             <a href="/finance/billing?nis=<?= $student['nis'] ?>" class="group bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition text-center">
+                 <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-xl mx-auto mb-2 group-hover:scale-110 transition">
+                     <i class="fa-solid fa-file-invoice-dollar"></i>
+                 </div>
+                 <p class="font-bold text-gray-800 text-sm">Keuangan</p>
+                 <p class="text-xs text-gray-500 mt-0.5">Tagihan SPP</p>
+             </a>
          </div>
          
          <?php endif; ?>

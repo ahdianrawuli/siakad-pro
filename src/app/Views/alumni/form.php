@@ -7,7 +7,7 @@
     </div>
 
     <div class="max-w-2xl bg-white p-8 rounded-lg shadow-sm">
-        <form action="<?= isset($alumni) ? '/student-affairs/alumni/update' : '/student-affairs/alumni/store' ?>" method="POST">
+        <form action="<?= isset($alumni) ? '/school/alumni/update' : '/school/alumni/store' ?>" method="POST">
             <?php if(isset($alumni)): ?><input type="hidden" name="id" value="<?= $alumni['id'] ?>"><?php endif; ?>
 
             <div class="grid grid-cols-1 gap-6">

@@ -16,7 +16,7 @@ if (($_SESSION['user_role'] ?? '') == 'siswa') {
 // Get Active Scope
 $activeScope = Session::get('active_scope', 'GLOBAL');
 
-// Logic Menu (Sama seperti sebelumnya)
+// Load menus from DB based on role
 $roleId = $_SESSION['user_role_id'] ?? 0;
 if ($roleId == 0 && isset($_SESSION['user_role'])) {
     $db = Database::getInstance();
@@ -25,41 +25,99 @@ if ($roleId == 0 && isset($_SESSION['user_role'])) {
     $roleId = $roleData['id'] ?? 0;
 }
 $db = Database::getInstance();
-$sql = "SELECT m.* FROM menus m JOIN role_menus rm ON m.id = rm.menu_id WHERE rm.role_id = ? ORDER BY m.order_num ASC";
+// Kandidat santri (belum aktif): menu id 900-909
+// Siswa aktif: semua menu role siswa KECUALI 900-909
+// Orang tua: semua menu role orang tua KECUALI 900-909
+// Role lain (admin, guru, dll): semua menu kecuali 900-999
+if ($isCandidate) {
+    $sql = "SELECT m.* FROM menus m JOIN role_menus rm ON m.id = rm.menu_id WHERE rm.role_id = ? AND m.is_active = 1 AND m.id BETWEEN 900 AND 909 ORDER BY m.order_num ASC";
+} elseif (($_SESSION['user_role'] ?? '') == 'siswa') {
+    $sql = "SELECT m.* FROM menus m JOIN role_menus rm ON m.id = rm.menu_id WHERE rm.role_id = ? AND m.is_active = 1 AND m.id NOT BETWEEN 900 AND 909 ORDER BY m.order_num ASC";
+} elseif (($_SESSION['user_role'] ?? '') == 'orang-tua') {
+    $sql = "SELECT m.* FROM menus m JOIN role_menus rm ON m.id = rm.menu_id WHERE rm.role_id = ? AND m.is_active = 1 AND m.id NOT BETWEEN 900 AND 909 ORDER BY m.order_num ASC";
+} else {
+    $sql = "SELECT m.* FROM menus m JOIN role_menus rm ON m.id = rm.menu_id WHERE rm.role_id = ? AND m.is_active = 1 AND m.id NOT BETWEEN 900 AND 999 ORDER BY m.order_num ASC";
+}
 $rawMenus = $db->query($sql, [$roleId])->fetchAll();
 
 function buildTree(array $elements, $parentId = null) {
-    $branch = array();
+    $branch = [];
     foreach ($elements as $element) {
         if ($element['parent_id'] == $parentId) {
             $children = buildTree($elements, $element['id']);
-            if ($children) { $element['children'] = $children; }
+            if ($children) $element['children'] = $children;
             $branch[] = $element;
         }
     }
     return $branch;
 }
 $menuTree = buildTree($rawMenus);
+
 function isActive($url) {
     if ($url == '#' || $url == '') return false;
-    return strpos($_SERVER['REQUEST_URI'], $url) === 0;
+    $uri = strtok($_SERVER['REQUEST_URI'], '?');
+
+    static $aliases = [
+        '/student-affairs/attendance'   => '/attendance/students',
+        '/student-affairs/discipline'   => '/discipline/student-violations',
+        '/student-affairs/achievements' => '/achievements',
+        '/student-affairs/counseling'   => '/counseling',
+        '/student-affairs/alumni'       => '/school/alumni',
+        '/student-affairs/teachers'     => '/school/teachers',
+        '/homeroom/report-all'          => '/discipline/homeroom-reports',
+        '/boarding/dorms'               => '/asrama/dorms',
+        '/boarding/supervisors'         => '/asrama/supervisors',
+        '/boarding/activities'          => '/asrama/activities',
+        '/boarding/mutations'           => '/discipline/dorm-mutations',
+        '/staff/positions'              => '/school/staff-positions',
+        '/staff/members'                => '/school/staff',
+        '/staff/attendance'             => '/attendance/staff',
+        '/settings/school'              => '/school/profile',
+        '/master/classrooms'            => '/academic/classrooms',
+        '/finance'                      => '/finance/billing',
+        '/report/print'                 => '/reports/students',
+    ];
+
+    if ($uri === $url) return true;
+    // URL yang harus exact match (tidak boleh prefix-match ke sub-URL)
+    static $exactOnly = ['/finance', '/students', '/parents', '/counseling', '/achievements', '/homeroom'];
+    if (in_array($url, $exactOnly)) return false;
+    if (strpos($uri, rtrim($url, '/') . '/') === 0) return true;
+
+    if (isset($aliases[$url])) {
+        $aliasUrl = $aliases[$url];
+        if ($uri === $aliasUrl) return true;
+        if (strpos($uri, rtrim($aliasUrl, '/') . '/') === 0) return true;
+    }
+
+    foreach ($aliases as $menuUrl => $aliasUrl) {
+        if ($url === $menuUrl) continue;
+        if ($url === $aliasUrl) {
+            if ($uri === $menuUrl) return true;
+        }
+    }
+
+    return false;
 }
+
+// Map invalid FA icons to valid FA6 equivalents
+$iconMap = ['settings' => 'gear', 'activity' => 'person-running', 'circle' => 'circle-dot', 'settings' => 'gear'];
 
 // Styling
 if ($isCandidate) {
     $bgSidebar = "bg-santri";
-    $bgHeader = "bg-santri-dark";
+    $bgHeader  = "bg-santri-dark";
     $hoverColor = "hover:bg-santri-dark";
     $activeColor = "bg-santri-dark";
     $headerTitle = "PANEL SANTRI";
-    $headerIcon = "fa-user-graduate";
+    $headerIcon  = "fa-user-graduate";
 } else {
     $bgSidebar = "bg-primary";
-    $bgHeader = "bg-gray-900";
+    $bgHeader  = "bg-gray-900";
     $hoverColor = "hover:bg-secondary";
     $activeColor = "bg-secondary";
     $headerTitle = "SIAKAD PARABEK";
-    $headerIcon = "fa-graduation-cap";
+    $headerIcon  = "fa-graduation-cap";
 }
 ?>
 
@@ -94,12 +152,12 @@ if ($isCandidate) {
             <form action="/change-scope" method="POST">
                 <label class="text-[10px] uppercase text-gray-400 font-bold tracking-wider mb-1 block">Mode Tampilan</label>
                 <div class="relative">
-<select name="scope" onchange="this.form.submit()" class="w-full bg-secondary text-white text-xs font-bold py-2 pl-3 pr-8 rounded border border-gray-600 focus:outline-none focus:border-blue-500 appearance-none cursor-pointer hover:bg-gray-700 transition">
-    <option value="GLOBAL" <?= $activeScope == 'GLOBAL' ? 'selected' : '' ?>>🌐 Semua Jenjang</option>
-    <option value="MTS" <?= $activeScope == 'MTS' ? 'selected' : '' ?>>🏫 MTS (Tsanawiyah)</option>
-    <option value="MA" <?= $activeScope == 'MA' ? 'selected' : '' ?>>🎓 MA (Aliyah)</option>
-    <option value="PDF" <?= $activeScope == 'PDF' ? 'selected' : '' ?>>👳 PDF (Diniyah Formal)</option>
-</select>
+                    <select name="scope" onchange="this.form.submit()" class="w-full bg-secondary text-white text-xs font-bold py-2 pl-3 pr-8 rounded border border-gray-600 focus:outline-none focus:border-blue-500 appearance-none cursor-pointer hover:bg-gray-700 transition">
+                        <option value="GLOBAL" <?= $activeScope == 'GLOBAL' ? 'selected' : '' ?>>🌐 Semua Jenjang</option>
+                        <option value="MTS"    <?= $activeScope == 'MTS'    ? 'selected' : '' ?>>🏫 MTS (Tsanawiyah)</option>
+                        <option value="MA"     <?= $activeScope == 'MA'     ? 'selected' : '' ?>>🎓 MA (Aliyah)</option>
+                        <option value="PDF"    <?= $activeScope == 'PDF'    ? 'selected' : '' ?>>👳 PDF (Diniyah Formal)</option>
+                    </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
                         <i class="fa-solid fa-chevron-down text-xs"></i>
                     </div>
@@ -110,55 +168,62 @@ if ($isCandidate) {
 
     <nav class="flex-1 overflow-y-auto py-4 custom-scrollbar">
         <ul class="space-y-1 px-2">
-            
-            <?php if ($isCandidate): ?>
-                <li><a href="/student/dashboard" class="flex items-center px-4 py-3 rounded-lg <?= $hoverColor ?> <?= isActive('/student/dashboard') ? $activeColor : '' ?>"><i class="fa-solid fa-gauge-high w-6 text-center"></i><span class="ml-3 font-medium">Overview</span></a></li>
-                <li><a href="/student/profile" class="flex items-center px-4 py-3 rounded-lg <?= $hoverColor ?> <?= isActive('/student/profile') ? $activeColor : '' ?>"><i class="fa-solid fa-id-card w-6 text-center"></i><span class="ml-3 font-medium">Biodata</span></a></li>
-                <li><a href="/student/payment" class="flex items-center px-4 py-3 rounded-lg <?= $hoverColor ?> <?= isActive('/student/payment') ? $activeColor : '' ?>"><i class="fa-solid fa-file-invoice-dollar w-6 text-center"></i><span class="ml-3 font-medium">Pembayaran</span></a></li>
-                <li><a href="/student/documents" class="flex items-center px-4 py-3 rounded-lg <?= $hoverColor ?> <?= isActive('/student/documents') ? $activeColor : '' ?>"><i class="fa-solid fa-folder-open w-6 text-center"></i><span class="ml-3 font-medium">Dokumen</span></a></li>
-            
-            <?php else: ?>
-                <?php $dashboardUrl = ($_SESSION['user_role'] == 'siswa') ? '/student/dashboard' : '/dashboard'; ?>
-                <li>
-                    <a href="<?= $dashboardUrl ?>" class="flex items-center px-4 py-3 rounded-lg transition-colors group <?= $hoverColor ?> <?= isActive($dashboardUrl) ? $activeColor : '' ?>">
-                        <i class="fa-solid fa-home w-6 text-center text-gray-400 group-hover:text-white <?= isActive($dashboardUrl) ? 'text-white' : '' ?>"></i>
-                        <span class="ml-3 text-sm font-medium">Dashboard</span>
-                    </a>
-                </li>
-                
-                <?php foreach ($menuTree as $menu): ?>
-                    <?php if(strtolower($menu['title']) == 'dashboard') continue; ?>
-                    <?php if ($menu['title'] === 'Kartu Ujian' && isset($isActiveStudent) && $isActiveStudent) continue; ?>
 
-                    <?php if (empty($menu['children'])): ?>
-                        <li>
-                            <a href="<?= $menu['url'] ?>" class="flex items-center px-4 py-3 rounded-lg transition-colors group <?= $hoverColor ?> <?= isActive($menu['url']) ? $activeColor : '' ?>">
-                                <i class="fa-solid fa-<?= $menu['icon'] ?> w-6 text-center text-gray-400 group-hover:text-white <?= isActive($menu['url']) ? 'text-white' : '' ?>"></i>
-                                <span class="ml-3 text-sm font-medium"><?= $menu['title'] ?></span>
-                            </a>
-                        </li>
-                    <?php else: ?>
-                        <?php 
-                            $isChildActive = false;
-                            foreach ($menu['children'] as $child) { if (isActive($child['url'])) { $isChildActive = true; break; } }
-                        ?>
-                        <li x-data="{ open: <?= $isChildActive ? 'true' : 'false' ?> }">
-                            <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors group focus:outline-none <?= $hoverColor ?> <?= $isChildActive ? $activeColor : '' ?>">
-                                <div class="flex items-center">
-                                    <i class="fa-solid fa-<?= $menu['icon'] ?> w-6 text-center group-hover:text-white <?= $isChildActive ? 'text-white' : 'text-gray-400' ?>"></i>
-                                    <span class="ml-3 text-sm font-medium"><?= $menu['title'] ?></span>
-                                </div>
-                                <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200" :class="{'rotate-180': open}"></i>
-                            </button>
-                            <ul x-show="open" class="pl-10 pr-2 py-1 space-y-1 bg-black/20 rounded-b-lg">
-                                <?php foreach ($menu['children'] as $child): ?>
-                                    <li><a href="<?= $child['url'] ?>" class="block px-3 py-2 text-sm hover:text-white hover:bg-white/10 rounded-md transition-colors <?= isActive($child['url']) ? 'text-white font-bold bg-white/10' : 'text-gray-400' ?>"><?= $child['title'] ?></a></li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </li>
-                    <?php endif; ?>
-                <?php endforeach; ?>
+            <?php
+            // Untuk kandidat santri: tampilkan menu dari DB (role siswa, id 250-254)
+            // Untuk user lain: tampilkan menu dari DB sesuai role
+            $dashboardUrl = ($_SESSION['user_role'] == 'siswa') ? '/student/dashboard' : '/dashboard';
+            ?>
+
+            <?php if (!$isCandidate): ?>
+            <li>
+                <a href="<?= $dashboardUrl ?>" class="flex items-center px-4 py-3 rounded-lg transition-colors group <?= $hoverColor ?> <?= isActive($dashboardUrl) ? $activeColor : '' ?>">
+                    <i class="fa-solid fa-home w-6 text-center text-gray-400 group-hover:text-white <?= isActive($dashboardUrl) ? 'text-white' : '' ?>"></i>
+                    <span class="ml-3 text-sm font-medium">Dashboard</span>
+                </a>
+            </li>
             <?php endif; ?>
+
+            <?php foreach ($menuTree as $menu): ?>
+                <?php if (strtolower($menu['title']) == 'dashboard') continue; ?>
+                <?php if ($menu['title'] === 'Kartu Ujian' && isset($isActiveStudent) && $isActiveStudent) continue; ?>
+
+                <?php if (empty($menu['children'])): ?>
+                    <li>
+                        <a href="<?= $menu['url'] ?>" class="flex items-center px-4 py-3 rounded-lg transition-colors group <?= $hoverColor ?> <?= isActive($menu['url']) ? $activeColor : '' ?>">
+                            <i class="fa-solid fa-<?= $iconMap[$menu['icon']] ?? $menu['icon'] ?> w-6 text-center text-gray-400 group-hover:text-white <?= isActive($menu['url']) ? 'text-white' : '' ?>"></i>
+                            <span class="ml-3 text-sm font-medium"><?= $menu['title'] ?></span>
+                        </a>
+                    </li>
+                <?php else: ?>
+                    <?php
+                        $isChildActive = false;
+                        foreach ($menu['children'] as $child) {
+                            if (isActive($child['url'])) { $isChildActive = true; break; }
+                        }
+                        $menuIcon = $iconMap[$menu['icon']] ?? $menu['icon'];
+                    ?>
+                    <li x-data="{ open: <?= $isChildActive ? 'true' : 'false' ?> }">
+                        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors group focus:outline-none <?= $hoverColor ?> <?= $isChildActive ? $activeColor : '' ?>">
+                            <div class="flex items-center">
+                                <i class="fa-solid fa-<?= $menuIcon ?> w-6 text-center group-hover:text-white <?= $isChildActive ? 'text-white' : 'text-gray-400' ?>"></i>
+                                <span class="ml-3 text-sm font-medium"><?= $menu['title'] ?></span>
+                            </div>
+                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200" :class="{'rotate-180': open}"></i>
+                        </button>
+                        <ul x-show="open" class="pl-10 pr-2 py-1 space-y-1 bg-black/20 rounded-b-lg">
+                            <?php foreach ($menu['children'] as $child): ?>
+                                <li>
+                                    <a href="<?= $child['url'] ?>" class="block px-3 py-2 text-sm hover:text-white hover:bg-white/10 rounded-md transition-colors <?= isActive($child['url']) ? 'text-white font-bold bg-white/10' : 'text-gray-400' ?>">
+                                        <?= $child['title'] ?>
+                                    </a>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </li>
+                <?php endif; ?>
+            <?php endforeach; ?>
+
         </ul>
     </nav>
 

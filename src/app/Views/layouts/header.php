@@ -36,5 +36,5 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 font-sans antialiased" x-data="{ sidebarOpen: false }">
-    <div class="flex h-screen overflow-hidden">
+<body class="bg-slate-50 font-sans text-slate-900 antialiased selection:bg-santri selection:text-white" x-data="{ sidebarOpen: false }">
+    <div class="flex h-screen overflow-hidden bg-slate-50/50 backdrop-blur-3xl">

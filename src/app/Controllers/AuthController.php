@@ -40,15 +40,38 @@ class AuthController {
         }
 
         // C. Cari User di Database (Cek Email ATAU Username)
+        // SUPPORT OLD & NEW SCHEMA FOR MIGRATION
         $db = Database::getInstance();
-        $user = $db->query(
-            "SELECT u.*, r.slug as role_slug, r.id as role_id 
-             FROM users u 
-             JOIN roles r ON u.role_id = r.id 
-             WHERE u.email = ? OR u.username = ? 
-             LIMIT 1", 
-            [$loginInput, $loginInput]
-        )->fetch();
+        try {
+            $user = $db->query(
+                "SELECT u.*,
+                 CASE
+                    WHEN r.name LIKE '%admin%' THEN 'super-admin'
+                    WHEN r.name LIKE '%siswa%' THEN 'siswa'
+                    ELSE r.name
+                 END as role_slug,
+                 r.id as role_id
+                 FROM users_users u
+                 JOIN users_roles r ON u.role_id = r.id
+                 WHERE u.email = ? OR u.username = ?
+                 LIMIT 1",
+                [$loginInput, $loginInput]
+            )->fetch();
+        } catch (\Exception $e) {
+            $user = false;
+        }
+
+        if (!$user) {
+            // Fallback ke tabel users lama
+            $user = $db->query(
+                "SELECT u.*, r.slug as role_slug, r.id as role_id
+                 FROM users u
+                 JOIN roles r ON u.role_id = r.id
+                 WHERE u.email = ? OR u.username = ?
+                 LIMIT 1",
+                [$loginInput, $loginInput]
+            )->fetch();
+        }
 
         // D. Verifikasi Password
         if ($user && password_verify($password, $user['password'])) {

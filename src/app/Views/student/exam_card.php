@@ -1,5 +1,5 @@
 <?php require __DIR__ . '/../layouts/header.php'; ?>
-<?php require __DIR__ . '/../layouts/sidebar.php'; ?>
+<?php require __DIR__ . '/../layouts/student_sidebar.php'; ?>
 
 <main class="flex-1 overflow-y-auto bg-gray-50 p-6 print:bg-white print:p-0">
 

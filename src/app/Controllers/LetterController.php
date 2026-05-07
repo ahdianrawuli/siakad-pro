@@ -21,6 +21,16 @@ class LetterController {
         View::render('letters/form', ['template' => $template]);
     }
 
+    public function store() {
+        $db = Database::getInstance();
+        $code = preg_replace('/[^a-z0-9_]/', '_', strtolower(trim($_POST['code'])));
+        $db->query("INSERT INTO letter_templates (code, name, content) VALUES (?, ?, ?)", [
+            $code, trim($_POST['name']), trim($_POST['content'])
+        ]);
+        Session::setFlash('success', 'Template surat berhasil ditambahkan.');
+        header('Location: /settings/letters');
+    }
+
     public function update() {
         $db = Database::getInstance();
         $id = $_POST['id'];
@@ -28,6 +38,13 @@ class LetterController {
             $_POST['name'], $_POST['content'], $id
         ]);
         Session::setFlash('success', 'Template surat diperbarui.');
+        header('Location: /settings/letters');
+    }
+
+    public function delete() {
+        $db = Database::getInstance();
+        $db->query("DELETE FROM letter_templates WHERE id = ?", [$_GET['id']]);
+        Session::setFlash('success', 'Template surat dihapus.');
         header('Location: /settings/letters');
     }
 

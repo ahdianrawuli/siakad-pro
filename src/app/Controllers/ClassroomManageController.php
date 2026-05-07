@@ -82,7 +82,7 @@ public function index() {
         $db->query($sql, [$name, $level, $major, $teacherId]);
 
         Session::setFlash('success', 'Kelas baru berhasil ditambahkan.');
-        header('Location: /master/classrooms');
+        header('Location: /academic/classrooms');
     }
 
     public function update() {
@@ -97,7 +97,7 @@ public function index() {
         $db->query($sql, [$name, $level, $major, $teacherId, $id]);
 
         Session::setFlash('success', 'Data kelas berhasil diperbarui.');
-        header('Location: /master/classrooms');
+        header('Location: /academic/classrooms');
     }
 
     public function delete() {
@@ -113,7 +113,7 @@ public function index() {
             Session::setFlash('success', 'Kelas berhasil dihapus.');
         }
         
-        header('Location: /master/classrooms');
+        header('Location: /academic/classrooms');
     }
 
     // ==========================================================
@@ -197,19 +197,42 @@ public function index() {
 
     public function assignHomeroomView() {
         $db = Database::getInstance();
+
+        $page   = (int)($_GET['page'] ?? 1);
+        $limit  = (int)($_GET['limit'] ?? 20);
+        $offset = ($page - 1) * $limit;
+        $search = $_GET['search'] ?? '';
+        $level  = $_GET['level'] ?? '';
+
+        $where = "WHERE 1=1";
+        $params = [];
+        if (!empty($search)) { $where .= " AND (c.name LIKE ? OR u.name LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
+        if (!empty($level))  { $where .= " AND c.level = ?"; $params[] = $level; }
+
+        $totalData  = $db->query("SELECT COUNT(*) FROM classrooms c LEFT JOIN users u ON c.homeroom_teacher_id = u.id $where", $params)->fetchColumn();
+        $totalPages = ceil($totalData / $limit);
+
         $classrooms = $db->query("
-            SELECT c.*, u.name as teacher_name 
+            SELECT c.*, u.name as teacher_name
             FROM classrooms c
             LEFT JOIN users u ON c.homeroom_teacher_id = u.id
-            ORDER BY c.level ASC, c.name ASC
-        ")->fetchAll();
+            $where ORDER BY c.level ASC, c.name ASC LIMIT $limit OFFSET $offset
+        ", $params)->fetchAll();
 
         $teachers = $db->query("SELECT id, name FROM users WHERE role_id = 3 ORDER BY name ASC")->fetchAll();
+        $levels   = $db->query("SELECT DISTINCT level FROM classrooms ORDER BY level")->fetchAll();
 
         View::render('academic/assign_homeroom', [
-            'title' => 'Set Wali Kelas',
-            'classrooms' => $classrooms,
-            'teachers' => $teachers
+            'title'       => 'Set Wali Kelas',
+            'classrooms'  => $classrooms,
+            'teachers'    => $teachers,
+            'levels'      => $levels,
+            'totalData'   => $totalData,
+            'totalPages'  => $totalPages,
+            'currentPage' => $page,
+            'limit'       => $limit,
+            'search'      => $search,
+            'levelFilter' => $level,
         ]);
     }
 

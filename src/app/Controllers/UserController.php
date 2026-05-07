@@ -13,8 +13,34 @@ class UserController {
     }
 
     public function index() {
-        $users = User::getAll();
-        View::render('settings/users/index', ['users' => $users, 'title' => 'Manajemen User']);
+        $db = Database::getInstance();
+        $search = $_GET['search'] ?? '';
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $offset = ($page - 1) * $limit;
+
+        $sql = "SELECT u.*, r.name as role_name FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE 1=1";
+        $params = [];
+        if (!empty($search)) {
+            $sql .= " AND (u.name LIKE ? OR u.username LIKE ? OR u.email LIKE ?)";
+            $params[] = "%$search%"; $params[] = "%$search%"; $params[] = "%$search%";
+        }
+
+        $totalData = $db->query("SELECT COUNT(*) FROM (" . $sql . ") as t", $params)->fetchColumn();
+        $sql .= " ORDER BY u.id DESC LIMIT $limit OFFSET $offset";
+        $users = $db->query($sql, $params)->fetchAll();
+        $roles = $db->query("SELECT * FROM roles ORDER BY name ASC")->fetchAll();
+
+        View::render('settings/users/index', [
+            'title' => 'Manajemen User',
+            'users' => $users,
+            'roles' => $roles,
+            'search' => $search,
+            'limit' => $limit,
+            'currentPage' => $page,
+            'totalData' => $totalData,
+            'totalPages' => ceil($totalData / $limit),
+        ]);
     }
 
     public function create() {

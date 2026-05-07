@@ -460,7 +460,7 @@
                 </div>
                 <div class="flex justify-between mt-4">
                     <button type="button" class="prev-btn px-6 py-2 bg-gray-500 text-white rounded-lg font-bold" data-target="tab-riwayat">Kembali</button>
-                    <button type="submit" class="px-8 py-2 bg-green-700 text-white font-bold rounded-lg hover:bg-green-800 shadow-lg transition">
+                    <button type="button" id="btn-final-submit" class="px-8 py-2 bg-green-700 text-white font-bold rounded-lg hover:bg-green-800 shadow-lg transition">
                         <i class="fa-solid fa-paper-plane mr-2"></i> DAFTAR SEKARANG
                     </button>
                 </div>
@@ -470,6 +470,61 @@
                 <a href="/login" class="text-sm font-bold text-green-600 hover:text-green-500">Sudah punya akun? Login disini</a>
             </div>
         </form>
+
+        <!-- Terms and Conditions Modal Overlay -->
+        <div id="terms-modal-overlay" class="fixed inset-0 z-[100] hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+
+                <!-- Modal Header -->
+                <div class="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
+                    <h3 class="text-xl font-bold text-gray-900">Syarat & Ketentuan Pendaftaran</h3>
+                </div>
+
+                <!-- Modal Body (Scrollable) -->
+                <div class="px-6 py-6 overflow-y-auto flex-grow text-gray-700 space-y-5 text-sm md:text-base leading-relaxed">
+                    <p class="font-semibold text-gray-800">
+                        Dengan mengisi formulir pendaftaran ini, Anda menyatakan telah membaca, memahami, dan menyetujui syarat dan ketentuan berikut:
+                    </p>
+
+                    <ol class="list-decimal pl-5 space-y-4 marker:text-santri marker:font-bold">
+                        <li>
+                            <strong>Kebenaran Data</strong><br>
+                            Anda menyatakan bahwa seluruh data yang diisi dalam formulir ini adalah benar dan dapat dipertanggungjawabkan. Kesalahan atau ketidaklengkapan data dapat berakibat pada pembatalan pendaftaran.
+                        </li>
+                        <li>
+                            <strong>Proses Seleksi</strong><br>
+                            Pendaftaran tidak menjamin penerimaan. Seluruh calon santri akan melalui proses seleksi sesuai dengan ketentuan yang berlaku di Pesantren.
+                        </li>
+                        <li>
+                            <strong>Dokumen Pendukung</strong><br>
+                            Anda diwajibkan untuk mengunggah seluruh dokumen pendukung yang diminta. Dokumen yang tidak lengkap atau tidak valid dapat mempengaruhi status pendaftaran.
+                        </li>
+                        <li>
+                            <strong>Pembayaran Biaya Pendaftaran</strong><br>
+                            Biaya pendaftaran yang telah dibayarkan tidak dapat dikembalikan, kecuali dalam kondisi tertentu yang ditentukan oleh pihak pesantren.
+                        </li>
+                        <li>
+                            <strong>Privasi dan Keamanan Data</strong><br>
+                            Data yang Anda berikan akan digunakan hanya untuk keperluan proses seleksi dan administrasi. Kami menjamin bahwa data Anda akan disimpan dengan aman dan tidak akan disebarluaskan kepada pihak ketiga tanpa izin.
+                        </li>
+                        <li>
+                            <strong>Keputusan Penerimaan</strong><br>
+                            Keputusan penerimaan santri baru sepenuhnya berada di tangan panitia penerimaan santri baru Pesantren dan bersifat final.
+                        </li>
+                    </ol>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="px-6 py-5 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 shrink-0">
+                    <button type="button" id="btn-batal-terms" class="px-5 py-2.5 rounded-xl font-bold text-gray-600 bg-white border border-gray-300 hover:bg-gray-100 transition shadow-sm">
+                        Batal
+                    </button>
+                    <button type="button" id="btn-setuju-terms" class="px-5 py-2.5 rounded-xl font-bold text-white bg-santri hover:bg-santri-dark transition shadow-md flex items-center justify-center gap-2">
+                        <span>Setuju & Mendaftar</span>
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <script>
             // Tab Logic
@@ -665,6 +720,83 @@
             // Init
             toggleParentType();
             initAutoSave();
+
+            // Force all text inputs to UPPERCASE automatically
+            // Form Submission Intercept & Modal Logic
+            const registerForm = document.getElementById('register-form');
+            const termsModal = document.getElementById('terms-modal-overlay');
+            const btnBatal = document.getElementById('btn-batal-terms');
+            const btnSetuju = document.getElementById('btn-setuju-terms');
+            const btnFinalSubmit = document.getElementById('btn-final-submit');
+            let isSubmitting = false;
+
+            btnFinalSubmit.addEventListener('click', function() {
+                if (registerForm.checkValidity()) {
+                    termsModal.classList.remove('hidden');
+                } else {
+                    const firstInvalid = registerForm.querySelector(':invalid');
+                    if (firstInvalid) {
+                        const tabContent = firstInvalid.closest('.tab-content');
+                        if (tabContent) {
+                            switchTab(tabContent.id);
+                        }
+                        registerForm.reportValidity();
+                    }
+                }
+            });
+
+            btnBatal.addEventListener('click', function() {
+                termsModal.classList.add('hidden');
+            });
+
+            btnSetuju.addEventListener('click', function() {
+                if(isSubmitting) return;
+
+                isSubmitting = true;
+
+                // Set loading state on button
+                const btnText = btnSetuju.querySelector('span');
+                const originalText = btnText.innerText;
+                btnText.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Memproses...';
+                btnSetuju.classList.add('opacity-70', 'cursor-not-allowed');
+
+                // Clear localStorage draft upon successful submit intention
+                localStorage.removeItem('ppdb_form_draft');
+
+                // Actually submit the form to the backend
+                registerForm.submit();
+            });
+
+            function initUppercaseInputs() {
+                // Select all inputs and textareas
+                const allInputs = registerForm.querySelectorAll('input, textarea');
+
+                allInputs.forEach(input => {
+                    // Exclude specific types and specific field names explicitly requested by user
+                    const isEmail = input.type === 'email' || input.name.includes('email');
+                    const isPassword = input.type === 'password' || input.name.includes('password');
+                    const isPhoneOrNumber = input.type === 'number' || input.name === 'phone';
+                    const isHiddenOrRadio = input.type === 'hidden' || input.type === 'radio' || input.type === 'checkbox';
+
+                    if (!isEmail && !isPassword && !isPhoneOrNumber && !isHiddenOrRadio) {
+                        // Apply CSS text-transform for visual immediate feedback
+                        input.style.textTransform = 'uppercase';
+
+                        input.addEventListener('input', function(e) {
+                            // Save cursor position to prevent jumping
+                            const start = this.selectionStart;
+                            const end = this.selectionEnd;
+
+                            this.value = this.value.toUpperCase();
+
+                            // Restore cursor position
+                            this.setSelectionRange(start, end);
+                        });
+                    }
+                });
+            }
+            initUppercaseInputs();
+
         </script>
     </div>
 </div>

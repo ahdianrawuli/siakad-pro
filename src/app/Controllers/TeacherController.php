@@ -107,7 +107,7 @@ class TeacherController {
             Session::setFlash('error', 'Gagal menyimpan: ' . $e->getMessage());
         }
 
-        header('Location: /student-affairs/teachers');
+        header('Location: /school/teachers');
     }
 
     public function update() {
@@ -122,20 +122,30 @@ class TeacherController {
         } catch (\Exception $e) {
             Session::setFlash('error', 'Gagal memperbarui data: ' . $e->getMessage());
         }
-        header('Location: /student-affairs/teachers');
+        header('Location: /school/teachers');
     }
 
     public function toggleStatus() {
         $db = Database::getInstance();
         $db->query("UPDATE teachers SET status = IF(status='ACTIVE', 'INACTIVE', 'ACTIVE') WHERE id = ?", [$_GET['id']]);
-        header('Location: /student-affairs/teachers');
+        header('Location: /school/teachers');
+    }
+
+    public function edit() {
+        $db = Database::getInstance();
+        $teacher = $db->query("SELECT * FROM teachers WHERE id = ?", [$_GET['id']])->fetch();
+        if (!$teacher) {
+            header('Location: /school/teachers');
+            exit;
+        }
+        View::render('teachers/form', ['title' => 'Edit Data Guru', 'teacher' => $teacher]);
     }
 
     public function detail() {
         $db = Database::getInstance();
         $teacher = $db->query("SELECT * FROM teachers WHERE id = ?", [$_GET['id']])->fetch();
         if (!$teacher) {
-            header('Location: /student-affairs/teachers');
+            header('Location: /school/teachers');
             exit;
         }
         View::render('teachers/detail', ['title' => 'Profil Guru', 'teacher' => $teacher]);
