@@ -4,32 +4,32 @@
 <main class="flex-1 overflow-y-auto bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-6">
 
     <!-- Hero Header dengan Pattern -->
-    <div class="mb-6 relative overflow-hidden bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-6 md:p-8 rounded-3xl shadow-2xl text-white">
+    <div class="mb-6 relative overflow-hidden bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 p-6 md:p-8 rounded-3xl shadow-2xl text-white">
         <div class="absolute inset-0 opacity-10">
             <div class="absolute top-0 right-0 w-96 h-96 bg-white rounded-full -translate-y-1/2 translate-x-1/2"></div>
             <div class="absolute bottom-0 left-0 w-64 h-64 bg-white rounded-full translate-y-1/2 -translate-x-1/2"></div>
         </div>
         <div class="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-                <p class="text-blue-100 text-sm font-medium mb-1">
+                <p class="text-green-100 text-sm font-medium mb-1">
                     <i class="fa-solid fa-hand-wave mr-1"></i> Assalamu'alaikum
                 </p>
                 <h2 class="text-2xl md:text-4xl font-black tracking-tight"><?= htmlspecialchars($user ?? 'Administrator') ?></h2>
-                <p class="text-blue-100 text-sm mt-2 flex items-center gap-2">
+                <p class="text-green-100 text-sm mt-2 flex items-center gap-2">
                     <i class="fa-solid fa-calendar-day"></i>
                     <?= date('l, d F Y') ?>
-                    <span class="w-1 h-1 bg-blue-200 rounded-full"></span>
+                    <span class="w-1 h-1 bg-green-200 rounded-full"></span>
                     <i class="fa-solid fa-mosque"></i>
                     Pondok Pesantren Sumatera Thawalib Parabek
                 </p>
             </div>
             <div class="flex items-center gap-3">
                 <div class="bg-white/15 backdrop-blur-sm border border-white/30 rounded-2xl px-5 py-3 text-center hover:bg-white/25 transition cursor-default">
-                    <div class="text-[10px] text-blue-100 font-semibold uppercase tracking-wider">Tahun Ajaran</div>
+                    <div class="text-[10px] text-green-100 font-semibold uppercase tracking-wider">Tahun Ajaran</div>
                     <div class="text-base font-black">2025/2026 Ganjil</div>
                 </div>
                 <div class="bg-white/15 backdrop-blur-sm border border-white/30 rounded-2xl px-5 py-3 text-center hover:bg-white/25 transition cursor-default">
-                    <div class="text-[10px] text-blue-100 font-semibold uppercase tracking-wider">Hari Ini</div>
+                    <div class="text-[10px] text-green-100 font-semibold uppercase tracking-wider">Hari Ini</div>
                     <div class="text-base font-black"><?= date('d M') ?></div>
                 </div>
             </div>
@@ -38,17 +38,17 @@
 
     <!-- Quick Stats dengan Gradient Cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <a href="/student-affairs/students" class="group relative bg-gradient-to-br from-blue-500 to-blue-600 p-5 rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 overflow-hidden">
+        <a href="/student-affairs/students" class="group relative bg-gradient-to-br from-green-500 to-green-600 p-5 rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 overflow-hidden">
             <div class="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
             <div class="relative">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs font-bold text-blue-100 uppercase tracking-wider">Total Santri</span>
+                    <span class="text-xs font-bold text-green-100 uppercase tracking-wider">Total Santri</span>
                     <div class="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center">
                         <i class="fa-solid fa-graduation-cap text-white text-lg"></i>
                     </div>
                 </div>
                 <div class="text-4xl font-black text-white"><?= $totalStudents ?></div>
-                <div class="mt-2 flex gap-4 text-xs text-blue-100">
+                <div class="mt-2 flex gap-4 text-xs text-green-100">
                     <span><i class="fa-solid fa-person"></i> <?= $genderStats['L'] ?? 0 ?> Putra</span>
                     <span><i class="fa-solid fa-person-dress"></i> <?= $genderStats['P'] ?? 0 ?> Putri</span>
                 </div>
@@ -104,9 +104,9 @@
         <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition">
             <div class="flex items-center justify-between mb-5">
                 <h3 class="font-bold text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-chart-pie text-blue-500"></i> Distribusi Santri
+                    <i class="fa-solid fa-chart-pie text-green-500"></i> Distribusi Santri
                 </h3>
-                <a href="/student-affairs/students" class="text-xs text-blue-600 hover:text-blue-700 font-semibold">Detail →</a>
+                <a href="/student-affairs/students" class="text-xs text-green-600 hover:text-green-700 font-semibold">Detail →</a>
             </div>
             <div class="grid grid-cols-3 gap-4">
                 <?php 
@@ -139,7 +139,7 @@
                 <h3 class="font-bold text-slate-800 flex items-center gap-2">
                     <i class="fa-solid fa-user-plus text-green-500"></i> Status PPDB 2025/2026
                 </h3>
-                <a href="/ppdb/registrations" class="text-xs text-blue-600 hover:text-blue-700 font-semibold">Kelola →</a>
+                <a href="/ppdb/registrations" class="text-xs text-green-600 hover:text-green-700 font-semibold">Kelola →</a>
             </div>
             <div class="grid grid-cols-4 gap-3">
                 <?php 
@@ -168,15 +168,15 @@
 
         <!-- Jadwal Hari Ini -->
         <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition">
-            <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-slate-100 flex items-center justify-between">
+            <div class="px-6 py-4 bg-gradient-to-r from-green-50 to-emerald-50 border-b border-slate-100 flex items-center justify-between">
                 <h4 class="font-bold text-slate-700 flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                        <i class="fa-solid fa-calendar-day text-blue-500"></i>
+                    <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                        <i class="fa-solid fa-calendar-day text-green-500"></i>
                     </div>
                     Jadwal Hari Ini
                     <span class="text-xs font-normal text-slate-400">(<?= $todayName ?>)</span>
                 </h4>
-                <a href="/academic/schedules" class="text-xs text-blue-600 hover:text-blue-700 font-semibold">Lihat Semua →</a>
+                <a href="/academic/schedules" class="text-xs text-green-600 hover:text-green-700 font-semibold">Lihat Semua →</a>
             </div>
             <div class="divide-y divide-slate-50 max-h-80 overflow-y-auto">
                 <?php if (empty($todaySchedules)): ?>
@@ -188,8 +188,8 @@
                 <?php foreach ($todaySchedules as $sch): ?>
                 <div class="px-6 py-4 hover:bg-slate-50 transition group">
                     <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 group-hover:bg-blue-100 transition">
-                            <span class="text-xs font-mono font-bold text-blue-600"><?= substr($sch['start_time'],0,5) ?></span>
+                        <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center shrink-0 group-hover:bg-green-100 transition">
+                            <span class="text-xs font-mono font-bold text-green-600"><?= substr($sch['start_time'],0,5) ?></span>
                         </div>
                         <div class="flex-1 min-w-0">
                             <div class="font-semibold text-slate-800 truncate"><?= htmlspecialchars($sch['subject']) ?></div>
@@ -214,7 +214,7 @@
                     </div>
                     Kapasitas Asrama
                 </h4>
-                <a href="/asrama/dorms" class="text-xs text-blue-600 hover:text-blue-700 font-semibold">Kelola →</a>
+                <a href="/asrama/dorms" class="text-xs text-green-600 hover:text-green-700 font-semibold">Kelola →</a>
             </div>
             <div class="p-6 space-y-5 max-h-80 overflow-y-auto">
                 <?php foreach ($dormStats as $d):
@@ -250,7 +250,7 @@
                     </div>
                     Aktivitas Terbaru
                 </h4>
-                <a href="/ppdb/registrations" class="text-xs text-blue-600 hover:text-blue-700 font-semibold">Lihat →</a>
+                <a href="/ppdb/registrations" class="text-xs text-green-600 hover:text-green-700 font-semibold">Lihat →</a>
             </div>
             <div class="p-6 max-h-80 overflow-y-auto">
                 <?php if (empty($activities)): ?>

@@ -2,10 +2,19 @@
 <?php require_once __DIR__ . '/../../layouts/sidebar.php'; ?>
 
 <main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 p-4 md:p-6" x-data="{ modalOpen: false, editModalOpen: false, deleteModalOpen: false, currentId: '', currentTitle: '', currentUrl: '', currentIcon: '', currentOrder: '', currentParent: '' }">
-    <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div>
-            <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Manajemen Menu</h1>
-            <p class="text-sm text-gray-500">Kelola struktur navigasi sidebar aplikasi.</p>
+            <h3 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Manajemen Menu</h3>
+            <p class="text-slate-500 text-sm mt-1 font-medium">Kelola struktur navigasi sidebar aplikasi.</p>
+            <div class="mt-3 flex items-center gap-2">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold border border-blue-100">
+                    <i class="fa-solid fa-bars"></i> Total Menu: <?= count($menus ?? []) ?>
+                </div>
+                <button onclick="document.getElementById('infoModal').classList.remove('hidden')"
+                    class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-colors border border-slate-200" title="Panduan Penggunaan">
+                    <i class="fa-solid fa-circle-info text-sm"></i>
+                </button>
+            </div>
         </div>
         <button @click="modalOpen = true" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2 shadow-sm">
             <i class="fa-solid fa-plus"></i> Tambah Menu
@@ -215,6 +224,22 @@
                 <button type="button" @click="deleteModalOpen = false" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 w-full">Batal</button>
                 <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 w-full">Hapus</button>
             </form>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div id="infoModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="fa-solid fa-circle-info text-green-500"></i> Panduan Manajemen Menu</h3>
+                <button onclick="document.getElementById('infoModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <ul class="text-sm text-gray-600 space-y-2">
+                <li><i class="fa-solid fa-plus text-green-500 mr-2"></i>Klik <strong>Tambah Menu</strong> untuk menambah item navigasi baru.</li>
+                <li><i class="fa-solid fa-sitemap text-blue-500 mr-2"></i>Atur <strong>Parent Menu</strong> untuk membuat submenu bertingkat.</li>
+                <li><i class="fa-solid fa-sort text-orange-500 mr-2"></i>Gunakan <strong>Order</strong> untuk mengatur urutan tampil di sidebar.</li>
+                <li><i class="fa-solid fa-icons text-purple-500 mr-2"></i>Isi <strong>Icon</strong> dengan nama ikon Font Awesome (tanpa prefix <code class="bg-gray-100 px-1 rounded">fa-</code>).</li>
+            </ul>
         </div>
     </div>
 

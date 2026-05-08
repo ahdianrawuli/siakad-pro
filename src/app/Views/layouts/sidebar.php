@@ -113,7 +113,7 @@ if ($isCandidate) {
     $headerIcon  = "fa-user-graduate";
 } else {
     $bgSidebar = "bg-primary";
-    $bgHeader  = "bg-gray-900";
+    $bgHeader  = "bg-green-800";
     $hoverColor = "hover:bg-secondary";
     $activeColor = "bg-secondary";
     $headerTitle = "SIAKAD PARABEK";
@@ -152,7 +152,7 @@ if ($isCandidate) {
             <form action="/change-scope" method="POST">
                 <label class="text-[10px] uppercase text-gray-400 font-bold tracking-wider mb-1 block">Mode Tampilan</label>
                 <div class="relative">
-                    <select name="scope" onchange="this.form.submit()" class="w-full bg-secondary text-white text-xs font-bold py-2 pl-3 pr-8 rounded border border-gray-600 focus:outline-none focus:border-blue-500 appearance-none cursor-pointer hover:bg-gray-700 transition">
+                    <select name="scope" onchange="this.form.submit()" class="w-full bg-secondary text-white text-xs font-bold py-2 pl-3 pr-8 rounded border border-green-700 focus:outline-none focus:border-green-400 appearance-none cursor-pointer hover:bg-green-800 transition">
                         <option value="GLOBAL" <?= $activeScope == 'GLOBAL' ? 'selected' : '' ?>>🌐 Semua Jenjang</option>
                         <option value="MTS"    <?= $activeScope == 'MTS'    ? 'selected' : '' ?>>🏫 MTS (Tsanawiyah)</option>
                         <option value="MA"     <?= $activeScope == 'MA'     ? 'selected' : '' ?>>🎓 MA (Aliyah)</option>
@@ -239,7 +239,7 @@ if ($isCandidate) {
 
     <div class="p-4 border-t border-white/10 <?= $bgHeader ?>">
         <div class="flex items-center mb-4">
-            <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-xs font-bold text-white border-2 border-gray-800">
+            <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-xs font-bold text-white border-2 border-green-900">
                 <?= substr($_SESSION['user_name'] ?? 'A', 0, 1) ?>
             </div>
             <div class="ml-3 overflow-hidden">
