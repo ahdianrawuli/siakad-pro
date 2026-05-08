@@ -6,6 +6,27 @@
     <title><?= $title ?? 'PPDB Online' ?> - SIAKAD PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+    <style>
+        /* Select2 custom theme to match Tailwind */
+        .select2-container--default .select2-selection--single {
+            height: 46px; border: 1px solid #d1d5db; border-radius: 0.75rem;
+            display: flex; align-items: center; padding: 0 12px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: normal; padding: 0; color: #374151; font-size: 0.875rem;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 44px; right: 8px;
+        }
+        .select2-container--default.select2-container--focus .select2-selection--single,
+        .select2-container--default.select2-container--open .select2-selection--single {
+            border-color: #16a34a; box-shadow: 0 0 0 2px rgba(22,163,74,0.2);
+        }
+        .select2-dropdown { border: 1px solid #d1d5db; border-radius: 0.75rem; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .select2-container--default .select2-results__option--highlighted[aria-selected] { background-color: #16a34a; }
+        .select2-search--dropdown .select2-search__field { border-radius: 0.5rem; border: 1px solid #d1d5db; padding: 6px 10px; }
+    </style>
     <script>
         tailwind.config = {
             theme: {

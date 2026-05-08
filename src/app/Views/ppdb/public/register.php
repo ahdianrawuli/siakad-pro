@@ -1,22 +1,45 @@
 
 <?php require __DIR__ . '/../../layouts/public_header.php'; ?>
 
-<div class="min-h-screen bg-gray-50 flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-2xl w-full space-y-8">
-        
-        <div class="text-center">
-            <h2 class="mt-6 text-3xl font-extrabold text-gray-900">Formulir Pendaftaran</h2>
-            <p class="mt-2 text-sm text-gray-600">Isi data diri Anda dengan lengkap dan benar.</p>
-        </div>
+<!-- Hero Banner Register -->
+<div class="relative bg-gray-900 py-14 overflow-hidden">
+    <img src="https://images.unsplash.com/photo-1577896851231-70ef18881754?w=1600&q=80&auto=format&fit=crop"
+         alt="bg" class="absolute inset-0 w-full h-full object-cover opacity-25">
+    <div class="absolute inset-0 bg-gradient-to-b from-gray-900/60 to-gray-900/80"></div>
+    <div class="relative z-10 max-w-2xl mx-auto px-4 text-center">
+        <span class="inline-block bg-white/10 border border-white/20 text-white text-xs font-bold tracking-widest uppercase px-4 py-1.5 rounded-full mb-4">PPDB 2025/2026</span>
+        <h1 class="text-3xl md:text-4xl font-extrabold text-white mb-2">Formulir Pendaftaran</h1>
+        <p class="text-gray-300 text-sm">Isi data diri Anda dengan lengkap dan benar · <a href="/prosedur" class="text-green-400 hover:underline">Lihat prosedur</a></p>
+    </div>
+</div>
+
+<div class="bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-2xl mx-auto space-y-8">
 
         <?php \App\Core\Session::flash(); ?>
 
-        <!-- Tab Navigation -->
-        <div class="flex border-b border-gray-200 mt-6" id="tab-nav">
-            <button type="button" class="tab-btn w-1/4 py-3 text-center font-bold text-sm bg-white border-b-2 border-green-600 text-green-600" data-target="tab-admin">A. Administrasi</button>
-            <button type="button" class="tab-btn w-1/4 py-3 text-center font-bold text-sm bg-gray-50 border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-target="tab-calon">B. Data Calon</button>
-            <button type="button" class="tab-btn w-1/4 py-3 text-center font-bold text-sm bg-gray-50 border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-target="tab-riwayat">C. Pendidikan</button>
-            <button type="button" class="tab-btn w-1/4 py-3 text-center font-bold text-sm bg-gray-50 border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-target="tab-ortu">D. Orang Tua</button>
+        <!-- Stepper Navigation -->
+        <div class="flex items-center justify-between" id="tab-nav">
+            <?php
+            $steps = [
+                ['id' => 'tab-admin',   'label' => 'Administrasi', 'icon' => 'fa-id-card'],
+                ['id' => 'tab-calon',   'label' => 'Data Calon',   'icon' => 'fa-user'],
+                ['id' => 'tab-riwayat', 'label' => 'Pendidikan',   'icon' => 'fa-school'],
+                ['id' => 'tab-ortu',    'label' => 'Orang Tua',    'icon' => 'fa-people-roof'],
+            ];
+            foreach ($steps as $i => $step):
+            ?>
+            <button type="button" class="tab-btn flex-1 flex flex-col items-center gap-1.5 py-3 group <?= $i === 0 ? 'active-step' : '' ?>" data-target="<?= $step['id'] ?>">
+                <div class="step-circle w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all
+                    <?= $i === 0 ? 'bg-green-600 border-green-600 text-white' : 'bg-white border-gray-300 text-gray-400 group-hover:border-green-400' ?>">
+                    <i class="fa-solid <?= $step['icon'] ?>"></i>
+                </div>
+                <span class="text-xs font-bold hidden sm:block <?= $i === 0 ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-600' ?> transition-colors step-label"><?= $step['label'] ?></span>
+            </button>
+            <?php if ($i < count($steps) - 1): ?>
+            <div class="step-line flex-1 h-0.5 bg-gray-200 mb-5 max-w-[60px]"></div>
+            <?php endif; ?>
+            <?php endforeach; ?>
         </div>
 
         <form class="mt-6 space-y-6" action="/register/process" method="POST" id="register-form">
@@ -24,8 +47,17 @@
 
             <!-- Tab A: Administrasi -->
             <div id="tab-admin" class="tab-content block">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
-                    <h3 class="text-lg font-bold text-gray-800 mb-4">A. Administrasi</h3>
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-green-600 to-green-500 px-6 py-4 flex items-center gap-3">
+                        <div class="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center">
+                            <i class="fa-solid fa-id-card text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-bold text-base">A. Administrasi</h3>
+                            <p class="text-green-100 text-xs">Pilih unit pendidikan dan buat akun</p>
+                        </div>
+                    </div>
+                    <div class="p-6 space-y-4">
 
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Unit Pendidikan</label>
@@ -58,24 +90,33 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Password</label>
-                            <input type="password" name="password" required class="block w-full px-3 py-3 border border-gray-300 rounded-lg sm:text-sm focus:ring-green-500 focus:border-green-500">
+                            <input type="password" name="password" required class="block w-full px-3 py-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Ulangi Password</label>
-                            <input type="password" name="password_confirm" required class="block w-full px-3 py-3 border border-gray-300 rounded-lg sm:text-sm focus:ring-green-500 focus:border-green-500">
+                            <input type="password" name="password_confirm" required class="block w-full px-3 py-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none">
                         </div>
                     </div>
                 </div>
+                </div>
                 <div class="flex justify-end mt-4">
-                    <button type="button" class="next-btn px-6 py-2 bg-green-600 text-white rounded-lg font-bold" data-target="tab-calon">Selanjutnya</button>
+                    <button type="button" class="next-btn inline-flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition shadow" data-target="tab-calon">Selanjutnya <i class="fa-solid fa-arrow-right text-sm"></i></button>
                 </div>
             </div>
 
             <!-- Tab B: Data Calon Santri -->
             <div id="tab-calon" class="tab-content hidden">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
-                    <h3 class="text-lg font-bold text-gray-800 mb-4">B. Data Calon Santri</h3>
-
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-4 flex items-center gap-3">
+                        <div class="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center">
+                            <i class="fa-solid fa-user text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-bold text-base">B. Data Calon Santri</h3>
+                            <p class="text-blue-100 text-xs">Identitas dan alamat calon santri</p>
+                        </div>
+                    </div>
+                    <div class="p-6 space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="md:col-span-2">
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nama Lengkap</label>
@@ -102,23 +143,35 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Provinsi</label>
-                            <input type="text" name="province" required class="block w-full px-3 py-3 border border-gray-300 rounded-lg sm:text-sm focus:ring-green-500 focus:border-green-500">
+                            <select id="sel_province" class="wilayah-select block w-full" required>
+                                <option value="">-- Pilih Provinsi --</option>
+                            </select>
+                            <input type="hidden" name="province" id="inp_province">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Kabupaten/Kota</label>
-                            <input type="text" name="city" required class="block w-full px-3 py-3 border border-gray-300 rounded-lg sm:text-sm focus:ring-green-500 focus:border-green-500">
+                            <select id="sel_city" class="wilayah-select block w-full" required disabled>
+                                <option value="">-- Pilih Provinsi Dulu --</option>
+                            </select>
+                            <input type="hidden" name="city" id="inp_city">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Kecamatan</label>
-                            <input type="text" name="district" required class="block w-full px-3 py-3 border border-gray-300 rounded-lg sm:text-sm focus:ring-green-500 focus:border-green-500">
+                            <select id="sel_district" class="wilayah-select block w-full" required disabled>
+                                <option value="">-- Pilih Kab/Kota Dulu --</option>
+                            </select>
+                            <input type="hidden" name="district" id="inp_district">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Kelurahan</label>
-                            <input type="text" name="village" required class="block w-full px-3 py-3 border border-gray-300 rounded-lg sm:text-sm focus:ring-green-500 focus:border-green-500">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Kelurahan/Desa</label>
+                            <select id="sel_village" class="wilayah-select block w-full" required disabled>
+                                <option value="">-- Pilih Kecamatan Dulu --</option>
+                            </select>
+                            <input type="hidden" name="village" id="inp_village">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Kode Pos</label>
-                            <input type="text" name="postal_code" required class="block w-full px-3 py-3 border border-gray-300 rounded-lg sm:text-sm focus:ring-green-500 focus:border-green-500">
+                            <input type="text" name="postal_code" id="inp_postal_code" required class="block w-full px-3 py-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none" placeholder="Contoh: 26181">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Anak Ke-</label>
@@ -167,16 +220,26 @@
 
                     </div>
                 </div>
+                </div>
                 <div class="flex justify-between mt-4">
-                    <button type="button" class="prev-btn px-6 py-2 bg-gray-500 text-white rounded-lg font-bold" data-target="tab-admin">Kembali</button>
-                    <button type="button" class="next-btn px-6 py-2 bg-green-600 text-white rounded-lg font-bold" data-target="tab-riwayat">Selanjutnya</button>
+                    <button type="button" class="prev-btn inline-flex items-center gap-2 px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition" data-target="tab-admin"><i class="fa-solid fa-arrow-left text-sm"></i> Kembali</button>
+                    <button type="button" class="next-btn inline-flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition shadow" data-target="tab-riwayat">Selanjutnya <i class="fa-solid fa-arrow-right text-sm"></i></button>
                 </div>
             </div>
 
             <!-- Tab C: Riwayat Pendidikan -->
             <div id="tab-riwayat" class="tab-content hidden">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
-                    <h3 class="text-lg font-bold text-gray-800 mb-4">C. Riwayat Pendidikan</h3>
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-purple-600 to-purple-500 px-6 py-4 flex items-center gap-3">
+                        <div class="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center">
+                            <i class="fa-solid fa-school text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-bold text-base">C. Riwayat Pendidikan</h3>
+                            <p class="text-purple-100 text-xs">Data sekolah asal dan nomor identitas</p>
+                        </div>
+                    </div>
+                    <div class="p-6 space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="md:col-span-2">
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Sekolah Asal</label>
@@ -201,16 +264,26 @@
                         <input type="hidden" name="school_address" value="-">
                     </div>
                 </div>
+                </div>
                 <div class="flex justify-between mt-4">
-                    <button type="button" class="prev-btn px-6 py-2 bg-gray-500 text-white rounded-lg font-bold" data-target="tab-calon">Kembali</button>
-                    <button type="button" class="next-btn px-6 py-2 bg-green-600 text-white rounded-lg font-bold" data-target="tab-ortu">Selanjutnya</button>
+                    <button type="button" class="prev-btn inline-flex items-center gap-2 px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition" data-target="tab-calon"><i class="fa-solid fa-arrow-left text-sm"></i> Kembali</button>
+                    <button type="button" class="next-btn inline-flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition shadow" data-target="tab-ortu">Selanjutnya <i class="fa-solid fa-arrow-right text-sm"></i></button>
                 </div>
             </div>
 
             <!-- Tab D: Orang Tua -->
             <div id="tab-ortu" class="tab-content hidden">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
-                    <h3 class="text-lg font-bold text-gray-800 mb-4">D. Data Pribadi OrangTua / Wali</h3>
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-orange-500 to-orange-400 px-6 py-4 flex items-center gap-3">
+                        <div class="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center">
+                            <i class="fa-solid fa-people-roof text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-bold text-base">D. Data Orang Tua / Wali</h3>
+                            <p class="text-orange-100 text-xs">Informasi orang tua atau wali santri</p>
+                        </div>
+                    </div>
+                    <div class="p-6 space-y-4">
 
                     <div class="mb-4">
                         <label class="block text-sm font-bold text-gray-700 mb-2">Pilih yang diisi:</label>
@@ -458,10 +531,11 @@
                     </div>
 
                 </div>
+                </div>
                 <div class="flex justify-between mt-4">
-                    <button type="button" class="prev-btn px-6 py-2 bg-gray-500 text-white rounded-lg font-bold" data-target="tab-riwayat">Kembali</button>
-                    <button type="button" id="btn-final-submit" class="px-8 py-2 bg-green-700 text-white font-bold rounded-lg hover:bg-green-800 shadow-lg transition">
-                        <i class="fa-solid fa-paper-plane mr-2"></i> DAFTAR SEKARANG
+                    <button type="button" class="prev-btn inline-flex items-center gap-2 px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition" data-target="tab-riwayat"><i class="fa-solid fa-arrow-left text-sm"></i> Kembali</button>
+                    <button type="button" id="btn-final-submit" class="inline-flex items-center gap-2 px-8 py-2.5 bg-green-700 text-white font-bold rounded-xl hover:bg-green-800 shadow-lg transition">
+                        <i class="fa-solid fa-paper-plane"></i> DAFTAR SEKARANG
                     </button>
                 </div>
             </div>
@@ -531,36 +605,84 @@
             const tabs = ['tab-admin', 'tab-calon', 'tab-riwayat', 'tab-ortu'];
             const buttons = document.querySelectorAll('.tab-btn');
             const contents = document.querySelectorAll('.tab-content');
+            const stepColors = ['green', 'blue', 'purple', 'orange'];
+            const unlockedTabs = new Set(['tab-admin']); // only first tab unlocked initially
 
-            function switchTab(targetId) {
-                contents.forEach(c => {
-                    if(c.id === targetId) {
-                        c.classList.remove('hidden');
-                        c.classList.add('block');
-                    } else {
-                        c.classList.add('hidden');
-                        c.classList.remove('block');
-                    }
-                });
+            function updateStepperUI(activeId) {
+                buttons.forEach((b, i) => {
+                    const circle = b.querySelector('.step-circle');
+                    const label = b.querySelector('.step-label');
+                    const isActive = b.dataset.target === activeId;
+                    const isUnlocked = unlockedTabs.has(b.dataset.target);
+                    const color = stepColors[i] || 'green';
 
-                buttons.forEach(b => {
-                    if(b.dataset.target === targetId) {
-                        b.classList.add('border-green-600', 'text-green-600', 'bg-white');
-                        b.classList.remove('border-transparent', 'text-gray-500', 'bg-gray-50');
+                    if (isActive) {
+                        circle.className = `step-circle w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all bg-${color}-600 border-${color}-600 text-white`;
+                        circle.innerHTML = `<i class="fa-solid ${['fa-id-card','fa-user','fa-school','fa-people-roof'][i]}"></i>`;
+                        if (label) label.className = `text-xs font-bold hidden sm:block text-${color}-600 transition-colors step-label`;
+                        b.style.cursor = 'default';
+                    } else if (isUnlocked) {
+                        circle.className = `step-circle w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all bg-${color}-100 border-${color}-400 text-${color}-600`;
+                        circle.innerHTML = `<i class="fa-solid fa-check text-sm"></i>`;
+                        if (label) label.className = `text-xs font-bold hidden sm:block text-${color}-500 transition-colors step-label`;
+                        b.style.cursor = 'pointer';
                     } else {
-                        b.classList.remove('border-green-600', 'text-green-600', 'bg-white');
-                        b.classList.add('border-transparent', 'text-gray-500', 'bg-gray-50');
+                        circle.className = 'step-circle w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all bg-white border-gray-200 text-gray-300';
+                        circle.innerHTML = `<i class="fa-solid fa-lock text-xs"></i>`;
+                        if (label) label.className = 'text-xs font-bold hidden sm:block text-gray-300 transition-colors step-label';
+                        b.style.cursor = 'not-allowed';
                     }
                 });
             }
 
+            function switchTab(targetId) {
+                contents.forEach(c => {
+                    c.classList.toggle('hidden', c.id !== targetId);
+                    c.classList.toggle('block', c.id === targetId);
+                });
+                updateStepperUI(targetId);
+            }
+
+            // Validate all required fields in a tab content div
+            function validateTab(tabId) {
+                const tabEl = document.getElementById(tabId);
+                const fields = tabEl.querySelectorAll('input[required], select[required], textarea[required]');
+                for (const f of fields) {
+                    if (!f.checkValidity()) {
+                        f.reportValidity();
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            // Stepper click — only if unlocked
             buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (unlockedTabs.has(btn.dataset.target)) {
+                        switchTab(btn.dataset.target);
+                    }
+                });
+            });
+
+            // Next button — validate current tab first, then unlock next
+            document.querySelectorAll('.next-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const currentTab = document.querySelector('.tab-content.block, .tab-content:not(.hidden)').id;
+                    if (validateTab(currentTab)) {
+                        unlockedTabs.add(btn.dataset.target);
+                        switchTab(btn.dataset.target);
+                    }
+                });
+            });
+
+            // Prev button — always allowed
+            document.querySelectorAll('.prev-btn').forEach(btn => {
                 btn.addEventListener('click', () => switchTab(btn.dataset.target));
             });
 
-            document.querySelectorAll('.next-btn, .prev-btn').forEach(btn => {
-                btn.addEventListener('click', () => switchTab(btn.dataset.target));
-            });
+            // Init stepper UI
+            updateStepperUI('tab-admin');
 
             // Jalur Logic
             function updateJalur() {
@@ -798,5 +920,100 @@
             initUppercaseInputs();
 
         </script>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        <script>
+            // Init Select2 on all selects (re-init after tab switch too)
+            function initSelect2() {
+                $('select').each(function() {
+                    if (!$(this).hasClass('select2-hidden-accessible')) {
+                        $(this).select2({
+                            width: '100%',
+                            minimumResultsForSearch: $(this).find('option').length > 6 ? 0 : Infinity
+                        });
+                        // Sync Select2 change back to native change event for existing JS logic
+                        $(this).on('select2:select', function() {
+                            this.dispatchEvent(new Event('change'));
+                        });
+                    }
+                });
+            }
+            initSelect2();
+
+            // ── Wilayah Bertingkat ──────────────────────────────────────────
+            const WILAYAH_BASE = 'https://ibnux.github.io/data-indonesia';
+
+            function initWilayahSelect2(selector, placeholder) {
+                return $(selector).select2({ width: '100%', placeholder });
+            }
+
+            function populateSelect(selector, data, placeholder, enable) {
+                const $sel = $(selector);
+                $sel.empty().append(`<option value="">${placeholder}</option>`);
+                data.forEach(d => $sel.append(new Option(d.nama, d.id)));
+                $sel.prop('disabled', !enable);
+                // destroy & re-init select2
+                if ($sel.hasClass('select2-hidden-accessible')) $sel.select2('destroy');
+                $sel.select2({ width: '100%', placeholder });
+            }
+
+            function resetSelect(selector, placeholder) {
+                const $sel = $(selector);
+                $sel.empty().append(`<option value="">${placeholder}</option>`).prop('disabled', true);
+                if ($sel.hasClass('select2-hidden-accessible')) $sel.select2('destroy');
+                $sel.select2({ width: '100%', placeholder });
+            }
+
+            // Load provinsi on page load
+            $.getJSON(`${WILAYAH_BASE}/provinsi.json`, function(data) {
+                populateSelect('#sel_province', data, '-- Pilih Provinsi --', true);
+            });
+
+            $('#sel_province').on('change', function() {
+                const id = $(this).val();
+                const nama = $(this).find('option:selected').text();
+                $('#inp_province').val(id ? nama.toUpperCase() : '');
+                resetSelect('#sel_city', '-- Pilih Kab/Kota --');
+                resetSelect('#sel_district', '-- Pilih Kecamatan Dulu --');
+                resetSelect('#sel_village', '-- Pilih Kecamatan Dulu --');
+                $('#inp_city, #inp_district, #inp_village').val('');
+                if (!id) return;
+                $.getJSON(`${WILAYAH_BASE}/kabupaten/${id}.json`, function(data) {
+                    populateSelect('#sel_city', data, '-- Pilih Kab/Kota --', true);
+                });
+            });
+
+            $('#sel_city').on('change', function() {
+                const id = $(this).val();
+                const nama = $(this).find('option:selected').text();
+                $('#inp_city').val(id ? nama.toUpperCase() : '');
+                resetSelect('#sel_district', '-- Pilih Kecamatan --');
+                resetSelect('#sel_village', '-- Pilih Kelurahan Dulu --');
+                $('#inp_district, #inp_village').val('');
+                if (!id) return;
+                $.getJSON(`${WILAYAH_BASE}/kecamatan/${id}.json`, function(data) {
+                    populateSelect('#sel_district', data, '-- Pilih Kecamatan --', true);
+                });
+            });
+
+            $('#sel_district').on('change', function() {
+                const id = $(this).val();
+                const nama = $(this).find('option:selected').text();
+                $('#inp_district').val(id ? nama.toUpperCase() : '');
+                resetSelect('#sel_village', '-- Pilih Kelurahan/Desa --');
+                $('#inp_village').val('');
+                if (!id) return;
+                $.getJSON(`${WILAYAH_BASE}/kelurahan/${id}.json`, function(data) {
+                    populateSelect('#sel_village', data, '-- Pilih Kelurahan/Desa --', true);
+                });
+            });
+
+            $('#sel_village').on('change', function() {
+                const nama = $(this).find('option:selected').text();
+                $('#inp_village').val($(this).val() ? nama.toUpperCase() : '');
+            });
+            // ────────────────────────────────────────────────────────────────
+        </script>
+
     </div>
 </div>

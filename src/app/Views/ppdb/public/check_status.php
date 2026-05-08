@@ -31,13 +31,13 @@
             <div class="flex justify-between items-center h-20">
                 <!-- Logo -->
                 <div class="flex items-center space-x-3 cursor-pointer">
-                    <div class="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center text-santri">
-                        <i class="fa-solid fa-mosque text-2xl"></i>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-santri text-2xl">
+                        <i class="fa-solid fa-mosque"></i>
                     </div>
-                    <div>
-                        <h1 class="font-bold text-gray-900 leading-tight">PONDOK PESANTREN</h1>
-                        <h2 class="font-extrabold text-santri leading-tight tracking-wide">SUMATERA THAWALIB PARABEK</h2>
-                        <p class="text-xs text-gray-500">Bukittinggi Agam</p>
+                    <div class="hidden sm:block leading-tight">
+                        <div class="font-bold text-sm tracking-wider text-gray-900">PONDOK PESANTREN</div>
+                        <div class="font-extrabold text-lg text-santri">SUMATERA THAWALIB PARABEK</div>
+                        <div class="text-xs text-gray-500">Bukittinggi Agam</div>
                     </div>
                 </div>
 
@@ -68,24 +68,29 @@
     <main class="flex-grow pt-20">
 
         <!-- 2. PAGE TITLE -->
-        <div class="pt-16 pb-12 text-center bg-gray-50 border-b border-gray-200">
-            <h2 class="text-4xl font-extrabold text-gray-900 mb-4">Cek Status Daftar</h2>
-            <div class="flex items-center justify-center space-x-2 text-sm text-gray-500 font-medium">
-                <a href="/" class="hover:text-santri">Home</a>
-                <span>/</span>
-                <span class="text-gray-900">Status</span>
+        <div class="relative bg-gray-900 pt-20 pb-16 overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=1600&q=80&auto=format&fit=crop" alt="bg" class="absolute inset-0 w-full h-full object-cover opacity-25">
+            <div class="absolute inset-0 bg-gradient-to-b from-gray-900/50 to-gray-900/80"></div>
+            <div class="relative z-10 text-center px-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-white/10 border border-white/20 rounded-full mb-5">
+                    <i class="fa-solid fa-user-magnifying-glass text-white text-2xl"></i>
+                </div>
+                <h2 class="text-4xl font-extrabold text-white mb-3">Cek Status Daftar</h2>
+                <p class="text-gray-300 mb-4">Pantau perkembangan pendaftaran Anda secara real-time</p>
+                <div class="flex items-center justify-center space-x-2 text-sm text-gray-400 font-medium">
+                    <a href="/" class="hover:text-white transition">Home</a>
+                    <span>/</span>
+                    <span class="text-white">Status</span>
+                </div>
             </div>
         </div>
 
         <!-- 3. CARD FORM STATUS -->
-        <div class="py-16 px-4 sm:px-6 lg:px-8">
+        <div class="py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
             <div class="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
                 <div class="p-8 sm:p-12 text-center">
-                    <div class="w-16 h-16 bg-green-50 text-santri rounded-full flex items-center justify-center text-3xl mx-auto mb-6">
-                        <i class="fa-solid fa-user-magnifying-glass"></i>
-                    </div>
                     <h3 class="text-2xl font-extrabold text-gray-900 mb-3">Periksa Status Anda</h3>
-                    <p class="text-gray-500 mb-10 text-lg">Masukkan nomor registrasi atau NISN Anda di bawah ini.</p>
+                    <p class="text-gray-500 mb-8 text-base">Masukkan nomor registrasi atau NISN Anda di bawah ini.</p>
 
                     <form action="/cek-status" method="POST" class="flex flex-col sm:flex-row gap-4 justify-center relative">
                         <div class="relative flex-grow">

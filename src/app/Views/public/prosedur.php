@@ -62,11 +62,15 @@
     </header>
 
     <!-- 2. PAGE TITLE -->
-    <section class="bg-white py-12 border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-4xl font-extrabold text-gray-900 mb-4">Prosedur</h1>
-            <p class="text-sm text-gray-500 font-medium">
-                <a href="/" class="hover:text-santri">Home</a> <span class="mx-2">/</span> <span class="text-gray-900">Prosedur</span>
+    <section class="relative bg-gray-900 py-20 overflow-hidden">
+        <img src="https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1600&q=80&auto=format&fit=crop" alt="bg" class="absolute inset-0 w-full h-full object-cover opacity-30">
+        <div class="absolute inset-0 bg-gradient-to-b from-gray-900/60 to-gray-900/80"></div>
+        <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <span class="inline-block bg-white/10 border border-white/20 text-white text-xs font-bold tracking-widest uppercase px-4 py-1.5 rounded-full mb-4">PPDB 2025/2026</span>
+            <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-4">Prosedur Pendaftaran</h1>
+            <p class="text-gray-300 text-lg mb-4">Panduan lengkap penerimaan santri baru Pondok Pesantren Sumatera Thawalib Parabek</p>
+            <p class="text-sm text-gray-400 font-medium">
+                <a href="/" class="hover:text-white transition">Home</a> <span class="mx-2">/</span> <span class="text-white">Prosedur</span>
             </p>
         </div>
     </section>

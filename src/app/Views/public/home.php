@@ -42,7 +42,7 @@
                     <nav class="flex space-x-6 text-sm font-bold text-gray-600">
                         <a href="#" class="text-santri hover:text-santri-dark transition">HOME</a>
                         <a href="/prosedur" class="hover:text-santri transition">PROSEDUR</a>
-                        <a href="#" class="hover:text-santri transition">STATUS DAFTAR</a>
+                        <a href="/cek-status" class="hover:text-santri transition">STATUS DAFTAR</a>
                     </nav>
                     <div class="flex items-center space-x-3">
                         <a href="/login" class="px-5 py-2 border-2 border-gray-200 text-gray-600 font-bold rounded-lg hover:bg-gray-50 transition">MASUK</a>
@@ -76,41 +76,97 @@
     </div>
 
     <!-- 2. HERO SECTION -->
-    <section class="bg-gray-50 py-16 md:py-24 relative overflow-hidden">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-                <div>
-                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight mb-4">
-                        Selamat datang <br>
-                        <span class="text-santri">calon santri!</span>
-                    </h1>
-                    <h2 class="text-xl md:text-2xl font-bold text-gray-700 mb-6">
-                        Pondok Pesantren Sumatera Thawalib Parabek
-                    </h2>
-                    <p class="text-lg text-gray-600 mb-8 leading-relaxed">
-                        Kini hadir sistem pendaftaran online yang mudah dan cepat, dapat diakses dari mana saja. Inilah langkah awal menuju Generasi Unggul! Klik 'Daftar Sekarang' untuk bergabung!
-                    </p>
-                    <div class="flex flex-col sm:flex-row gap-4">
-                        <a href="/register" class="px-8 py-4 bg-santri text-white font-bold rounded-xl hover:bg-santri-dark transition shadow-xl shadow-green-200 text-center text-lg">
-                            Daftar Sekarang <i class="fa-solid fa-arrow-right ml-2"></i>
-                        </a>
-                        <a href="#program" class="px-8 py-4 bg-white border-2 border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition text-center text-lg">
-                            Lihat Program
-                        </a>
-                    </div>
+    <section class="relative overflow-hidden bg-gray-900 min-h-[600px] md:min-h-[680px] flex items-center">
+        <!-- Slideshow Background -->
+        <div id="hero-slideshow" class="absolute inset-0">
+            <div class="slide absolute inset-0 transition-opacity duration-1000 opacity-100">
+                <img src="https://images.unsplash.com/photo-1564981797816-1043664bf78d?w=1600&q=80&auto=format&fit=crop" alt="Pesantren" class="w-full h-full object-cover">
+            </div>
+            <div class="slide absolute inset-0 transition-opacity duration-1000 opacity-0">
+                <img src="https://images.unsplash.com/photo-1577896851231-70ef18881754?w=1600&q=80&auto=format&fit=crop" alt="Pendidikan Islam" class="w-full h-full object-cover">
+            </div>
+            <div class="slide absolute inset-0 transition-opacity duration-1000 opacity-0">
+                <img src="https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1600&q=80&auto=format&fit=crop" alt="Belajar" class="w-full h-full object-cover">
+            </div>
+            <div class="slide absolute inset-0 transition-opacity duration-1000 opacity-0">
+                <img src="https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=1600&q=80&auto=format&fit=crop" alt="Kampus" class="w-full h-full object-cover">
+            </div>
+        </div>
+        <!-- Overlay gradient -->
+        <div class="absolute inset-0 bg-gradient-to-r from-gray-900/90 via-gray-900/60 to-transparent"></div>
+
+        <!-- Slideshow dots -->
+        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+            <button class="slide-dot w-3 h-3 rounded-full bg-white transition-all" data-index="0"></button>
+            <button class="slide-dot w-3 h-3 rounded-full bg-white/40 transition-all" data-index="1"></button>
+            <button class="slide-dot w-3 h-3 rounded-full bg-white/40 transition-all" data-index="2"></button>
+            <button class="slide-dot w-3 h-3 rounded-full bg-white/40 transition-all" data-index="3"></button>
+        </div>
+
+        <!-- Content -->
+        <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
+            <div class="max-w-2xl">
+                <span class="inline-block bg-santri/90 text-white text-xs font-bold tracking-widest uppercase px-4 py-1.5 rounded-full mb-6">
+                    Penerimaan Santri Baru 2025/2026
+                </span>
+                <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-5">
+                    Selamat datang <br>
+                    <span class="text-green-400">calon santri!</span>
+                </h1>
+                <h2 class="text-lg md:text-xl font-semibold text-gray-200 mb-6">
+                    Pondok Pesantren Sumatera Thawalib Parabek
+                </h2>
+                <p class="text-base md:text-lg text-gray-300 mb-10 leading-relaxed max-w-xl">
+                    Kini hadir sistem pendaftaran online yang mudah dan cepat, dapat diakses dari mana saja. Inilah langkah awal menuju Generasi Unggul!
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="/register" class="px-8 py-4 bg-santri text-white font-bold rounded-xl hover:bg-santri-dark transition shadow-xl text-center text-lg">
+                        Daftar Sekarang <i class="fa-solid fa-arrow-right ml-2"></i>
+                    </a>
+                    <a href="#program" class="px-8 py-4 bg-white/10 backdrop-blur border border-white/30 text-white font-bold rounded-xl hover:bg-white/20 transition text-center text-lg">
+                        Lihat Program
+                    </a>
                 </div>
-                <div class="relative hidden md:block">
-                    <!-- Placeholder untuk Ilustrasi -->
-                    <div class="w-full h-[500px] bg-green-100 rounded-3xl relative overflow-hidden border-8 border-white shadow-2xl flex items-center justify-center">
-                        <i class="fa-solid fa-users text-9xl text-green-200"></i>
-                        <!-- Mockup HP -->
-                        <div class="absolute -bottom-10 -left-10 w-48 h-80 bg-white rounded-3xl border-8 border-gray-800 shadow-2xl flex items-center justify-center">
-                            <i class="fa-solid fa-mobile-screen text-5xl text-gray-300"></i>
-                        </div>
-                    </div>
-                    <!-- Dekorasi -->
-                    <div class="absolute top-10 -right-10 w-24 h-24 bg-yellow-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-                    <div class="absolute -bottom-10 right-20 w-32 h-32 bg-green-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        (function() {
+            const slides = document.querySelectorAll('#hero-slideshow .slide');
+            const dots = document.querySelectorAll('.slide-dot');
+            let current = 0;
+            function goTo(n) {
+                slides[current].classList.replace('opacity-100', 'opacity-0');
+                dots[current].classList.replace('bg-white', 'bg-white/40');
+                current = n;
+                slides[current].classList.replace('opacity-0', 'opacity-100');
+                dots[current].classList.replace('bg-white/40', 'bg-white');
+            }
+            dots.forEach(d => d.addEventListener('click', () => goTo(+d.dataset.index)));
+            setInterval(() => goTo((current + 1) % slides.length), 5000);
+        })();
+    </script>
+
+    <!-- STATS BAR -->
+    <section class="bg-white border-b border-gray-100 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-100">
+                <div class="py-6 px-8 text-center">
+                    <div class="text-3xl font-extrabold text-santri">114+</div>
+                    <div class="text-sm text-gray-500 font-medium mt-1">Tahun Berdiri</div>
+                </div>
+                <div class="py-6 px-8 text-center">
+                    <div class="text-3xl font-extrabold text-santri">3.000+</div>
+                    <div class="text-sm text-gray-500 font-medium mt-1">Santri Aktif</div>
+                </div>
+                <div class="py-6 px-8 text-center">
+                    <div class="text-3xl font-extrabold text-santri">4</div>
+                    <div class="text-sm text-gray-500 font-medium mt-1">Jenjang Pendidikan</div>
+                </div>
+                <div class="py-6 px-8 text-center">
+                    <div class="text-3xl font-extrabold text-santri">A</div>
+                    <div class="text-sm text-gray-500 font-medium mt-1">Akreditasi Unggul</div>
                 </div>
             </div>
         </div>
@@ -145,8 +201,11 @@
                     </div>
                 </div>
                 <div class="md:col-span-5 relative hidden md:block">
-                    <div class="aspect-square bg-gray-100 rounded-2xl overflow-hidden shadow-lg flex items-center justify-center">
-                        <i class="fa-solid fa-book-open text-9xl text-gray-300"></i>
+                    <div class="aspect-square rounded-2xl overflow-hidden shadow-xl">
+                        <img src="https://images.unsplash.com/photo-1544717305-2782549b5136?w=800&q=80&auto=format&fit=crop" alt="Santri belajar" class="w-full h-full object-cover">
+                    </div>
+                    <div class="absolute -bottom-4 -right-4 w-32 h-32 rounded-xl overflow-hidden shadow-lg border-4 border-white">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&q=80&auto=format&fit=crop" alt="Santri" class="w-full h-full object-cover">
                     </div>
                 </div>
             </div>
