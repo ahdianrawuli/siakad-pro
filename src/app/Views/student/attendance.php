@@ -2,19 +2,31 @@
 <?php require __DIR__ . '/../layouts/student_sidebar.php'; ?>
 
 <main class="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-8 pb-24">
-    <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div>
-            <h1 class="text-xl md:text-2xl font-bold text-gray-800">Rekap Absensi</h1>
-            <p class="text-sm text-gray-500"><?= htmlspecialchars($student['full_name']) ?> — Kelas <?= htmlspecialchars($student['class_name'] ?? '-') ?></p>
-        </div>
-        <form method="GET" class="flex items-center gap-2">
-            <input type="month" name="month" value="<?= htmlspecialchars($month) ?>"
-                   class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
-            <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">Tampilkan</button>
-        </form>
-    </div>
+<?php
+$pageTitle    = 'Rekap Absensi';
+$pageSubtitle = htmlspecialchars($student['full_name']) . ' — Kelas ' . htmlspecialchars($student['class_name'] ?? '-');
+$pageBadge    = 'Bulan: ' . date('F Y', strtotime($month . '-01'));
+$pageBadgeIcon = 'fa-calendar-check';
+$infoItems    = [
+    'Halaman ini menampilkan rekap kehadiran Anda per bulan.',
+    'Gunakan filter bulan untuk melihat data absensi di bulan tertentu.',
+    'H = Hadir, S = Sakit, I = Izin, A = Alpha (tanpa keterangan).',
+    'Hubungi wali kelas jika ada data yang tidak sesuai.',
+];
+require __DIR__ . '/../layouts/portal_header_card.php';
+?>
 
     <?php \App\Core\Session::flash(); ?>
+
+    <!-- Filter -->
+    <div class="portal-filter-bar">
+        <form method="GET" class="flex flex-wrap items-center gap-3">
+            <label class="text-xs font-bold text-slate-500 uppercase">Bulan</label>
+            <input type="month" name="month" value="<?= htmlspecialchars($month) ?>"
+                   class="border border-slate-200 bg-slate-50 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 outline-none">
+            <button type="submit" class="bg-green-700 text-white px-5 py-2 rounded-xl text-sm font-bold hover:bg-green-800 transition">Tampilkan</button>
+        </form>
+    </div>
 
     <!-- Rekap Kartu -->
     <div class="grid grid-cols-4 gap-3 mb-6">
@@ -27,9 +39,9 @@
         ];
         foreach ($cards as $key => $c):
         ?>
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
-            <div class="text-2xl font-bold text-<?= $c['color'] ?>-600"><?= $recap[$key] ?></div>
-            <div class="text-xs text-gray-500 mt-1 flex items-center justify-center gap-1">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 text-center">
+            <div class="text-2xl font-extrabold text-<?= $c['color'] ?>-600"><?= $recap[$key] ?></div>
+            <div class="text-xs text-slate-500 mt-1 flex items-center justify-center gap-1">
                 <i class="fa-solid fa-<?= $c['icon'] ?> text-<?= $c['color'] ?>-400"></i>
                 <?= $c['label'] ?>
             </div>
@@ -38,35 +50,36 @@
     </div>
 
     <!-- Tabel Log -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50 text-gray-600 text-xs uppercase">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
                 <tr>
-                    <th class="px-4 py-3 text-left">Tanggal</th>
-                    <th class="px-4 py-3 text-center">Status</th>
-                    <th class="px-4 py-3 text-left">Keterangan</th>
+                    <th class="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase">Tanggal</th>
+                    <th class="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase">Status</th>
+                    <th class="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase">Keterangan</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
+            <tbody class="divide-y divide-slate-100">
                 <?php if (empty($logs)): ?>
-                <tr><td colspan="3" class="text-center py-8 text-gray-400">Tidak ada data absensi bulan ini.</td></tr>
+                <tr><td colspan="3" class="text-center py-12 text-slate-400"><i class="fa-solid fa-calendar-xmark text-3xl mb-2 block opacity-30"></i>Tidak ada data absensi bulan ini.</td></tr>
                 <?php else: ?>
                 <?php foreach ($logs as $l):
                     $statusMap = ['H'=>['Hadir','green'],'S'=>['Sakit','yellow'],'I'=>['Izin','blue'],'A'=>['Alpha','red']];
                     [$label, $color] = $statusMap[$l['status']] ?? [$l['status'], 'gray'];
                 ?>
-                <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-3 font-medium text-gray-700"><?= date('d M Y', strtotime($l['date'])) ?></td>
-                    <td class="px-4 py-3 text-center">
-                        <span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-<?= $color ?>-100 text-<?= $color ?>-700"><?= $label ?></span>
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="px-5 py-3 font-medium text-slate-700"><?= date('d M Y', strtotime($l['date'])) ?></td>
+                    <td class="px-5 py-3 text-center">
+                        <span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold bg-<?= $color ?>-100 text-<?= $color ?>-700"><?= $label ?></span>
                     </td>
-                    <td class="px-4 py-3 text-gray-500"><?= htmlspecialchars($l['notes'] ?? '-') ?></td>
+                    <td class="px-5 py-3 text-slate-500"><?= htmlspecialchars($l['notes'] ?? '-') ?></td>
                 </tr>
                 <?php endforeach; ?>
                 <?php endif; ?>
             </tbody>
         </table>
+        </div>
     </div>
 </main>
-
 <?php require __DIR__ . '/../layouts/footer.php'; ?>

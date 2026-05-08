@@ -10,7 +10,6 @@
             $menus = [
                 ['href' => '/student/dashboard',      'icon' => 'fa-gauge-high',           'label' => 'Overview'],
                 ['href' => '/student/profile',        'icon' => 'fa-address-card',         'label' => 'Data Santri'],
-                ['href' => '/student/biodata',        'icon' => 'fa-id-card',              'label' => 'Biodata Lengkap'],
                 ['href' => '/student/schedule',       'icon' => 'fa-calendar-days',        'label' => 'Jadwal Pelajaran'],
                 ['href' => '/student/attendance',     'icon' => 'fa-clipboard-check',      'label' => 'Absensi'],
                 ['href' => '/student/grades',         'icon' => 'fa-chart-bar',            'label' => 'Nilai'],

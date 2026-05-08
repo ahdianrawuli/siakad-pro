@@ -2,85 +2,92 @@
 <?php require __DIR__ . '/../layouts/student_sidebar.php'; ?>
 
 <main class="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-8 pb-24">
-    <h1 class="text-xl md:text-2xl font-bold text-gray-800 mb-6">Kelengkapan Dokumen</h1>
+<?php
+$pageTitle    = 'Kelengkapan Dokumen';
+$pageSubtitle = 'Upload dan pantau status dokumen pendaftaran Anda';
+$pageBadge    = 'Dokumen Terupload: ' . count(array_filter($documents ?? [], fn($d) => $d !== null));
+$pageBadgeIcon = 'fa-folder-open';
+$infoItems    = [
+    'Upload dokumen yang diperlukan untuk melengkapi berkas pendaftaran.',
+    'Dokumen yang diterima: JPG, PNG, atau PDF (maks. 2MB).',
+    'Status "Valid" berarti dokumen telah diverifikasi oleh admin.',
+    'Status "Verifikasi" berarti dokumen sedang dalam proses pengecekan.',
+    'Klik "Ganti" untuk mengganti dokumen yang sudah diupload.',
+];
+require __DIR__ . '/../layouts/portal_header_card.php';
+?>
+
     <?php \App\Core\Session::flash(); ?>
 
-    <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
-        <?php 
-        $requiredDocs = [
-            'KK' => ['label' => 'Kartu Keluarga', 'icon' => 'fa-users-rectangle'],
-            'AKTA' => ['label' => 'Akta Kelahiran', 'icon' => 'fa-scroll'],
-            'IJAZAH' => ['label' => 'Ijazah / SKL', 'icon' => 'fa-certificate'],
-            'FOTO' => ['label' => 'Pas Foto Warna', 'icon' => 'fa-image']
-        ];
+    <?php
+    $requiredDocs = [
+        'KK'     => ['label' => 'Kartu Keluarga',  'icon' => 'fa-users-rectangle', 'desc' => 'Scan/foto KK yang jelas'],
+        'AKTA'   => ['label' => 'Akta Kelahiran',   'icon' => 'fa-scroll',          'desc' => 'Akta kelahiran asli/fotokopi'],
+        'IJAZAH' => ['label' => 'Ijazah / SKL',     'icon' => 'fa-certificate',     'desc' => 'Ijazah atau Surat Keterangan Lulus'],
+        'FOTO'   => ['label' => 'Pas Foto Warna',   'icon' => 'fa-image',           'desc' => 'Foto terbaru latar merah/biru'],
+    ];
+    $uploaded = count(array_filter($documents ?? [], fn($d) => $d !== null));
+    $total    = count($requiredDocs);
+    $pct      = $total > 0 ? round($uploaded / $total * 100) : 0;
+    ?>
+
+    <!-- Progress bar -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-6">
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-semibold text-slate-700">Progress Kelengkapan</span>
+            <span class="text-sm font-bold text-green-700"><?= $uploaded ?>/<?= $total ?> dokumen</span>
+        </div>
+        <div class="w-full bg-slate-100 rounded-full h-2.5">
+            <div class="bg-green-600 h-2.5 rounded-full transition-all" style="width: <?= $pct ?>%"></div>
+        </div>
+        <p class="text-xs text-slate-400 mt-1"><?= $pct ?>% selesai</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <?php foreach ($requiredDocs as $code => $info):
+            $doc = $documents[$code] ?? null;
+            if ($doc) {
+                $statusColor  = ['VALID'=>'bg-green-100 text-green-700','INVALID'=>'bg-red-100 text-red-700'][$doc['status']] ?? 'bg-yellow-100 text-yellow-700';
+                $statusText   = ['VALID'=>'Valid','INVALID'=>'Ditolak'][$doc['status']] ?? 'Verifikasi';
+                $borderColor  = ['VALID'=>'border-green-300','INVALID'=>'border-red-300'][$doc['status']] ?? 'border-yellow-300';
+                $iconBg       = ['VALID'=>'bg-green-100 text-green-600','INVALID'=>'bg-red-100 text-red-500'][$doc['status']] ?? 'bg-yellow-100 text-yellow-600';
+            } else {
+                $statusColor = 'bg-slate-100 text-slate-500'; $statusText = 'Belum Ada';
+                $borderColor = 'border-slate-200'; $iconBg = 'bg-slate-100 text-slate-400';
+            }
         ?>
-
-        <?php foreach ($requiredDocs as $code => $info): ?>
-            <?php $doc = $documents[$code] ?? null; ?>
-            <?php 
-                $statusColor = 'bg-gray-100 text-gray-500';
-                $statusText = 'Belum Ada';
-                $borderColor = 'border-gray-200';
-                $iconColor = 'text-gray-300';
-
-                if($doc) {
-                    if($doc['status'] == 'VALID') {
-                        $statusColor = 'bg-green-100 text-green-700';
-                        $statusText = 'Valid';
-                        $borderColor = 'border-green-300 ring-1 ring-green-100';
-                        $iconColor = 'text-green-500';
-                    } elseif($doc['status'] == 'INVALID') {
-                        $statusColor = 'bg-red-100 text-red-700';
-                        $statusText = 'Ditolak';
-                        $borderColor = 'border-red-300';
-                        $iconColor = 'text-red-500';
-                    } else {
-                        $statusColor = 'bg-yellow-100 text-yellow-700';
-                        $statusText = 'Verifikasi';
-                        $borderColor = 'border-yellow-300';
-                        $iconColor = 'text-yellow-500';
-                    }
-                }
-            ?>
-            
-            <div class="bg-white rounded-xl shadow-sm border <?= $borderColor ?> flex flex-col h-full relative overflow-hidden transition hover:shadow-md">
-                
-                <div class="absolute top-0 right-0 p-2">
-                     <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full <?= $statusColor ?>">
-                        <?= $statusText ?>
-                     </span>
-                </div>
-
-                <div class="p-4 flex-1 flex flex-col items-center text-center mt-2">
-                    <div class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center mb-3">
-                        <i class="fa-solid <?= $info['icon'] ?> text-xl <?= $iconColor ?>"></i>
+        <div class="bg-white rounded-2xl border <?= $borderColor ?> shadow-sm flex flex-col overflow-hidden hover:shadow-md transition">
+            <div class="p-5 flex-1">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="w-11 h-11 <?= $iconBg ?> rounded-xl flex items-center justify-center text-xl">
+                        <i class="fa-solid <?= $info['icon'] ?>"></i>
                     </div>
-                    
-                    <h4 class="font-bold text-gray-800 text-sm leading-tight mb-1"><?= $info['label'] ?></h4>
-                    
-                    <?php if($doc): ?>
-                        <a href="/uploads/documents/<?= $doc['file_path'] ?>" target="_blank" class="text-xs text-blue-500 hover:text-blue-700 underline truncate max-w-[120px]">
-                            Lihat File
-                        </a>
-                    <?php else: ?>
-                        <p class="text-[10px] text-gray-400">Wajib diupload</p>
-                    <?php endif; ?>
+                    <span class="text-[10px] uppercase font-bold px-2 py-1 rounded-full <?= $statusColor ?>"><?= $statusText ?></span>
                 </div>
-                
-                <div class="p-3 border-t border-gray-100 bg-gray-50">
-                    <form action="/student/documents/store" method="POST" enctype="multipart/form-data">
-                        <?= \App\Core\Csrf::input() ?>
-                        <input type="hidden" name="doc_type" value="<?= $code ?>">
-                        <input type="file" name="doc_file" id="file_<?= $code ?>" class="hidden" onchange="this.form.submit()" accept=".jpg,.jpeg,.png,.pdf">
-                        
-                        <label for="file_<?= $code ?>" class="cursor-pointer block w-full text-center py-2 rounded-lg text-xs font-bold transition
-                            <?= $doc ? 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm' ?>">
-                            <?= $doc ? '<i class="fa-solid fa-pen mr-1"></i> Ganti' : '<i class="fa-solid fa-upload mr-1"></i> Upload' ?>
-                        </label>
-                    </form>
-                </div>
-
+                <h4 class="font-bold text-slate-800 text-sm mb-1"><?= $info['label'] ?></h4>
+                <p class="text-xs text-slate-400"><?= $info['desc'] ?></p>
+                <?php if ($doc): ?>
+                <a href="/uploads/documents/<?= $doc['file_path'] ?>" target="_blank"
+                   class="inline-flex items-center gap-1 mt-3 text-xs text-green-700 font-semibold hover:underline">
+                    <i class="fa-solid fa-eye"></i> Lihat File
+                </a>
+                <?php endif; ?>
             </div>
+            <div class="px-4 pb-4">
+                <form action="/student/documents/store" method="POST" enctype="multipart/form-data">
+                    <?= \App\Core\Csrf::input() ?>
+                    <input type="hidden" name="doc_type" value="<?= $code ?>">
+                    <input type="file" name="doc_file" id="file_<?= $code ?>" class="hidden"
+                           onchange="this.form.submit()" accept=".jpg,.jpeg,.png,.pdf">
+                    <label for="file_<?= $code ?>"
+                           class="cursor-pointer flex items-center justify-center gap-2 w-full py-2 rounded-xl text-xs font-bold transition
+                           <?= $doc ? 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200' : 'bg-green-700 text-white hover:bg-green-800' ?>">
+                        <i class="fa-solid <?= $doc ? 'fa-pen' : 'fa-upload' ?>"></i>
+                        <?= $doc ? 'Ganti File' : 'Upload' ?>
+                    </label>
+                </form>
+            </div>
+        </div>
         <?php endforeach; ?>
     </div>
 </main>

@@ -2,198 +2,228 @@
 <?php require __DIR__ . '/../layouts/student_sidebar.php'; ?>
 
 <main class="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-8 pb-24">
+<?php
+$name = $student['full_name'] ?? $student['name'] ?? ($candidate['full_name'] ?? 'Santri');
+$pageTitle    = 'Data Santri';
+$pageSubtitle = 'Biodata lengkap dan informasi pribadi';
+$pageBadgeIcon = 'fa-address-card';
+$infoItems    = [
+    'Halaman ini menampilkan biodata lengkap Anda.',
+    'Data ditampilkan sesuai yang tercatat di sistem pesantren.',
+    'Jika ada data yang tidak sesuai, hubungi admin atau wali kelas.',
+];
+require __DIR__ . '/../layouts/portal_header_card.php';
+?>
 
-    <?php if (isset($is_candidate) && $is_candidate === true): ?>
-        
-        <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div>
-                <h1 class="text-xl md:text-2xl font-bold text-gray-800">Data Diri Santri</h1>
-                <p class="text-sm text-gray-600">Biodata lengkap pendaftaran.</p>
-            </div>
-            <div class="self-start md:self-auto">
-                <span class="px-3 py-1.5 rounded-full text-xs md:text-sm font-bold border 
-                    <?= ($candidate['registration_status'] ?? '') == 'APPROVED' 
-                        ? 'bg-green-100 text-green-700 border-green-200' 
-                        : 'bg-yellow-100 text-yellow-700 border-yellow-200' ?>">
-                    <i class="fa-solid fa-circle-info mr-1"></i>
-                    Status: <?= $candidate['registration_status'] ?? 'PENDING' ?>
-                </span>
-            </div>
-        </div>
+    <?php \App\Core\Session::flash(); ?>
 
-        <?php \App\Core\Session::flash(); ?>
+    <?php if (isset($is_candidate) && $is_candidate): ?>
+    <!-- ── MODE CALON SANTRI ── -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            <div class="md:col-span-1 space-y-6">
-                
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-green-700 to-green-600"></div>
-                    
-                    <div class="relative z-10 text-center mt-8">
-                        <div class="w-28 h-28 mx-auto bg-white rounded-full flex items-center justify-center p-1 shadow-lg mb-3">
-                            <div class="w-full h-full bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
-                                <i class="fa-solid fa-user text-5xl text-gray-300"></i>
-                            </div>
-                        </div>
-                        
-                        <h2 class="text-lg font-bold text-gray-800"><?= htmlspecialchars($candidate['full_name'] ?? 'Tanpa Nama') ?></h2>
-                        <p class="text-xs text-gray-500 font-mono mt-1">
-                            NISN: <?= htmlspecialchars($candidate['nisn'] ?? '-') ?>
-                        </p>
-
-                        <div class="mt-4 flex justify-center">
-                            <span class="inline-flex items-center px-3 py-1 rounded-lg bg-green-50 text-green-700 text-xs font-bold border border-green-100">
-                                <i class="fa-solid fa-road mr-2"></i>
-                                <?= htmlspecialchars($candidate['track_name'] ?? '-') ?>
-                            </span>
-                        </div>
+        <!-- Sidebar Profil -->
+        <div class="space-y-5">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="h-20 bg-gradient-to-r from-green-700 to-emerald-600"></div>
+                <div class="px-5 pb-5 -mt-10 text-center">
+                    <div class="w-20 h-20 bg-white rounded-full border-4 border-white shadow-md flex items-center justify-center mx-auto mb-3">
+                        <span class="text-3xl font-extrabold text-green-700"><?= strtoupper(substr($name, 0, 1)) ?></span>
                     </div>
+                    <h3 class="font-bold text-slate-800"><?= htmlspecialchars($name) ?></h3>
+                    <p class="text-xs text-slate-500 font-mono mt-0.5">NISN: <?= htmlspecialchars($candidate['nisn'] ?? '-') ?></p>
+                    <span class="inline-block mt-2 bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">
+                        <i class="fa-solid fa-road mr-1"></i><?= htmlspecialchars($candidate['track_name'] ?? 'Reguler') ?>
+                    </span>
                 </div>
+            </div>
 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 border-b pb-2">Akun Login</h3>
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <span class="text-xs text-gray-400 block mb-1">Username</span>
-                            <div class="flex items-center justify-between bg-gray-50 p-2 rounded border border-gray-200">
-                                <span class="font-mono text-sm font-bold text-gray-700">
-                                    <?= htmlspecialchars($candidate['account_username'] ?? '-') ?>
-                                </span>
-                                <i class="fa-solid fa-key text-gray-400 text-xs"></i>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <span class="text-xs text-gray-400 block mb-1">Email Terdaftar</span>
-                            <div class="flex items-center text-gray-700">
-                                <i class="fa-solid fa-envelope text-blue-500 mr-2"></i>
-                                <span class="text-sm truncate w-full">
-                                    <?= htmlspecialchars($candidate['account_email'] ?? '-') ?>
-                                </span>
-                            </div>
-                        </div>
-
-                        <div>
-                            <span class="text-xs text-gray-400 block mb-1">Tanggal Daftar</span>
-                            <div class="flex items-center text-gray-700">
-                                <i class="fa-solid fa-calendar-check text-green-600 mr-2"></i>
-                                <span class="text-sm">
-                                    <?= !empty($candidate['created_at']) ? date('d F Y', strtotime($candidate['created_at'])) : '-' ?>
-                                </span>
-                            </div>
-                        </div>
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                <p class="text-xs font-bold text-slate-400 uppercase mb-3">Akun Login</p>
+                <div class="space-y-2 text-sm">
+                    <div class="bg-slate-50 rounded-xl px-3 py-2">
+                        <p class="text-xs text-slate-400">Username</p>
+                        <p class="font-mono font-bold text-slate-800"><?= htmlspecialchars($candidate['account_username'] ?? '-') ?></p>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl px-3 py-2">
+                        <p class="text-xs text-slate-400">Email</p>
+                        <p class="font-medium text-slate-700 truncate"><?= htmlspecialchars($candidate['account_email'] ?? '-') ?></p>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl px-3 py-2">
+                        <p class="text-xs text-slate-400">Tanggal Daftar</p>
+                        <p class="font-medium text-slate-700"><?= !empty($candidate['created_at']) ? date('d F Y', strtotime($candidate['created_at'])) : '-' ?></p>
                     </div>
                 </div>
             </div>
 
-            <div class="md:col-span-2 space-y-6">
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 md:p-6">
-                    <h3 class="font-bold text-lg text-gray-800 mb-6 flex items-center">
-                        <div class="w-8 h-8 rounded bg-green-100 text-green-600 flex items-center justify-center mr-3 text-sm">
-                            <i class="fa-solid fa-address-card"></i>
-                        </div>
-                        Informasi Pribadi
-                    </h3>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                        <div class="group">
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">NIK</label>
-                            <input type="text" value="<?= $candidate['nik'] ?? '-' ?>" readonly 
-                                class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-gray-800 text-sm focus:outline-none cursor-default group-hover:bg-gray-100 transition">
-                        </div>
-                        <div class="group">
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tempat Lahir</label>
-                            <input type="text" value="<?= $candidate['birth_place'] ?? '-' ?>" readonly 
-                                class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-gray-800 text-sm focus:outline-none cursor-default group-hover:bg-gray-100 transition">
-                        </div>
-                        <div class="group">
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tanggal Lahir</label>
-                            <input type="text" 
-                                value="<?= !empty($candidate['birth_date']) ? date('d-m-Y', strtotime($candidate['birth_date'])) : '-' ?>" 
-                                readonly 
-                                class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-gray-800 text-sm focus:outline-none cursor-default group-hover:bg-gray-100 transition">
-                        </div>
-                        <div class="group">
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Jenis Kelamin</label>
-                            <input type="text" value="<?= ($candidate['gender'] ?? '') == 'L' ? 'Laki-laki' : 'Perempuan' ?>" readonly 
-                                class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-gray-800 text-sm focus:outline-none cursor-default group-hover:bg-gray-100 transition">
-                        </div>
-                        <div class="group md:col-span-2">
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">No. WhatsApp</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <i class="fa-brands fa-whatsapp text-green-500"></i>
-                                </div>
-                                <input type="text" value="<?= $candidate['phone'] ?? '-' ?>" readonly 
-                                    class="w-full bg-gray-50 border border-gray-200 rounded-lg pl-10 pr-3 py-2.5 text-gray-800 text-sm focus:outline-none cursor-default">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 md:p-6">
-                    <h3 class="font-bold text-lg text-gray-800 mb-6 flex items-center">
-                        <div class="w-8 h-8 rounded bg-blue-100 text-blue-600 flex items-center justify-center mr-3 text-sm">
-                            <i class="fa-solid fa-users"></i>
-                        </div>
-                        Data Orang Tua & Sekolah
-                    </h3>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nama Ayah</label>
-                            <input type="text" value="<?= $candidate['father_name'] ?? '-' ?>" readonly 
-                                class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-gray-800 text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nama Ibu</label>
-                            <input type="text" value="<?= $candidate['mother_name'] ?? '-' ?>" readonly 
-                                class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-gray-800 text-sm">
-                        </div>
-                    </div>
-
-                    <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                        <label class="block text-xs font-bold text-blue-800 uppercase mb-1">Asal Sekolah</label>
-                        <p class="font-bold text-gray-800 text-lg"><?= $candidate['previous_school'] ?? '-' ?></p>
-                        <p class="text-xs text-gray-500 mt-1"><?= $candidate['school_address'] ?? '-' ?></p>
-                    </div>
-                </div>
-
-                <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded-lg text-sm flex items-start">
-                    <i class="fa-solid fa-circle-info mt-0.5 mr-3 text-lg"></i>
-                    <div>
-                        <p class="font-bold">Info Perubahan Data</p>
-                        <p class="text-xs mt-1">Jika terdapat kesalahan data pada biodata di atas, silakan hubungi panitia melalui WhatsApp atau gunakan fitur Pusat Bantuan.</p>
-                    </div>
-                </div>
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-800 flex items-start gap-2">
+                <i class="fa-solid fa-circle-info mt-0.5 shrink-0"></i>
+                <p>Jika ada kesalahan data, hubungi panitia melalui WhatsApp atau Pusat Bantuan.</p>
             </div>
         </div>
 
+        <!-- Konten Biodata -->
+        <div class="md:col-span-2 space-y-5">
+
+            <!-- Informasi Pribadi -->
+            <?php $fields = [
+                ['NIK',           $candidate['nik'] ?? '-'],
+                ['Tempat Lahir',  $candidate['birth_place'] ?? '-'],
+                ['Tanggal Lahir', !empty($candidate['birth_date']) ? date('d-m-Y', strtotime($candidate['birth_date'])) : '-'],
+                ['Jenis Kelamin', ($candidate['gender'] ?? '') == 'L' ? 'Laki-laki' : 'Perempuan'],
+                ['No. WhatsApp',  $candidate['phone'] ?? '-'],
+            ]; ?>
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                <h4 class="font-bold text-slate-700 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+                    <i class="fa-solid fa-address-card text-green-600"></i> Informasi Pribadi
+                </h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <?php foreach ($fields as [$lbl, $val]): ?>
+                    <div class="bg-slate-50 rounded-xl px-4 py-3">
+                        <p class="text-xs text-slate-400 mb-0.5"><?= $lbl ?></p>
+                        <p class="font-semibold text-slate-800 text-sm"><?= htmlspecialchars($val) ?></p>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <!-- Data Orang Tua & Sekolah -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                <h4 class="font-bold text-slate-700 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+                    <i class="fa-solid fa-users text-blue-500"></i> Data Orang Tua & Sekolah
+                </h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                    <div class="bg-slate-50 rounded-xl px-4 py-3">
+                        <p class="text-xs text-slate-400 mb-0.5">Nama Ayah</p>
+                        <p class="font-semibold text-slate-800 text-sm"><?= htmlspecialchars($candidate['father_name'] ?? '-') ?></p>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl px-4 py-3">
+                        <p class="text-xs text-slate-400 mb-0.5">Nama Ibu</p>
+                        <p class="font-semibold text-slate-800 text-sm"><?= htmlspecialchars($candidate['mother_name'] ?? '-') ?></p>
+                    </div>
+                </div>
+                <div class="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
+                    <p class="text-xs text-blue-600 font-bold mb-0.5">Asal Sekolah</p>
+                    <p class="font-bold text-slate-800"><?= htmlspecialchars($candidate['previous_school'] ?? '-') ?></p>
+                    <p class="text-xs text-slate-500"><?= htmlspecialchars($candidate['school_address'] ?? '') ?></p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <?php elseif (isset($student)): ?>
-        <div class="mb-6">
-            <h1 class="text-xl font-bold text-gray-800">Profil Saya</h1>
-        </div>
+    <!-- ── MODE SISWA AKTIF ── -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-        <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500 relative overflow-hidden">
-            <div class="flex flex-col md:flex-row items-center gap-6 relative z-10">
-                <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center text-3xl text-gray-400 shadow-inner">
-                    <i class="fa-solid fa-user"></i>
-                </div>
-                <div class="text-center md:text-left">
-                    <h2 class="text-2xl font-bold text-gray-800"><?= $student['full_name'] ?? 'Siswa' ?></h2>
-                    <p class="text-gray-500 font-mono">NIS: <?= $student['nis'] ?? '-' ?></p>
-                    <div class="mt-3 flex flex-wrap justify-center md:justify-start gap-2">
-                        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-lg text-xs font-bold"><?= $student['class_name'] ?? 'Tanpa Kelas' ?></span>
-                        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-lg text-xs font-bold"><?= $student['dorm_name'] ?? 'Non-Asrama' ?></span>
+        <!-- Sidebar Profil -->
+        <div class="space-y-5">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="h-20 bg-gradient-to-r from-green-700 to-emerald-600"></div>
+                <div class="px-5 pb-5 -mt-10 text-center">
+                    <div class="w-20 h-20 bg-white rounded-full border-4 border-white shadow-md flex items-center justify-center mx-auto mb-3">
+                        <span class="text-3xl font-extrabold text-green-700"><?= strtoupper(substr($name, 0, 1)) ?></span>
+                    </div>
+                    <h3 class="font-bold text-slate-800"><?= htmlspecialchars($name) ?></h3>
+                    <p class="text-xs text-slate-500 font-mono mt-0.5">NIS: <?= htmlspecialchars($student['nis'] ?? '-') ?></p>
+                    <div class="flex flex-wrap justify-center gap-2 mt-2">
+                        <span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-full"><?= htmlspecialchars($student['class_name'] ?? '-') ?></span>
+                        <?php if (!empty($student['dorm_name'])): ?>
+                        <span class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-full"><?= htmlspecialchars($student['dorm_name']) ?></span>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
+
+            <!-- Identitas Singkat -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                <p class="text-xs font-bold text-slate-400 uppercase mb-3">Identitas</p>
+                <?php $ids = [
+                    ['NISN', $student['nisn'] ?? '-'],
+                    ['NIK',  $student['nik']  ?? '-'],
+                    ['No. KK', $student['no_kk'] ?? '-'],
+                ]; foreach ($ids as [$lbl, $val]): ?>
+                <div class="bg-slate-50 rounded-xl px-3 py-2 mb-2 last:mb-0">
+                    <p class="text-xs text-slate-400"><?= $lbl ?></p>
+                    <p class="font-mono font-semibold text-slate-800 text-sm"><?= htmlspecialchars($val) ?></p>
+                </div>
+                <?php endforeach; ?>
+            </div>
         </div>
-        <?php endif; ?>
 
+        <!-- Konten Biodata -->
+        <div class="md:col-span-2 space-y-5">
+
+            <!-- Data Pribadi -->
+            <?php $personal = [
+                ['Nama Lengkap',   $student['full_name'] ?? $student['name'] ?? '-'],
+                ['Tempat Lahir',   $student['place_of_birth'] ?? '-'],
+                ['Tanggal Lahir',  !empty($student['date_of_birth']) ? date('d-m-Y', strtotime($student['date_of_birth'])) : '-'],
+                ['Jenis Kelamin',  ($student['gender'] ?? '') == 'L' ? 'Laki-laki' : 'Perempuan'],
+                ['Alamat',         $student['address'] ?? '-'],
+                ['Anak Ke',        $student['birth_order'] ?? '-'],
+                ['Jml Bersaudara', $student['number_of_siblings'] ?? '-'],
+            ]; ?>
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                <h4 class="font-bold text-slate-700 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+                    <i class="fa-solid fa-user text-green-600"></i> Data Pribadi
+                </h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <?php foreach ($personal as [$lbl, $val]): ?>
+                    <div class="bg-slate-50 rounded-xl px-4 py-3 <?= $lbl === 'Alamat' ? 'sm:col-span-2' : '' ?>">
+                        <p class="text-xs text-slate-400 mb-0.5"><?= $lbl ?></p>
+                        <p class="font-semibold text-slate-800 text-sm"><?= htmlspecialchars($val) ?></p>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <!-- Riwayat Pendidikan -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                <h4 class="font-bold text-slate-700 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+                    <i class="fa-solid fa-school text-blue-500"></i> Riwayat Pendidikan
+                </h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <?php $edu = [
+                        ['Sekolah Asal',      $student['school_origin'] ?? '-'],
+                        ['NPSN Sekolah Asal', $student['school_origin_npsn'] ?? '-'],
+                    ]; foreach ($edu as [$lbl, $val]): ?>
+                    <div class="bg-slate-50 rounded-xl px-4 py-3">
+                        <p class="text-xs text-slate-400 mb-0.5"><?= $lbl ?></p>
+                        <p class="font-semibold text-slate-800 text-sm"><?= htmlspecialchars($val) ?></p>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <!-- Data Orang Tua -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <?php foreach ([
+                    ['Ayah', 'fa-user-tie', 'indigo', $father ?? []],
+                    ['Ibu',  'fa-person-dress', 'pink', $mother ?? []],
+                ] as [$label, $icon, $color, $parent]): ?>
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                    <h4 class="font-bold text-slate-700 mb-3 flex items-center gap-2 border-b border-slate-100 pb-3">
+                        <i class="fa-solid <?= $icon ?> text-<?= $color ?>-500"></i> <?= $label ?>
+                    </h4>
+                    <div class="space-y-2">
+                        <?php $pFields = [
+                            ['Nama',       $parent['name'] ?? '-'],
+                            ['NIK',        $parent['nik'] ?? '-'],
+                            ['No. HP',     $parent['phone_number'] ?? '-'],
+                            ['Pekerjaan',  $parent['job'] ?? '-'],
+                            ['Pendidikan', $parent['education'] ?? '-'],
+                        ]; foreach ($pFields as [$lbl, $val]): ?>
+                        <div class="flex justify-between items-start gap-2 text-sm border-b border-slate-50 pb-1.5 last:border-0">
+                            <span class="text-slate-400 shrink-0"><?= $lbl ?></span>
+                            <span class="font-medium text-slate-800 text-right"><?= htmlspecialchars($val) ?></span>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+        </div>
+    </div>
+    <?php endif; ?>
 </main>
-
 <?php require __DIR__ . '/../layouts/footer.php'; ?>

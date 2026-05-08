@@ -80,16 +80,16 @@
         <!-- Slideshow Background -->
         <div id="hero-slideshow" class="absolute inset-0">
             <div class="slide absolute inset-0 transition-opacity duration-1000 opacity-100">
-                <img src="https://images.unsplash.com/photo-1564981797816-1043664bf78d?w=1600&q=80&auto=format&fit=crop" alt="Pesantren" class="w-full h-full object-cover">
+                <img src="https://www.thawalib-parabek.sch.id/wp-content/uploads/2025/10/Template-Website-6.png" alt="Pesantren Sumatera Thawalib Parabek" class="w-full h-full object-cover">
             </div>
             <div class="slide absolute inset-0 transition-opacity duration-1000 opacity-0">
-                <img src="https://images.unsplash.com/photo-1577896851231-70ef18881754?w=1600&q=80&auto=format&fit=crop" alt="Pendidikan Islam" class="w-full h-full object-cover">
+                <img src="https://www.thawalib-parabek.sch.id/wp-content/uploads/2025/10/Template-Website-5.png" alt="Kegiatan Santri" class="w-full h-full object-cover">
             </div>
             <div class="slide absolute inset-0 transition-opacity duration-1000 opacity-0">
-                <img src="https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1600&q=80&auto=format&fit=crop" alt="Belajar" class="w-full h-full object-cover">
+                <img src="https://www.thawalib-parabek.sch.id/wp-content/uploads/2025/10/Template-Website-4.png" alt="Pendidikan Islam" class="w-full h-full object-cover">
             </div>
             <div class="slide absolute inset-0 transition-opacity duration-1000 opacity-0">
-                <img src="https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=1600&q=80&auto=format&fit=crop" alt="Kampus" class="w-full h-full object-cover">
+                <img src="https://www.thawalib-parabek.sch.id/wp-content/uploads/2025/10/Template-Website-3.png" alt="Kampus Parabek" class="w-full h-full object-cover">
             </div>
         </div>
         <!-- Overlay gradient -->
@@ -202,10 +202,10 @@
                 </div>
                 <div class="md:col-span-5 relative hidden md:block">
                     <div class="aspect-square rounded-2xl overflow-hidden shadow-xl">
-                        <img src="https://images.unsplash.com/photo-1544717305-2782549b5136?w=800&q=80&auto=format&fit=crop" alt="Santri belajar" class="w-full h-full object-cover">
+                        <img src="https://www.thawalib-parabek.sch.id/wp-content/uploads/2026/04/Ponpes-Sumatera-Thawalib-Parabek-Gelar-Haflatul-Wada-Santri-Kelas-Akhir-Tahun-Ajaran-2025-2026-01.png" alt="Santri Thawalib Parabek" class="w-full h-full object-cover">
                     </div>
                     <div class="absolute -bottom-4 -right-4 w-32 h-32 rounded-xl overflow-hidden shadow-lg border-4 border-white">
-                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&q=80&auto=format&fit=crop" alt="Santri" class="w-full h-full object-cover">
+                        <img src="https://www.thawalib-parabek.sch.id/wp-content/uploads/2026/04/Madrasah-Tsanawiyah-Gelar-Outbound-untuk-Santri-Kelas-3-di-KWS-Sarilamak.png" alt="Kegiatan Santri" class="w-full h-full object-cover">
                     </div>
                 </div>
             </div>

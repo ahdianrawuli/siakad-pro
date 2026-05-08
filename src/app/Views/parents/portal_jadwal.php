@@ -1,37 +1,46 @@
 <?php require __DIR__ . '/../layouts/header.php'; ?>
 <?php require __DIR__ . '/../layouts/parent_sidebar.php'; ?>
 <main class="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-8 pb-24">
-    <div class="mb-5">
-        <h1 class="text-xl font-bold text-gray-800"><i class="fa-solid fa-calendar-days text-indigo-500 mr-2"></i>Jadwal Pelajaran</h1>
-        <?php if ($student): ?><p class="text-sm text-gray-500">Kelas: <?= htmlspecialchars($student['class_name'] ?? '-') ?></p><?php endif; ?>
-    </div>
+<?php
+$pageTitle    = 'Jadwal Pelajaran';
+$pageSubtitle = $student ? 'Kelas: ' . htmlspecialchars($student['class_name'] ?? '-') : 'Pilih santri terlebih dahulu';
+$pageBadgeIcon = 'fa-calendar-days';
+$infoItems    = [
+    'Halaman ini menampilkan jadwal pelajaran santri per hari.',
+    'Jadwal dikelompokkan dari Senin hingga Sabtu.',
+    'Hubungi admin jika jadwal belum muncul atau ada perubahan.',
+];
+require __DIR__ . '/../layouts/portal_header_card.php';
+?>
 
     <?php $baseUrl = '/portal/orangtua/jadwal'; require __DIR__ . '/_child_selector.php'; ?>
 
     <?php if (!$student): ?>
-    <div class="bg-white rounded-xl p-10 text-center text-gray-400">Akun belum terhubung ke data siswa.</div>
+    <div class="bg-white rounded-2xl p-10 text-center text-slate-400 border border-slate-200">Akun belum terhubung ke data siswa.</div>
     <?php else: ?>
     <div class="space-y-4">
         <?php foreach ($days as $day):
             if (empty($grouped[$day])) continue;
         ?>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-5 py-3 bg-indigo-50 border-b border-indigo-100 font-semibold text-indigo-700"><?= $day ?></div>
-            <table class="w-full text-sm">
-                <tbody class="divide-y divide-gray-50">
-                    <?php foreach ($grouped[$day] as $sc): ?>
-                    <tr>
-                        <td class="px-4 py-2 text-gray-500 w-32"><?= substr($sc['start_time'],0,5) ?> – <?= substr($sc['end_time'],0,5) ?></td>
-                        <td class="px-4 py-2 font-medium text-gray-800"><?= htmlspecialchars($sc['subject_name']) ?></td>
-                        <td class="px-4 py-2 text-gray-500"><?= htmlspecialchars($sc['teacher_name'] ?? '-') ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="px-5 py-2.5 bg-green-700 font-semibold text-white text-sm"><?= $day ?></div>
+            <div class="divide-y divide-slate-100">
+                <?php foreach ($grouped[$day] as $sc): ?>
+                <div class="flex items-center px-5 py-3 gap-4 hover:bg-slate-50 transition">
+                    <div class="text-xs font-mono text-slate-500 w-24 shrink-0 bg-slate-100 rounded-lg px-2 py-1 text-center">
+                        <?= substr($sc['start_time'],0,5) ?> – <?= substr($sc['end_time'],0,5) ?>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-slate-800 text-sm"><?= htmlspecialchars($sc['subject_name']) ?></p>
+                        <p class="text-xs text-slate-500"><?= htmlspecialchars($sc['teacher_name'] ?? '-') ?></p>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
         </div>
         <?php endforeach; ?>
-        <?php if (empty(array_filter($grouped))): ?>
-        <div class="bg-white rounded-xl p-10 text-center text-gray-400">Jadwal belum tersedia.</div>
+        <?php if (empty(array_filter($grouped ?? []))): ?>
+        <div class="bg-white rounded-2xl p-10 text-center text-slate-400 border border-slate-200">Jadwal belum tersedia.</div>
         <?php endif; ?>
     </div>
     <?php endif; ?>

@@ -2,222 +2,222 @@
 <?php require __DIR__ . '/../layouts/student_sidebar.php'; ?>
 
 <main class="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-8 pb-24">
-    
+
+    <?php \App\Core\Session::flash(); ?>
+
     <?php if (isset($candidate)): ?>
-        <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+    <!-- ══════════════════════════════════════════
+         MODE CALON SANTRI (PPDB)
+    ══════════════════════════════════════════ -->
+
+    <!-- Hero Welcome -->
+    <div class="relative bg-gradient-to-br from-green-700 via-green-600 to-emerald-500 rounded-2xl overflow-hidden mb-6 shadow-lg shadow-green-200">
+        <div class="absolute inset-0 opacity-10">
+            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="g" width="60" height="60" patternUnits="userSpaceOnUse"><circle cx="30" cy="30" r="20" fill="none" stroke="white" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(#g)"/></svg>
+        </div>
+        <div class="relative z-10 p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
-                <h1 class="text-xl md:text-2xl font-bold text-gray-800">Overview</h1>
-                <p class="text-sm md:text-base text-gray-600">
-                    Halo, <span class="font-bold text-[#2E603E]"><?= htmlspecialchars($candidate['full_name']) ?></span>
+                <p class="text-green-200 text-sm font-medium mb-1">Selamat datang,</p>
+                <h1 class="text-2xl md:text-3xl font-extrabold text-white"><?= htmlspecialchars($candidate['full_name']) ?></h1>
+                <p class="text-green-100 text-sm mt-1">
+                    <i class="fa-solid fa-road mr-1"></i> Jalur <?= htmlspecialchars($candidate['track_name'] ?? 'Reguler') ?>
+                    &nbsp;·&nbsp;
+                    <i class="fa-solid fa-hashtag mr-1"></i> REG-<?= $candidate['id'] ?>
                 </p>
             </div>
-            <div class="inline-block bg-gray-200 rounded-full px-3 py-1 text-xs font-mono text-gray-600 self-start md:self-auto">
-                ID: REG-<?= $candidate['id'] ?>
+            <div class="shrink-0">
+                <?php
+                $rawStatus = strtoupper(trim($candidate['registration_status'] ?? ''));
+                $statusMap = [
+                    'APPROVED' => ['LULUS SELEKSI',       'bg-white text-green-700'],
+                    'LULUS'    => ['LULUS SELEKSI',       'bg-white text-green-700'],
+                    'DITERIMA' => ['LULUS SELEKSI',       'bg-white text-green-700'],
+                    'ACCEPTED' => ['LULUS SELEKSI',       'bg-white text-green-700'],
+                    'PAID'     => ['SEDANG DIVERIFIKASI', 'bg-white text-blue-700'],
+                    'VERIFIKASI'=>['SEDANG DIVERIFIKASI', 'bg-white text-blue-700'],
+                    'PENDING'  => ['MENUNGGU PEMBAYARAN', 'bg-white/20 text-white border border-white/30'],
+                    ''         => ['MENUNGGU PEMBAYARAN', 'bg-white/20 text-white border border-white/30'],
+                ];
+                [$statusLabel, $statusClass] = $statusMap[$rawStatus] ?? [$rawStatus, 'bg-white/20 text-white'];
+                ?>
+                <span class="inline-block px-4 py-2 rounded-xl text-xs font-extrabold tracking-wide <?= $statusClass ?>">
+                    <?= $statusLabel ?>
+                </span>
             </div>
         </div>
+    </div>
 
-        <?php \App\Core\Session::flash(); ?>
-
-        <?php 
-            // Logika Status (Tetap sama seperti sebelumnya)
-            $rawStatus = strtoupper(trim($candidate['registration_status'] ?? ''));
-
-            $judulStatus = "Status Pendaftaran";
-            $bgCard = "bg-white";
-            $borderCard = "border-gray-200";
-            $textStatus = "text-gray-700";
-            $iconJudul = "fa-list-check";
-
-            if ($rawStatus == 'APPROVED' || $rawStatus == 'LULUS' || $rawStatus == 'DITERIMA' || $rawStatus == 'ACCEPTED') {
-                $judulStatus = "LULUS SELEKSI";
-                $bgCard = "bg-green-50"; 
-                $borderCard = "border-green-200";
-                $textStatus = "text-green-800";
-                $iconJudul = "fa-certificate";
-            } elseif ($rawStatus == 'PAID' || $rawStatus == 'BAYAR' || $rawStatus == 'VERIFIKASI') {
-                $judulStatus = "SEDANG DIVERIFIKASI";
-                $bgCard = "bg-blue-50";
-                $borderCard = "border-blue-200";
-                $textStatus = "text-blue-800";
-                $iconJudul = "fa-hourglass-half";
-            } elseif ($rawStatus == 'PENDING' || $rawStatus == '') {
-                $judulStatus = "MENUNGGU PEMBAYARAN";
-                $bgCard = "bg-orange-50";
-                $borderCard = "border-orange-200";
-                $textStatus = "text-orange-800";
-                $iconJudul = "fa-circle-exclamation";
-            }
-        ?>
-
-        <div class="<?= $bgCard ?> border <?= $borderCard ?> p-5 rounded-xl shadow-sm mb-6 relative overflow-hidden">
-            <i class="fa-solid <?= $iconJudul ?> absolute -right-4 -bottom-4 text-8xl opacity-10 pointer-events-none <?= $textStatus ?>"></i>
-
-            <div class="relative z-10">
-                <h3 class="font-bold <?= $textStatus ?> text-sm uppercase tracking-wider mb-1 opacity-80">Status Saat Ini</h3>
-                <div class="text-2xl md:text-3xl font-extrabold <?= $textStatus ?> mb-4 flex items-center">
-                    <?= $judulStatus ?>
+    <!-- Progress Steps -->
+    <?php if (isset($progress)): ?>
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-6">
+        <h3 class="text-sm font-bold text-slate-600 uppercase tracking-wider mb-4">Progress Pendaftaran</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <?php $steps = [
+                ['Pendaftaran', $progress['registered'], 'fa-pen-to-square', 'green'],
+                ['Pembayaran',  $progress['paid'],       'fa-money-bill-wave','blue'],
+                ['Dokumen',     $progress['document'],   'fa-folder-open',   'orange'],
+                ['Verifikasi',  $progress['verified'],   'fa-user-check',    'purple'],
+            ]; foreach ($steps as $i => [$lbl, $done, $icon, $color]): ?>
+            <div class="flex items-center gap-3 p-3 rounded-xl <?= $done ? 'bg-green-50 border border-green-200' : 'bg-slate-50 border border-slate-200' ?>">
+                <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 <?= $done ? 'bg-green-600 text-white' : 'bg-slate-200 text-slate-400' ?>">
+                    <i class="fa-solid <?= $done ? 'fa-check' : $icon ?> text-sm"></i>
                 </div>
-
-                <?php if(isset($progress)): ?>
-                <div class="my-4 bg-white/60 p-4 rounded-lg">
-                    <h4 class="text-sm font-bold text-gray-800 mb-3">Progress Pendaftaran:</h4>
-                    <div class="flex flex-col md:flex-row gap-4 md:gap-8 text-sm">
-                        <div class="flex items-center gap-2">
-                            <?php if($progress['registered']): ?>
-                                <i class="fa-solid fa-circle-check text-green-600 text-lg"></i>
-                            <?php else: ?>
-                                <i class="fa-solid fa-circle-xmark text-red-500 text-lg"></i>
-                            <?php endif; ?>
-                            <span class="text-gray-800 font-medium">1. Pendaftaran</span>
-                        </div>
-
-                        <div class="flex items-center gap-2">
-                            <?php if($progress['paid']): ?>
-                                <i class="fa-solid fa-circle-check text-green-600 text-lg"></i>
-                            <?php else: ?>
-                                <i class="fa-solid fa-circle-xmark text-red-500 text-lg"></i>
-                            <?php endif; ?>
-                            <span class="text-gray-800 font-medium">2. Pembayaran</span>
-                        </div>
-
-                        <div class="flex items-center gap-2">
-                            <?php if($progress['document']): ?>
-                                <i class="fa-solid fa-circle-check text-green-600 text-lg"></i>
-                            <?php else: ?>
-                                <i class="fa-solid fa-circle-xmark text-red-500 text-lg"></i>
-                            <?php endif; ?>
-                            <span class="text-gray-800 font-medium">3. Dokumen</span>
-                        </div>
-
-                        <div class="flex items-center gap-2">
-                            <?php if($progress['verified']): ?>
-                                <i class="fa-solid fa-circle-check text-green-600 text-lg"></i>
-                            <?php else: ?>
-                                <i class="fa-solid fa-circle-xmark text-red-500 text-lg"></i>
-                            <?php endif; ?>
-                            <span class="text-gray-800 font-medium">4. Verifikasi Akhir</span>
-                        </div>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <div class="mt-2">
-                    <?php if ($rawStatus == 'PENDING' || $rawStatus == ''): ?>
-                        <p class="text-sm text-gray-700 mb-4 max-w-lg">
-                            Formulir Anda belum diproses. Silakan lakukan pembayaran biaya pendaftaran untuk melanjutkan ke tahap verifikasi.
-                        </p>
-                        <a href="/student/payment" class="block w-full md:w-auto text-center bg-orange-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-700 shadow-lg shadow-orange-200 transition transform active:scale-95">
-                            <i class="fa-solid fa-wallet mr-2"></i> Bayar Sekarang
-                        </a>
-                    
-                    <?php elseif ($rawStatus == 'PAID' || $rawStatus == 'BAYAR' || $rawStatus == 'VERIFIKASI'): ?>
-                        <p class="text-sm text-gray-700">
-                            Terima kasih. Bukti pembayaran telah kami terima. Panitia PPDB sedang memverifikasi data Anda (1x24 Jam).
-                        </p>
-                    
-                    <?php elseif ($rawStatus == 'APPROVED' || $rawStatus == 'LULUS' || $rawStatus == 'DITERIMA' || $rawStatus == 'ACCEPTED'): ?>
-                        <p class="text-sm text-green-800 mb-4 max-w-lg font-medium">
-                            Selamat! Anda dinyatakan diterima sebagai santri baru. Silakan unduh kartu ujian/bukti kelulusan di bawah ini.
-                        </p>
-                        <a href="/student/exam-card" class="block w-full md:w-auto text-center bg-[#2E603E] text-white px-6 py-3 rounded-lg font-bold hover:bg-[#254e32] shadow-lg shadow-green-200 transition transform active:scale-95">
-                            <i class="fa-solid fa-print mr-2"></i> Cetak Kartu Ujian
-                        </a>
-                    <?php endif; ?>
+                <div>
+                    <p class="text-xs font-bold <?= $done ? 'text-green-800' : 'text-slate-500' ?>"><?= $lbl ?></p>
+                    <p class="text-[10px] <?= $done ? 'text-green-600' : 'text-slate-400' ?>"><?= $done ? 'Selesai' : 'Belum' ?></p>
                 </div>
             </div>
+            <?php endforeach; ?>
         </div>
+    </div>
+    <?php endif; ?>
 
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
-            
-            <a href="/student/payment" class="group bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition active:bg-gray-50">
-                <div class="flex flex-col items-center text-center">
-                    <div class="w-12 h-12 md:w-14 md:h-14 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl md:text-2xl mb-3 group-hover:scale-110 transition">
-                        <i class="fa-solid fa-file-invoice-dollar"></i>
-                    </div>
-                    <h3 class="font-bold text-gray-800 text-sm md:text-lg">Pembayaran</h3>
-                    <p class="text-xs text-gray-500 mt-1 hidden md:block">Upload bukti transfer</p>
-                </div>
-            </a>
-            
-            <a href="/student/documents" class="group bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition active:bg-gray-50">
-                <div class="flex flex-col items-center text-center">
-                    <div class="w-12 h-12 md:w-14 md:h-14 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-xl md:text-2xl mb-3 group-hover:scale-110 transition">
-                        <i class="fa-solid fa-folder-open"></i>
-                    </div>
-                    <h3 class="font-bold text-gray-800 text-sm md:text-lg">Dokumen</h3>
-                    <p class="text-xs text-gray-500 mt-1 hidden md:block">Lengkapi berkas KK/Akta</p>
-                </div>
-            </a>
-
-            <a href="/student/profile" class="group bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition active:bg-gray-50">
-                <div class="flex flex-col items-center text-center">
-                    <div class="w-12 h-12 md:w-14 md:h-14 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-xl md:text-2xl mb-3 group-hover:scale-110 transition">
-                        <i class="fa-solid fa-user-pen"></i>
-                    </div>
-                    <h3 class="font-bold text-gray-800 text-sm md:text-lg">Biodata</h3>
-                    <p class="text-xs text-gray-500 mt-1 hidden md:block">Cek data diri Anda</p>
-                </div>
-            </a>
-
+    <!-- CTA berdasarkan status -->
+    <?php if ($rawStatus === 'PENDING' || $rawStatus === ''): ?>
+    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="flex items-start gap-3">
+            <div class="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-circle-exclamation text-lg"></i>
+            </div>
+            <div>
+                <p class="font-bold text-amber-800">Pembayaran Belum Dilakukan</p>
+                <p class="text-sm text-amber-700 mt-0.5">Silakan lakukan pembayaran biaya pendaftaran untuk melanjutkan ke tahap verifikasi.</p>
+            </div>
         </div>
+        <a href="/student/payment" class="shrink-0 bg-amber-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-amber-700 transition text-sm">
+            <i class="fa-solid fa-wallet mr-2"></i> Bayar Sekarang
+        </a>
+    </div>
+    <?php elseif ($rawStatus === 'PAID' || $rawStatus === 'VERIFIKASI'): ?>
+    <div class="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-6 flex items-start gap-3">
+        <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center shrink-0 animate-pulse">
+            <i class="fa-solid fa-hourglass-half text-lg"></i>
+        </div>
+        <div>
+            <p class="font-bold text-blue-800">Sedang Diverifikasi</p>
+            <p class="text-sm text-blue-700 mt-0.5">Panitia PPDB sedang memverifikasi data Anda. Proses ini memakan waktu maksimal 1×24 jam.</p>
+        </div>
+    </div>
+    <?php elseif (in_array($rawStatus, ['APPROVED','LULUS','DITERIMA','ACCEPTED'])): ?>
+    <div class="bg-green-50 border border-green-200 rounded-2xl p-5 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="flex items-start gap-3">
+            <div class="w-10 h-10 bg-green-100 text-green-600 rounded-xl flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-circle-check text-lg"></i>
+            </div>
+            <div>
+                <p class="font-bold text-green-800">Selamat! Anda Diterima</p>
+                <p class="text-sm text-green-700 mt-0.5">Anda dinyatakan diterima sebagai santri baru. Silakan cetak kartu ujian.</p>
+            </div>
+        </div>
+        <a href="/student/exam-card" class="shrink-0 bg-green-700 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-green-800 transition text-sm">
+            <i class="fa-solid fa-print mr-2"></i> Cetak Kartu Ujian
+        </a>
+    </div>
+    <?php endif; ?>
+
+    <!-- Menu Aksi Cepat -->
+    <div class="grid grid-cols-3 gap-3">
+        <?php $menus = [
+            ['/student/payment',   'fa-file-invoice-dollar', 'blue',   'Pembayaran',  'Upload bukti transfer'],
+            ['/student/documents', 'fa-folder-open',         'orange', 'Dokumen',     'Lengkapi berkas'],
+            ['/student/profile',   'fa-address-card',        'purple', 'Data Santri', 'Lihat biodata'],
+        ]; foreach ($menus as [$href, $icon, $color, $title, $desc]): ?>
+        <a href="<?= $href ?>" class="group bg-white rounded-2xl border border-slate-200 shadow-sm p-4 md:p-5 hover:shadow-md hover:border-<?= $color ?>-300 transition text-center">
+            <div class="w-12 h-12 bg-<?= $color ?>-100 text-<?= $color ?>-600 rounded-xl flex items-center justify-center text-xl mx-auto mb-3 group-hover:scale-110 transition">
+                <i class="fa-solid <?= $icon ?>"></i>
+            </div>
+            <p class="font-bold text-slate-800 text-sm"><?= $title ?></p>
+            <p class="text-xs text-slate-400 mt-0.5 hidden md:block"><?= $desc ?></p>
+        </a>
+        <?php endforeach; ?>
+    </div>
 
     <?php elseif (isset($student)): ?>
-         <div class="mb-6">
-            <h1 class="text-xl md:text-2xl font-bold text-gray-800">Dashboard Siswa</h1>
-            <p class="text-sm text-gray-600">Selamat datang, <span class="font-bold text-blue-600"><?= htmlspecialchars($student['full_name']) ?></span></p>
-         </div>
-         
-         <div class="bg-white p-5 rounded-xl shadow border-l-4 border-blue-500 flex items-start space-x-4 mb-6">
-             <div class="bg-blue-100 p-3 rounded-full text-blue-600">
-                <i class="fa-solid fa-user-graduate text-xl"></i>
-             </div>
-             <div>
-                 <h3 class="font-bold text-lg text-gray-800">Status Akademik: AKTIF</h3>
-                 <p class="text-sm text-gray-600 mt-1">
-                    Anda tercatat sebagai siswa aktif di kelas <span class="font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs"><?= $student['class_name'] ?? '-' ?></span>
-                 </p>
-                 <?php if (!empty($unpaid_bills) && $unpaid_bills > 0): ?>
-                 <p class="text-sm text-red-600 mt-1 font-medium">
-                    <i class="fa-solid fa-triangle-exclamation mr-1"></i>
-                    Anda memiliki <strong><?= $unpaid_bills ?></strong> tagihan yang belum dibayar.
-                    <a href="/finance/billing?nis=<?= $student['nis'] ?>" class="underline">Bayar sekarang</a>
-                 </p>
-                 <?php endif; ?>
-             </div>
-         </div>
+    <!-- ══════════════════════════════════════════
+         MODE SISWA AKTIF
+    ══════════════════════════════════════════ -->
 
-         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-             <a href="/student/schedule" class="group bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition text-center">
-                 <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl mx-auto mb-2 group-hover:scale-110 transition">
-                     <i class="fa-solid fa-calendar-days"></i>
-                 </div>
-                 <p class="font-bold text-gray-800 text-sm">Jadwal</p>
-                 <p class="text-xs text-gray-500 mt-0.5">Pelajaran</p>
-             </a>
-             <a href="/student/attendance" class="group bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition text-center">
-                 <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xl mx-auto mb-2 group-hover:scale-110 transition">
-                     <i class="fa-solid fa-calendar-check"></i>
-                 </div>
-                 <p class="font-bold text-gray-800 text-sm">Absensi</p>
-                 <p class="text-xs text-gray-500 mt-0.5">Rekap Kehadiran</p>
-             </a>
-             <a href="/student/grades" class="group bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition text-center">
-                 <div class="w-12 h-12 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center text-xl mx-auto mb-2 group-hover:scale-110 transition">
-                     <i class="fa-solid fa-star"></i>
-                 </div>
-                 <p class="font-bold text-gray-800 text-sm">Nilai</p>
-                 <p class="text-xs text-gray-500 mt-0.5">Akademik</p>
-             </a>
-             <a href="/finance/billing?nis=<?= $student['nis'] ?>" class="group bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition text-center">
-                 <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-xl mx-auto mb-2 group-hover:scale-110 transition">
-                     <i class="fa-solid fa-file-invoice-dollar"></i>
-                 </div>
-                 <p class="font-bold text-gray-800 text-sm">Keuangan</p>
-                 <p class="text-xs text-gray-500 mt-0.5">Tagihan SPP</p>
-             </a>
-         </div>
-         
-         <?php endif; ?>
+    <!-- Hero Welcome -->
+    <div class="relative bg-gradient-to-br from-green-700 via-green-600 to-emerald-500 rounded-2xl overflow-hidden mb-6 shadow-lg shadow-green-200">
+        <div class="absolute inset-0 opacity-10">
+            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="g2" width="60" height="60" patternUnits="userSpaceOnUse"><circle cx="30" cy="30" r="20" fill="none" stroke="white" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(#g2)"/></svg>
+        </div>
+        <div class="relative z-10 p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+                <p class="text-green-200 text-sm font-medium mb-1">Selamat datang,</p>
+                <h1 class="text-2xl md:text-3xl font-extrabold text-white"><?= htmlspecialchars($student['full_name']) ?></h1>
+                <p class="text-green-100 text-sm mt-1">
+                    <i class="fa-solid fa-graduation-cap mr-1"></i> Kelas <?= htmlspecialchars($student['class_name'] ?? '-') ?>
+                    &nbsp;·&nbsp;
+                    <i class="fa-solid fa-id-card mr-1"></i> NIS: <?= htmlspecialchars($student['nis'] ?? '-') ?>
+                </p>
+            </div>
+            <div class="shrink-0">
+                <span class="inline-flex items-center gap-2 bg-white/20 border border-white/30 text-white px-4 py-2 rounded-xl text-xs font-bold">
+                    <span class="w-2 h-2 bg-green-300 rounded-full animate-pulse"></span> AKTIF
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert tagihan -->
+    <?php if (!empty($unpaid_bills) && $unpaid_bills > 0): ?>
+    <div class="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 bg-red-100 text-red-600 rounded-xl flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <p class="text-sm text-red-800 font-medium">
+                Anda memiliki <strong><?= $unpaid_bills ?></strong> tagihan yang belum dibayar.
+            </p>
+        </div>
+        <a href="/student/payment" class="shrink-0 bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-700 transition">Bayar</a>
+    </div>
+    <?php endif; ?>
+
+    <!-- Menu Aksi Cepat -->
+    <h2 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Menu Utama</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <?php $mainMenus = [
+            ['/student/schedule',   'fa-calendar-days',        'blue',   'Jadwal',      'Pelajaran'],
+            ['/student/attendance', 'fa-clipboard-check',      'green',  'Absensi',     'Rekap Kehadiran'],
+            ['/student/grades',     'fa-star',                 'yellow', 'Nilai',       'Akademik'],
+            ['/student/payment',    'fa-file-invoice-dollar',  'orange', 'Keuangan',    'Tagihan SPP'],
+        ]; foreach ($mainMenus as [$href, $icon, $color, $title, $desc]): ?>
+        <a href="<?= $href ?>" class="group bg-white rounded-2xl border border-slate-200 shadow-sm p-4 hover:shadow-md hover:border-<?= $color ?>-300 transition text-center">
+            <div class="w-12 h-12 bg-<?= $color ?>-100 text-<?= $color ?>-600 rounded-xl flex items-center justify-center text-xl mx-auto mb-2 group-hover:scale-110 transition">
+                <i class="fa-solid <?= $icon ?>"></i>
+            </div>
+            <p class="font-bold text-slate-800 text-sm"><?= $title ?></p>
+            <p class="text-xs text-slate-400 mt-0.5"><?= $desc ?></p>
+        </a>
+        <?php endforeach; ?>
+    </div>
+
+    <!-- Menu Lainnya -->
+    <h2 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Lainnya</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <?php $otherMenus = [
+            ['/student/boarding',        'fa-house',                'teal',   'Asrama',       'Info Kamar'],
+            ['/student/health',          'fa-heart-pulse',          'pink',   'Kesehatan',    'Riwayat Poskestren'],
+            ['/student/discipline',      'fa-triangle-exclamation', 'red',    'Kedisiplinan', 'Pelanggaran & Prestasi'],
+            ['/student/extracurricular', 'fa-person-running',       'indigo', 'Ekskul',       'Kegiatan Ekstra'],
+            ['/student/announcements',   'fa-bullhorn',             'cyan',   'Pengumuman',   'Info Pesantren'],
+            ['/student/letter',          'fa-envelope',             'violet', 'Surat',        'Keterangan'],
+            ['/student/profile',         'fa-address-card',         'slate',  'Data Santri',  'Biodata Lengkap'],
+            ['/student/resume',          'fa-file-lines',           'gray',   'Resume',       'Status Pendaftaran'],
+        ]; foreach ($otherMenus as [$href, $icon, $color, $title, $desc]): ?>
+        <a href="<?= $href ?>" class="group bg-white rounded-2xl border border-slate-200 shadow-sm p-4 hover:shadow-md transition text-center">
+            <div class="w-10 h-10 bg-<?= $color ?>-100 text-<?= $color ?>-600 rounded-xl flex items-center justify-center text-lg mx-auto mb-2 group-hover:scale-110 transition">
+                <i class="fa-solid <?= $icon ?>"></i>
+            </div>
+            <p class="font-bold text-slate-800 text-xs"><?= $title ?></p>
+            <p class="text-[10px] text-slate-400 mt-0.5 hidden md:block"><?= $desc ?></p>
+        </a>
+        <?php endforeach; ?>
+    </div>
+
+    <?php endif; ?>
 
 </main>
 <?php require __DIR__ . '/../layouts/footer.php'; ?>
