@@ -112,101 +112,242 @@ class ParentsController {
     // PORTAL ORANG TUA (role: orangtua)
     // =========================================================================
 
-    /** Dashboard orang tua: lihat data anak */
-    public function portalIndex() {
+    // =========================================================================
+    // HELPER: ambil daftar anak & resolve student yang dipilih
+    // =========================================================================
+    private function getStudents() {
         $userId = Session::get('user_id');
         $db = Database::getInstance();
-
-        // Cari siswa yang terhubung ke akun orang tua ini
         $students = $db->query(
-            "SELECT s.*, c.name as class_name
-             FROM students s
+            "SELECT s.*, c.name as class_name FROM students s
              LEFT JOIN classrooms c ON s.classroom_id = c.id
              WHERE s.parent_user_id = ? AND s.status = 'ACTIVE'
              ORDER BY s.full_name",
             [$userId]
         )->fetchAll();
+        return $students;
+    }
 
-        // Jika tidak ada relasi parent_user_id, coba cari via nomor HP
-        if (empty($students)) {
-            $user = $db->query("SELECT phone FROM users WHERE id = ?", [$userId])->fetch();
-            if ($user && $user['phone']) {
-                $students = $db->query(
-                    "SELECT s.*, c.name as class_name
-                     FROM students s LEFT JOIN classrooms c ON s.classroom_id = c.id
-                     WHERE (s.father_phone = ? OR s.mother_phone = ? OR s.guardian_phone = ?)
-                     AND s.status = 'ACTIVE'",
-                    [$user['phone'], $user['phone'], $user['phone']]
-                )->fetchAll();
-            }
+    private function resolveStudent(array $students) {
+        if (empty($students)) return null;
+        $id = $_GET['student_id'] ?? $students[0]['id'];
+        foreach ($students as $s) {
+            if ($s['id'] == $id) return $s;
         }
+        return $students[0];
+    }
 
+    /** Dashboard orang tua: lihat data anak */
+    public function portalIndex() {
+        $students = $this->getStudents();
         View::render('parents/portal_index', [
             'title'    => 'Portal Orang Tua',
             'students' => $students,
         ]);
     }
 
-    /** Detail anak: nilai, absensi, tagihan */
+    /** Detail anak (legacy, redirect ke dashboard) */
     public function portalChild() {
-        $studentId = $_GET['id'] ?? null;
-        if (!$studentId) { header('Location: /portal/orangtua'); exit; }
+        header('Location: /portal/orangtua');
+        exit;
+    }
 
+    public function portalAbsensi() {
+        $students = $this->getStudents();
+        $student  = $this->resolveStudent($students);
         $db = Database::getInstance();
-        $student = $db->query(
-            "SELECT s.*, c.name as class_name FROM students s
-             LEFT JOIN classrooms c ON s.classroom_id = c.id
-             WHERE s.id = ? AND s.status = 'ACTIVE'",
-            [$studentId]
-        )->fetch();
-        if (!$student) { header('Location: /portal/orangtua'); exit; }
 
-        $activeYear = $db->query("SELECT id, name FROM academic_years WHERE is_active = 1 LIMIT 1")->fetch();
-
-        // Nilai
-        $grades = $activeYear ? $db->query(
-            "SELECT g.*, s.name as subject_name, s.kkm FROM grades g
-             JOIN subjects s ON g.subject_id = s.id
-             WHERE g.student_id = ? AND g.academic_year_id = ?
-             ORDER BY s.name",
-            [$studentId, $activeYear['id']]
-        )->fetchAll() : [];
-
-        // Absensi bulan ini
-        $month = date('Y-m');
-        $attendance = $db->query(
+        $month = $_GET['month'] ?? date('Y-m');
+        $attendance = $student ? $db->query(
             "SELECT date, status, notes FROM attendances
              WHERE student_id = ? AND DATE_FORMAT(date,'%Y-%m') = ?
              ORDER BY date DESC",
-            [$studentId, $month]
-        )->fetchAll();
+            [$student['id'], $month]
+        )->fetchAll() : [];
+
         $recap = ['H' => 0, 'S' => 0, 'I' => 0, 'A' => 0];
         foreach ($attendance as $a) { if (isset($recap[$a['status']])) $recap[$a['status']]++; }
 
-        // Tagihan
-        $bills = $db->query(
-            "SELECT * FROM bills WHERE student_id = ? ORDER BY created_at DESC LIMIT 10",
-            [$studentId]
-        )->fetchAll();
+        View::render('parents/portal_absensi', [
+            'title'      => 'Absensi',
+            'students'   => $students,
+            'student'    => $student,
+            'attendance' => $attendance,
+            'recap'      => $recap,
+            'month'      => $month,
+        ]);
+    }
 
-        // Pelanggaran terbaru
-        $violations = $db->query(
-            "SELECT dv.*, mv.name as violation_name, mv.points
-             FROM discipline_violations dv
-             JOIN master_violations mv ON dv.violation_id = mv.id
-             WHERE dv.student_id = ? ORDER BY dv.date DESC LIMIT 5",
-            [$studentId]
-        )->fetchAll();
+    public function portalNilai() {
+        $students = $this->getStudents();
+        $student  = $this->resolveStudent($students);
+        $db = Database::getInstance();
 
-        View::render('parents/portal_child', [
-            'title'      => 'Detail Anak: ' . $student['full_name'],
+        $activeYear = $db->query("SELECT id, name FROM academic_years WHERE is_active=1 LIMIT 1")->fetch();
+        $grades = ($student && $activeYear) ? $db->query(
+            "SELECT sub.name as subject_name, sub.kkm,
+                    MAX(CASE WHEN g.type='TUGAS' THEN g.score END) as task_score,
+                    MAX(CASE WHEN g.type='UTS'   THEN g.score END) as mid_score,
+                    MAX(CASE WHEN g.type='UAS'   THEN g.score END) as final_exam_score,
+                    AVG(g.score) as final_score
+             FROM student_grades g
+             JOIN schedules sc ON g.schedule_id = sc.id
+             JOIN subjects sub ON sc.subject_id = sub.id
+             WHERE g.student_id = ? AND sc.academic_year_id = ?
+             GROUP BY sub.id, sub.name, sub.kkm
+             ORDER BY sub.name",
+            [$student['id'], $activeYear['id']]
+        )->fetchAll() : [];
+
+        View::render('parents/portal_nilai', [
+            'title'      => 'Nilai',
+            'students'   => $students,
             'student'    => $student,
             'grades'     => $grades,
             'activeYear' => $activeYear,
-            'attendance' => $attendance,
-            'recap'      => $recap,
-            'bills'      => $bills,
-            'violations' => $violations,
+        ]);
+    }
+
+    public function portalPembayaran() {
+        $students = $this->getStudents();
+        $student  = $this->resolveStudent($students);
+        $db = Database::getInstance();
+
+        $bills = $student ? $db->query(
+            "SELECT b.*, ft.name as fee_name FROM bills b
+             LEFT JOIN fee_types ft ON b.fee_type_id = ft.id
+             WHERE b.student_id = ? ORDER BY b.created_at DESC",
+            [$student['id']]
+        )->fetchAll() : [];
+
+        $transactions = $student ? $db->query(
+            "SELECT t.*, b.title as fee_name FROM transactions t
+             JOIN bills b ON t.bill_id = b.id
+             WHERE b.student_id = ? ORDER BY t.created_at DESC LIMIT 20",
+            [$student['id']]
+        )->fetchAll() : [];
+
+        View::render('parents/portal_pembayaran', [
+            'title'        => 'Pembayaran',
+            'students'     => $students,
+            'student'      => $student,
+            'bills'        => $bills,
+            'transactions' => $transactions,
+        ]);
+    }
+
+    public function portalKedisiplinan() {
+        $students = $this->getStudents();
+        $student  = $this->resolveStudent($students);
+        $db = Database::getInstance();
+
+        $violations = $student ? $db->query(
+            "SELECT sv.*, vt.name as violation_name, vt.points, vt.category
+             FROM student_violations sv
+             JOIN violation_types vt ON sv.violation_type_id = vt.id
+             WHERE sv.student_id = ? ORDER BY sv.date DESC",
+            [$student['id']]
+        )->fetchAll() : [];
+
+        $totalPoints = array_sum(array_column($violations, 'points'));
+
+        View::render('parents/portal_kedisiplinan', [
+            'title'       => 'Kedisiplinan',
+            'students'    => $students,
+            'student'     => $student,
+            'violations'  => $violations,
+            'totalPoints' => $totalPoints,
+        ]);
+    }
+
+    public function portalAsrama() {
+        $students = $this->getStudents();
+        $student  = $this->resolveStudent($students);
+        $db = Database::getInstance();
+
+        $dorm = ($student && $student['dorm_id']) ? $db->query(
+            "SELECT * FROM dorms WHERE id = ?", [$student['dorm_id']]
+        )->fetch() : null;
+
+        $permits = $student ? $db->query(
+            "SELECT * FROM permits WHERE student_id = ? ORDER BY created_at DESC LIMIT 10",
+            [$student['id']]
+        )->fetchAll() : [];
+
+        View::render('parents/portal_asrama', [
+            'title'    => 'Asrama',
+            'students' => $students,
+            'student'  => $student,
+            'dorm'     => $dorm,
+            'permits'  => $permits,
+        ]);
+    }
+
+    public function portalKesehatan() {
+        $students = $this->getStudents();
+        $student  = $this->resolveStudent($students);
+        $db = Database::getInstance();
+
+        $records = $student ? $db->query(
+            "SELECT hr.*, u.name as officer_name FROM health_records hr
+             LEFT JOIN users u ON hr.officer_id = u.id
+             WHERE hr.student_id = ? ORDER BY hr.date DESC",
+            [$student['id']]
+        )->fetchAll() : [];
+
+        View::render('parents/portal_kesehatan', [
+            'title'    => 'Kesehatan',
+            'students' => $students,
+            'student'  => $student,
+            'records'  => $records,
+        ]);
+    }
+
+    public function portalJadwal() {
+        $students = $this->getStudents();
+        $student  = $this->resolveStudent($students);
+        $db = Database::getInstance();
+
+        $activeYear = $db->query("SELECT id FROM academic_years WHERE is_active=1 LIMIT 1")->fetch();
+        $schedules = ($student && $student['classroom_id'] && $activeYear) ? $db->query(
+            "SELECT sc.*, s.name as subject_name, t.full_name as teacher_name
+             FROM schedules sc
+             JOIN subjects s ON sc.subject_id = s.id
+             LEFT JOIN teachers t ON sc.teacher_id = t.id
+             WHERE sc.classroom_id = ? AND sc.academic_year_id = ?
+             ORDER BY FIELD(sc.day,'SENIN','SELASA','RABU','KAMIS','JUMAT','SABTU','AHAD'), sc.start_time",
+            [$student['classroom_id'], $activeYear['id']]
+        )->fetchAll() : [];
+
+        $days = ['SENIN','SELASA','RABU','KAMIS','JUMAT','SABTU','AHAD'];
+        $grouped = [];
+        foreach ($days as $d) $grouped[$d] = [];
+        foreach ($schedules as $sc) $grouped[$sc['day']][] = $sc;
+
+        View::render('parents/portal_jadwal', [
+            'title'    => 'Jadwal Pelajaran',
+            'students' => $students,
+            'student'  => $student,
+            'grouped'  => $grouped,
+            'days'     => $days,
+        ]);
+    }
+
+    public function portalPengumuman() {
+        $db = Database::getInstance();
+        // Gunakan tabel announcements jika ada, fallback ke master_notification
+        try {
+            $announcements = $db->query(
+                "SELECT * FROM announcements ORDER BY created_at DESC LIMIT 30"
+            )->fetchAll();
+        } catch (\Exception $e) {
+            $announcements = [];
+        }
+
+        View::render('parents/portal_pengumuman', [
+            'title'         => 'Pengumuman',
+            'students'      => $this->getStudents(),
+            'announcements' => $announcements,
         ]);
     }
 }

@@ -12,19 +12,49 @@ class AcademicSupportController {
     public function calendar() {
         $db = Database::getInstance();
         $activeYear = $db->query("SELECT id FROM academic_years WHERE is_active = 1")->fetch();
-        $events = $db->query("SELECT * FROM academic_calendar WHERE academic_year_id = ? ORDER BY start_date ASC", [$activeYear['id'] ?? 0])->fetchAll();
-        
-        View::render('academic/calendar', ['title' => 'Kalender Akademik', 'events' => $events]);
+
+        $search = $_GET['search'] ?? '';
+        $filter = $_GET['type']   ?? '';
+        $page   = max(1, (int)($_GET['page'] ?? 1));
+        $limit  = 10;
+        $offset = ($page - 1) * $limit;
+
+        $where  = "WHERE academic_year_id = ?";
+        $params = [$activeYear['id'] ?? 0];
+        if ($search) { $where .= " AND title LIKE ?"; $params[] = "%$search%"; }
+        if ($filter) { $where .= " AND type = ?";    $params[] = $filter; }
+
+        $total      = $db->query("SELECT COUNT(*) FROM academic_calendar $where", $params)->fetchColumn();
+        $totalPages = max(1, ceil($total / $limit));
+        $events     = $db->query("SELECT * FROM academic_calendar $where ORDER BY start_date ASC LIMIT $limit OFFSET $offset", $params)->fetchAll();
+
+        View::render('academic/calendar', [
+            'title'       => 'Kalender Akademik',
+            'events'      => $events,
+            'total'       => $total,
+            'totalPages'  => $totalPages,
+            'currentPage' => $page,
+            'search'      => $search,
+            'filter'      => $filter,
+        ]);
     }
 
     public function storeEvent() {
         $db = Database::getInstance();
         $activeYear = $db->query("SELECT id FROM academic_years WHERE is_active = 1")->fetch();
-        
         $db->query("INSERT INTO academic_calendar (academic_year_id, title, start_date, end_date, type, color) VALUES (?, ?, ?, ?, ?, ?)", [
             $activeYear['id'], $_POST['title'], $_POST['start_date'], $_POST['end_date'], $_POST['type'], $_POST['color']
         ]);
         Session::setFlash('success', 'Event berhasil ditambahkan.');
+        header('Location: /academic/calendar');
+    }
+
+    public function updateEvent() {
+        $db = Database::getInstance();
+        $db->query("UPDATE academic_calendar SET title=?, start_date=?, end_date=?, type=?, color=? WHERE id=?", [
+            $_POST['title'], $_POST['start_date'], $_POST['end_date'], $_POST['type'], $_POST['color'], (int)$_POST['id']
+        ]);
+        Session::setFlash('success', 'Event berhasil diperbarui.');
         header('Location: /academic/calendar');
     }
 
@@ -33,6 +63,34 @@ class AcademicSupportController {
         $db->query("DELETE FROM academic_calendar WHERE id = ?", [(int)$_POST['id']]);
         Session::setFlash('success', 'Event berhasil dihapus.');
         header('Location: /academic/calendar');
+    }
+
+    public function printCalendar() {
+        $db = Database::getInstance();
+        $activeYear = $db->query("SELECT id FROM academic_years WHERE is_active = 1")->fetch();
+
+        $month = max(1, min(12, (int)($_GET['month'] ?? date('n'))));
+        $year  = (int)($_GET['year'] ?? date('Y'));
+
+        $monthStart = sprintf('%04d-%02d-01', $year, $month);
+        $monthEnd   = sprintf('%04d-%02d-%02d', $year, $month, (int)date('t', mktime(0,0,0,$month,1,$year)));
+
+        $events = $db->query(
+            "SELECT * FROM academic_calendar
+             WHERE academic_year_id = ?
+               AND start_date <= ? AND end_date >= ?
+             ORDER BY start_date ASC",
+            [$activeYear['id'] ?? 0, $monthEnd, $monthStart]
+        )->fetchAll();
+
+        $monthNames = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+        View::render('academic/calendar_print', [
+            'events'    => $events,
+            'month'     => $month,
+            'year'      => $year,
+            'monthName' => $monthNames[$month],
+        ]);
     }
 
     // --- BANK SOAL ---

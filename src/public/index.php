@@ -29,7 +29,7 @@ use App\Controllers\{
     BoardingMutationController, BoardingReportController,
     StaffController, StaffPositionController, StaffAttendanceController, SchoolStructureController,
     FinanceController, InventoryController, ReportController, PoskestrenController, AnnouncementController, TeacherController,
-    PasswordResetController
+    PasswordResetController, GuidelineController
 };
 
 $router = new Router();
@@ -326,7 +326,9 @@ $router->get('/academic/assignments/delete',[TeachingAssignmentController::class
 
 $router->get('/academic/calendar',          [AcademicSupportController::class, 'calendar']);
 $router->post('/academic/calendar/store',   [AcademicSupportController::class, 'storeEvent']);
-$router->post('/academic/calendar/delete',  [AcademicSupportController::class, 'deleteEvent']);
+$router->post('/academic/calendar/update',  [AcademicSupportController::class, 'updateEvent']);
+$router->post('/academic/calendar/delete',   [AcademicSupportController::class, 'deleteEvent']);
+$router->get('/academic/calendar/print',    [AcademicSupportController::class, 'printCalendar']);
 $router->get('/academic/exams',             [AcademicSupportController::class, 'examBank']);
 $router->post('/academic/exams/store',      [AcademicSupportController::class, 'storeExam']);
 $router->get('/academic/kitab',             [KitabController::class, 'index']);
@@ -578,8 +580,19 @@ $router->post('/staff/attendance/store',        [StaffAttendanceController::clas
 $router->get('/student/profile',                [StudentController::class, 'profile']);
 
 // Portal Orang Tua
-$router->get('/portal/orangtua',            [ParentsController::class, 'portalIndex']);
-$router->get('/portal/orangtua/anak',       [ParentsController::class, 'portalChild']);
+$router->get('/portal/orangtua',                [ParentsController::class, 'portalIndex']);
+$router->get('/portal/orangtua/anak',           [ParentsController::class, 'portalChild']);
+$router->get('/portal/orangtua/absensi',        [ParentsController::class, 'portalAbsensi']);
+$router->get('/portal/orangtua/nilai',          [ParentsController::class, 'portalNilai']);
+$router->get('/portal/orangtua/pembayaran',     [ParentsController::class, 'portalPembayaran']);
+$router->get('/portal/orangtua/kedisiplinan',   [ParentsController::class, 'portalKedisiplinan']);
+$router->get('/portal/orangtua/asrama',         [ParentsController::class, 'portalAsrama']);
+$router->get('/portal/orangtua/kesehatan',      [ParentsController::class, 'portalKesehatan']);
+$router->get('/portal/orangtua/jadwal',         [ParentsController::class, 'portalJadwal']);
+$router->get('/portal/orangtua/pengumuman',     [ParentsController::class, 'portalPengumuman']);
+
+// Guideline
+$router->get('/guideline', [GuidelineController::class, 'index']);
 
 // Execute Router
 $router->resolve();

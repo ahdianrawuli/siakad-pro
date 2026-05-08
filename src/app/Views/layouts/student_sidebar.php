@@ -38,6 +38,16 @@
             </li>
             <?php endforeach; ?>
         </ul>
+
+        <!-- Panduan -->
+        <div class="px-2 mt-2">
+            <div class="border-t border-green-700 my-2"></div>
+            <a href="/guideline" class="flex items-center px-4 py-3 hover:bg-green-700 rounded-lg transition-colors <?= $currentUri === '/guideline' ? 'bg-green-700' : '' ?>">
+                <i class="fa-solid fa-book-open w-6 text-center"></i>
+                <span class="ml-3 font-medium">Panduan</span>
+            </a>
+        </div>
+
     </nav>
 
     <div class="p-4 border-t border-green-700 bg-green-900">

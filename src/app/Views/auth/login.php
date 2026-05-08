@@ -59,6 +59,15 @@
             <p>👤 Admin &nbsp;&nbsp;: <code class="bg-gray-100 px-1 rounded">admin</code> / <code class="bg-gray-100 px-1 rounded">password</code></p>
             <p>🎓 Siswa &nbsp;&nbsp;: <code class="bg-gray-100 px-1 rounded">25260001</code> / <code class="bg-gray-100 px-1 rounded">27092013</code> <span class="text-gray-400 text-xs">(tgl lahir: 27 Sep 2013)</span></p>
             <p>📖 Guru &nbsp;&nbsp;&nbsp;: <code class="bg-gray-100 px-1 rounded">ahmad.fauzi</code> / <code class="bg-gray-100 px-1 rounded">123456</code></p>
+            <p>👨‍👩‍👦 Ortu &nbsp;&nbsp;: <code class="bg-gray-100 px-1 rounded">083891834125</code> / <code class="bg-gray-100 px-1 rounded">25260001</code> <span class="text-gray-400">(HP ayah / NIS anak)</span></p>
+        </div>
+
+        <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 text-xs text-blue-700 space-y-1.5">
+            <p class="font-bold text-blue-800 mb-1"><i class="fa-solid fa-circle-info mr-1"></i>Cara Login Orang Tua</p>
+            <p>Akun orang tua dibuat otomatis saat siswa didaftarkan.</p>
+            <p>🔑 <strong>Username</strong>: Nomor HP Ayah (atau Ibu jika tidak ada)</p>
+            <p>🔑 <strong>Password</strong>: NIS siswa</p>
+            <p class="text-blue-500 mt-1">Belum punya akun? Hubungi admin pesantren.</p>
         </div>
 
     </div>

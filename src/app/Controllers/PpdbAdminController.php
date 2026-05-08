@@ -159,9 +159,33 @@ class PpdbAdminController {
                 $candidate['father_name'], $candidate['father_phone'],
             ]
         );
+        $studentId = $db->getConnection()->lastInsertId();
+
+        // Auto-create akun orang tua
+        // Username = no HP ayah (prioritas), fallback ke ibu
+        // Password = NIS siswa
+        $parentPhone = preg_replace('/\D/', '', $candidate['father_phone'] ?? $candidate['mother_phone'] ?? '');
+        if ($parentPhone) {
+            $parentPassHash = password_hash($nis, PASSWORD_BCRYPT);
+            $parentName     = $candidate['father_name'] ?: ($candidate['mother_name'] ?: 'Orang Tua ' . $candidate['full_name']);
+
+            // Cek apakah username sudah ada (HP bisa sama jika punya anak lebih dari 1)
+            $existingParent = $db->query("SELECT id FROM users WHERE username = ?", [$parentPhone])->fetch();
+            if ($existingParent) {
+                // Akun sudah ada, langsung link ke siswa baru
+                $db->query("UPDATE students SET parent_user_id = ? WHERE id = ?", [$existingParent['id'], $studentId]);
+            } else {
+                $parentEmail = $parentPhone . '@wali.thawalib.sch.id';
+                $db->query("INSERT INTO users (name, username, email, password, role_id, status) VALUES (?,?,?,?,5,'active')",
+                    [$parentName, $parentPhone, $parentEmail, $parentPassHash]);
+                $parentUserId = $db->getConnection()->lastInsertId();
+                $db->query("UPDATE students SET parent_user_id = ? WHERE id = ?", [$parentUserId, $studentId]);
+            }
+        }
 
         $db->getConnection()->commit();
-        Session::setFlash('success', "Siswa aktif berhasil dibuat. NIS: $nis | Username: $nis | Password: $passPlain (tanggal lahir)");
+        $parentInfo = $parentPhone ? " | Login Ortu: $parentPhone / $nis" : '';
+        Session::setFlash('success', "Siswa aktif berhasil dibuat. NIS: $nis | Username: $nis | Password: $passPlain (tanggal lahir)$parentInfo");
         header("Location: /ppdb/registrations/detail?id=" . $candidateId);
         exit;
     }

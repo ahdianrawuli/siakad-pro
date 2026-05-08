@@ -225,6 +225,16 @@ if ($isCandidate) {
             <?php endforeach; ?>
 
         </ul>
+
+        <!-- Panduan -->
+        <div class="px-2 mt-2">
+            <div class="border-t border-white/10 my-2"></div>
+            <a href="/guideline" class="flex items-center px-4 py-3 rounded-lg transition-colors group <?= $hoverColor ?> <?= isActive('/guideline') ? $activeColor : '' ?>">
+                <i class="fa-solid fa-book-open w-6 text-center text-gray-400 group-hover:text-white <?= isActive('/guideline') ? 'text-white' : '' ?>"></i>
+                <span class="ml-3 text-sm font-medium">Panduan</span>
+            </a>
+        </div>
+
     </nav>
 
     <div class="p-4 border-t border-white/10 <?= $bgHeader ?>">

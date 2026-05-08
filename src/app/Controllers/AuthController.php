@@ -96,6 +96,8 @@ class AuthController {
             // F. Redirect Berdasarkan Role
             if ($user['role_slug'] === 'siswa') {
                 header('Location: /student/dashboard'); 
+            } elseif ($user['role_slug'] === 'orang-tua') {
+                header('Location: /portal/orangtua');
             } else {
                 header('Location: /dashboard');
             }
