@@ -53,25 +53,20 @@ class AnnouncementController {
 
     public function store() {
         $db = Database::getInstance();
-        $title = trim($_POST['title']);
+        $title   = trim($_POST['title']);
         $content = trim($_POST['content']);
-        $target = $_POST['target_audience'] ?? 'ALL';
-        $status = $_POST['status'] ?? 'PUBLISHED';
+        $target  = $_POST['target_audience'] ?? 'ALL';
+        $status  = $_POST['status'] ?? 'PUBLISHED';
 
-        try {
-            $db->query("INSERT INTO announcements (title, content, target_audience, status) VALUES (?, ?, ?, ?)", [
-                $title, $content, $target, $status
-            ]);
+        $db->query("INSERT INTO announcements (title, content, target_audience, status, created_by) VALUES (?, ?, ?, ?, ?)", [
+            $title, $content, $target, $status, Session::get('user_id')
+        ]);
 
-            if ($status === 'PUBLISHED') {
-                $this->broadcastWhatsApp($title, $content, $target);
-            }
-
-            Session::setFlash('success', 'Pengumuman berhasil disimpan.');
-        } catch (\Exception $e) {
-            Session::setFlash('error', 'Gagal menyimpan pengumuman.');
+        if ($status === 'PUBLISHED') {
+            try { $this->broadcastWhatsApp($title, $content, $target); } catch (\Exception $e) {}
         }
 
+        Session::setFlash('success', 'Pengumuman berhasil disimpan.');
         header('Location: /announcements');
     }
 
@@ -112,14 +107,12 @@ class AnnouncementController {
         $numbers = [];
 
         if ($target === 'ALL' || $target === 'STUDENTS' || $target === 'PARENTS') {
-            $students = $db->query("SELECT phone_number, father_phone, mother_phone, guardian_phone FROM students WHERE status = 'ACTIVE'")->fetchAll();
+            $students = $db->query("SELECT parent_phone, father_phone, mother_phone, guardian_phone FROM students WHERE status = 'ACTIVE'")->fetchAll();
             foreach ($students as $s) {
-                if ($target === 'ALL' || $target === 'STUDENTS') {
-                    if (!empty($s['phone_number'])) $numbers[] = $s['phone_number'];
-                }
                 if ($target === 'ALL' || $target === 'PARENTS') {
-                    if (!empty($s['father_phone'])) $numbers[] = $s['father_phone'];
-                    if (!empty($s['mother_phone'])) $numbers[] = $s['mother_phone'];
+                    if (!empty($s['parent_phone']))   $numbers[] = $s['parent_phone'];
+                    if (!empty($s['father_phone']))   $numbers[] = $s['father_phone'];
+                    if (!empty($s['mother_phone']))   $numbers[] = $s['mother_phone'];
                     if (!empty($s['guardian_phone'])) $numbers[] = $s['guardian_phone'];
                 }
             }

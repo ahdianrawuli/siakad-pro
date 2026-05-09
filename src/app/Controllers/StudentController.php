@@ -96,7 +96,31 @@ class StudentController {
 
         $student = $this->getActiveStudent($userId);
         if ($student) {
-            View::render('student/profile', ['title' => 'Profil Saya', 'student' => $student, 'is_candidate' => false]);
+            $father = [
+                'name'          => $student['father_name'] ?? null,
+                'nik'           => null,
+                'phone_number'  => $student['father_phone'] ?? null,
+                'job'           => $student['father_job'] ?? null,
+                'education'     => null,
+            ];
+            $mother = [
+                'name'          => $student['mother_name'] ?? null,
+                'nik'           => null,
+                'phone_number'  => $student['mother_phone'] ?? null,
+                'job'           => $student['mother_job'] ?? null,
+                'education'     => null,
+            ];
+            // Alias agar kompatibel dengan view
+            $student['place_of_birth'] = $student['birth_place'] ?? null;
+            $student['date_of_birth']  = $student['birth_date'] ?? null;
+
+            View::render('student/profile', [
+                'title'        => 'Profil Saya',
+                'student'      => $student,
+                'father'       => $father,
+                'mother'       => $mother,
+                'is_candidate' => false,
+            ]);
             return;
         }
 
@@ -478,13 +502,9 @@ class StudentController {
     // =========================================================================
     public function announcements() {
         $db = Database::getInstance();
-        try {
-            $announcements = $db->query(
-                "SELECT * FROM announcements WHERE is_active = 1 ORDER BY created_at DESC LIMIT 30"
-            )->fetchAll();
-        } catch (\Exception $e) {
-            $announcements = [];
-        }
+        $announcements = $db->query(
+            "SELECT * FROM announcements WHERE status = 'PUBLISHED' AND (target_audience IN ('ALL','STUDENTS')) ORDER BY created_at DESC LIMIT 30"
+        )->fetchAll();
         View::render('student/announcements', ['title' => 'Pengumuman', 'announcements' => $announcements]);
     }
 

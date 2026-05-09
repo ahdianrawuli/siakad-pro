@@ -139,10 +139,21 @@ class ParentsController {
 
     /** Dashboard orang tua: lihat data anak */
     public function portalIndex() {
+        $db       = Database::getInstance();
         $students = $this->getStudents();
+
+        // Ambil quick stats per anak
+        $stats = [];
+        foreach ($students as $s) {
+            $unpaid = $db->query("SELECT COUNT(*) FROM bills WHERE student_id = ? AND status = 'UNPAID'", [$s['id']])->fetchColumn();
+            $absent = $db->query("SELECT COUNT(*) FROM attendances WHERE student_id = ? AND status = 'A' AND DATE_FORMAT(date,'%Y-%m') = ?", [$s['id'], date('Y-m')])->fetchColumn();
+            $stats[$s['id']] = ['unpaid' => $unpaid, 'absent' => $absent];
+        }
+
         View::render('parents/portal_index', [
             'title'    => 'Portal Orang Tua',
             'students' => $students,
+            'stats'    => $stats,
         ]);
     }
 
