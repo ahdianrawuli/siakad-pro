@@ -65,6 +65,8 @@ function isActive($url) {
         '/student-affairs/alumni'       => '/school/alumni',
         '/student-affairs/teachers'     => '/school/teachers',
         '/homeroom/report-all'          => '/discipline/homeroom-reports',
+        '/report/print'                 => '/reports/students',
+        '/reports/students'             => '/report/print',
         '/boarding/dorms'               => '/asrama/dorms',
         '/boarding/supervisors'         => '/asrama/supervisors',
         '/boarding/activities'          => '/asrama/activities',

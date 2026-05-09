@@ -251,6 +251,7 @@ $router->get('/counseling/delete',      [DisciplineController::class, 'deleteCou
 // X. RAPOR (REPORTS)
 // ============================================================================
 $router->get('/reports/students', [ReportController::class, 'students']);
+$router->get('/report/print',    [ReportController::class, 'students']); // alias menu
 $router->get('/reports/boarding', [BoardingReportController::class, 'index']);
 
 // ============================================================================
