@@ -152,9 +152,12 @@ $router->post('/ppdb/tracks/update',    [PpdbAdminController::class, 'updateTrac
 $router->post('/ppdb/tracks/delete',    [PpdbAdminController::class, 'deleteTrack']);
 
 // Registration & Processing
-$router->get('/ppdb/registrations',         [PpdbAdminController::class, 'index']);
-$router->get('/ppdb/registrations/detail',  [PpdbAdminController::class, 'detail']);
-$router->post('/ppdb/registrations/store',  [PpdbAdminController::class, 'storeCandidate']);
+$router->get('/ppdb/registrations',                [PpdbAdminController::class, 'index']);
+$router->get('/ppdb/registrations/detail',         [PpdbAdminController::class, 'detail']);
+$router->post('/ppdb/registrations/store',         [PpdbAdminController::class, 'storeCandidate']);
+$router->post('/ppdb/registrations/set-status',    [PpdbAdminController::class, 'setStatus']);
+$router->post('/ppdb/registrations/delete',        [PpdbAdminController::class, 'deleteCandidate']);
+$router->post('/ppdb/registrations/notify',        [PpdbAdminController::class, 'notifyCandidate']);
 $router->post('/ppdb/verify/payment',       [PpdbAdminController::class, 'verifyPayment']);
 $router->post('/ppdb/verify/document',      [PpdbAdminController::class, 'verifyDocument']);
 $router->post('/ppdb/verify/graduation',    [PpdbAdminController::class, 'setGraduation']);
@@ -168,8 +171,14 @@ $router->post('/ppdb/promote',              [PpdbAdminController::class, 'promot
 // Data Siswa & Wali
 $router->get('/students',                           [StudentAffairsController::class, 'index']);
 $router->post('/students/assign-class',             [StudentAffairsController::class, 'assignClass']);
-$router->get('/student-affairs/students',           [StudentAffairsController::class, 'index']);
-$router->get('/student-affairs/students/print',     [StudentAffairsController::class, 'printBiodata']);
+$router->get('/student-affairs/students',              [StudentAffairsController::class, 'index']);
+$router->get('/student-affairs/students/print',        [StudentAffairsController::class, 'printBiodata']);
+$router->post('/student-affairs/students/store',       [StudentAffairsController::class, 'store']);
+$router->post('/student-affairs/students/update',      [StudentAffairsController::class, 'update']);
+$router->get('/student-affairs/students/delete',       [StudentAffairsController::class, 'delete']);
+$router->get('/student-affairs/students/export',       [StudentAffairsController::class, 'export']);
+$router->post('/student-affairs/students/import',      [StudentAffairsController::class, 'import']);
+$router->get('/student-affairs/students/detail',       [StudentAffairsController::class, 'detail']);
 
 $router->get('/parents',                        [ParentsController::class, 'index']);
 $router->get('/parents/edit',                   [ParentsController::class, 'edit']);
@@ -401,17 +410,26 @@ $router->post('/finance/fee-types/store',   [FinanceController::class, 'storeFee
 $router->get('/finance/fee-types/delete',   [FinanceController::class, 'deleteFeeType']);
 $router->get('/finance/billing',            [FinanceController::class, 'billing']); 
 $router->post('/finance/billing/create',    [FinanceController::class, 'createBill']);
+$router->post('/finance/billing/mark-paid', [FinanceController::class, 'markAsPaid']);
+$router->post('/finance/billing/verify',    [FinanceController::class, 'verifyPayment']);
+$router->get('/finance/billing/delete',     [FinanceController::class, 'deleteBill']);
 $router->post('/finance/generate-bill',     [FinanceController::class, 'generateBill']); 
 $router->get('/finance/reports',            [FinanceController::class, 'reports']);
 $router->get('/finance/reports/export',     [FinanceController::class, 'exportReports']);
 $router->get('/finance/receipt',            [FinanceController::class, 'printReceipt']);
 $router->post('/finance/pay',               [FinanceController::class, 'pay']);
 
-// Inventaris Legacy
-$router->get('/finance/inventory',          [InventoryController::class, 'index']);
-$router->post('/finance/inventory/store',   [InventoryController::class, 'store']);
-$router->post('/finance/inventory/update',  [InventoryController::class, 'update']);
-$router->get('/finance/inventory/delete',   [InventoryController::class, 'delete']);
+// Inventaris Aset
+$router->get('/finance/inventory',                  [InventoryController::class, 'index']);
+$router->post('/finance/inventory/store',           [InventoryController::class, 'store']);
+$router->post('/finance/inventory/update',          [InventoryController::class, 'update']);
+$router->get('/finance/inventory/delete',           [InventoryController::class, 'delete']);
+$router->get('/finance/inventory/mutations',        [InventoryController::class, 'mutations']);
+$router->get('/finance/inventory/loans',            [InventoryController::class, 'loans']);
+$router->post('/finance/inventory/loans/store',     [InventoryController::class, 'storeLoan']);
+$router->post('/finance/inventory/loans/return',    [InventoryController::class, 'returnLoan']);
+$router->get('/finance/inventory/export',           [InventoryController::class, 'export']);
+$router->post('/finance/inventory/notify-damaged',  [InventoryController::class, 'notifyDamaged']);
 
 
 // ============================================================================

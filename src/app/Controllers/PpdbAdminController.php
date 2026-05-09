@@ -190,7 +190,68 @@ class PpdbAdminController {
         exit;
     }
 
+    // --- UPDATE STATUS LANGSUNG DARI TABEL ---
+    public function setStatus() {
+        $db          = Database::getInstance();
+        $id          = (int)($_POST['id'] ?? 0);
+        $status      = $_POST['status'] ?? '';
+        $validStatus = ['PENDING', 'VERIFIED', 'PAID', 'ACCEPTED', 'REJECTED'];
+        if (!$id || !in_array($status, $validStatus)) {
+            Session::setFlash('error', 'Data tidak valid.'); header('Location: /ppdb/registrations'); exit;
+        }
+        $db->query("UPDATE student_candidates SET registration_status = ? WHERE id = ?", [$status, $id]);
+
+        // Kirim notif WA jika ACCEPTED atau REJECTED
+        $c = $db->query("SELECT full_name, whatsapp_number, registration_no FROM student_candidates WHERE id = ?", [$id])->fetch();
+        if ($c && !empty($c['whatsapp_number'])) {
+            if ($status === 'ACCEPTED') {
+                $msg = "Assalamu'alaikum,\n\nSelamat! Pendaftaran atas nama *{$c['full_name']}* (No. Reg: {$c['registration_no']}) telah *DITERIMA* di Pondok Pesantren Sumatera Thawalib Parabek.\n\nSilakan pantau informasi selanjutnya melalui portal PPDB.\n— Panitia PPDB Thawalib Parabek";
+            } elseif ($status === 'REJECTED') {
+                $msg = "Assalamu'alaikum,\n\nMohon maaf, pendaftaran atas nama *{$c['full_name']}* (No. Reg: {$c['registration_no']}) belum dapat kami terima pada seleksi ini.\n\nTerima kasih atas partisipasinya.\n— Panitia PPDB Thawalib Parabek";
+            }
+            if (isset($msg)) {
+                try { WhatsappService::send($c['whatsapp_number'], $msg); } catch (\Exception $e) {}
+            }
+        }
+
+        Session::setFlash('success', 'Status pendaftar diperbarui.');
+        header('Location: /ppdb/registrations');
+    }
+
+    // --- HAPUS PENDAFTAR ---
+    public function deleteCandidate() {
+        $db = Database::getInstance();
+        $id = (int)($_POST['id'] ?? 0);
+        $c  = $db->query("SELECT registration_status FROM student_candidates WHERE id = ?", [$id])->fetch();
+        if (!$c) { Session::setFlash('error', 'Data tidak ditemukan.'); header('Location: /ppdb/registrations'); exit; }
+        if ($c['registration_status'] === 'ACCEPTED') {
+            Session::setFlash('error', 'Pendaftar yang sudah DITERIMA tidak dapat dihapus.'); header('Location: /ppdb/registrations'); exit;
+        }
+        $db->query("DELETE FROM student_candidates WHERE id = ?", [$id]);
+        Session::setFlash('success', 'Data pendaftar dihapus.');
+        header('Location: /ppdb/registrations');
+    }
+
+    // --- KIRIM NOTIF WA MANUAL ---
+    public function notifyCandidate() {
+        $db  = Database::getInstance();
+        $id  = (int)($_POST['id'] ?? 0);
+        $msg = trim($_POST['message'] ?? '');
+        $c   = $db->query("SELECT full_name, whatsapp_number FROM student_candidates WHERE id = ?", [$id])->fetch();
+        if (!$c || empty($c['whatsapp_number']) || empty($msg)) {
+            Session::setFlash('error', 'Gagal kirim notifikasi.'); header('Location: /ppdb/registrations'); exit;
+        }
+        try {
+            WhatsappService::send($c['whatsapp_number'], $msg);
+            Session::setFlash('success', "Notifikasi WA berhasil dikirim ke {$c['full_name']}.");
+        } catch (\Exception $e) {
+            Session::setFlash('error', 'Gagal kirim WA: ' . $e->getMessage());
+        }
+        header('Location: /ppdb/registrations');
+    }
+
     // --- PENGELOLAAN SETTINGS PPDB (Jalur & Gelombang) ---
+
     public function settings() {
         $db = Database::getInstance();
         $paths   = $db->query("SELECT * FROM ppdb_tracks ORDER BY level, name ASC")->fetchAll();

@@ -7,9 +7,9 @@
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 </style>
 
-<main class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6" x-data="{ viewColumns: false }">
+<main class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
     <!-- Header Section -->
-    <div class="mb-8 flex flex-col md:flex-row md:justify-between md:items-end gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+    <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div>
             <h3 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Data Pendaftar PPDB</h3>
             <p class="text-slate-500 text-sm mt-1 font-medium">Mengelola dan memverifikasi calon santri baru secara terpusat.</p>
@@ -17,19 +17,45 @@
                 <i class="fa-solid fa-users"></i> Total Pendaftar: <?= $totalData ?>
             </div>
         </div>
-
-        <!-- Global Actions -->
         <div class="flex flex-wrap gap-2">
+            <button onclick="document.getElementById('addModal').classList.remove('hidden')"
+                class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 hover:bg-blue-700 transition flex items-center gap-2">
+                <i class="fa-solid fa-plus"></i> Tambah Manual
+            </button>
             <button onclick="document.getElementById('infoModal').classList.remove('hidden')"
-                class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-colors border border-slate-200" title="Panduan">
-                <i class="fa-solid fa-circle-info text-sm"></i>
+                class="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition border border-slate-200" title="Panduan">
+                <i class="fa-solid fa-circle-info"></i>
             </button>
         </div>
     </div>
     
     <?php \App\Core\Session::flash(); ?>
 
-    <!-- Banner Gelombang & Tahun Ajaran -->
+    <!-- Summary Cards -->
+    <?php
+    $statusCount = ['PENDING'=>0,'PAID'=>0,'VERIFIED'=>0,'ACCEPTED'=>0,'REJECTED'=>0];
+    foreach ($candidates as $c) { $s = $c['registration_status'] ?? 'PENDING'; if (isset($statusCount[$s])) $statusCount[$s]++; }
+    $cards = [
+        ['PENDING',  'Menunggu',  'bg-slate-100 text-slate-600',  'fa-clock'],
+        ['PAID',     'Lunas',     'bg-green-50 text-green-700',   'fa-circle-check'],
+        ['VERIFIED', 'Terverif.', 'bg-blue-50 text-blue-700',     'fa-file-circle-check'],
+        ['ACCEPTED', 'Diterima',  'bg-emerald-50 text-emerald-700','fa-user-check'],
+        ['REJECTED', 'Ditolak',   'bg-red-50 text-red-700',       'fa-user-xmark'],
+    ];
+    ?>
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+        <?php foreach ($cards as [$val, $label, $cls, $icon]): ?>
+        <a href="?status=<?= $val ?>" class="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-3 hover:shadow-md transition <?= ($selectedStatus??'')===$val ? 'ring-2 ring-blue-500' : '' ?>">
+            <div class="w-9 h-9 rounded-xl <?= $cls ?> flex items-center justify-center shrink-0">
+                <i class="fa-solid <?= $icon ?> text-sm"></i>
+            </div>
+            <div>
+                <div class="text-xl font-extrabold text-slate-800"><?= $statusCount[$val] ?></div>
+                <div class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider"><?= $label ?></div>
+            </div>
+        </a>
+        <?php endforeach; ?>
+    </div>
     <div class="bg-gradient-to-r from-blue-600 to-blue-500 rounded-2xl shadow-sm p-4 mb-6 flex flex-col md:flex-row justify-between items-center text-white border border-blue-400/30">
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
@@ -97,8 +123,9 @@
         </div>
 
         <!-- Data Table Section -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col relative z-0">
-            <div class="overflow-x-auto custom-scrollbar pb-4">
+        <!-- PENTING: tidak pakai overflow-hidden agar dropdown tidak terpotong -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col relative">
+            <div class="overflow-x-auto custom-scrollbar pb-1">
                 <table class="min-w-full whitespace-nowrap text-left">
                     <thead>
                         <tr class="bg-slate-50 border-b border-slate-200">
@@ -211,33 +238,24 @@
                             <!-- Actions -->
                             <td class="px-4 py-4 text-center sticky right-0 z-10 bg-white group-hover:bg-slate-50/80 transition-colors shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.02)]">
                                 <div class="flex items-center justify-center gap-2">
-                                    <!-- Validasi Dokumen -->
-                                    <button class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-colors shadow-sm" title="Validasi Dokumen">
-                                        <i class="fa-solid fa-file-signature text-sm"></i>
+                                    <!-- Ubah Status -->
+                                    <button onclick="openStatusModal(<?= $row['id'] ?>, '<?= $row['registration_status'] ?? 'PENDING' ?>', '<?= addslashes($row['full_name']) ?>')"
+                                        class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition shadow-sm" title="Ubah Status">
+                                        <i class="fa-solid fa-arrows-rotate text-sm"></i>
                                     </button>
 
-                                    <!-- Kelulusan -->
-                                    <button class="w-8 h-8 rounded-lg bg-green-50 text-green-600 hover:bg-green-600 hover:text-white flex items-center justify-center transition-colors shadow-sm" title="Konfirmasi Kelulusan">
-                                        <i class="fa-solid fa-user-check text-sm"></i>
+                                    <!-- Kirim WA -->
+                                    <button onclick="openWaModal(<?= $row['id'] ?>, '<?= addslashes($row['full_name']) ?>', '<?= $row['whatsapp_number'] ?? '' ?>')"
+                                        class="w-8 h-8 rounded-lg bg-green-50 text-green-600 hover:bg-green-600 hover:text-white flex items-center justify-center transition shadow-sm" title="Kirim WA">
+                                        <i class="fa-brands fa-whatsapp text-sm"></i>
                                     </button>
 
-                                    <!-- Dropdown Action -->
-                                    <div class="relative" x-data="{ open: false }">
-                                        <button @click="open = !open" @click.away="open = false" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center transition-colors shadow-sm">
+                                    <!-- Dropdown -->
+                                    <div class="relative">
+                                        <button onclick="toggleDropdown(<?= $row['id'] ?>, this)"
+                                            class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center transition shadow-sm">
                                             <i class="fa-solid fa-ellipsis-vertical"></i>
                                         </button>
-                                        <div x-show="open" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50 text-left">
-                                            <a href="/ppdb/registrations/detail?id=<?= $row['id'] ?>" class="block px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600">
-                                                <i class="fa-solid fa-eye w-5 text-center text-slate-400"></i> Lihat Detail
-                                            </a>
-                                            <a href="#" class="block px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600">
-                                                <i class="fa-solid fa-pen-to-square w-5 text-center text-slate-400"></i> Edit Data
-                                            </a>
-                                            <div class="border-t border-slate-100"></div>
-                                            <button class="w-full text-left px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors">
-                                                <i class="fa-solid fa-trash-can w-5 text-center"></i> Hapus Santri
-                                            </button>
-                                        </div>
                                     </div>
                                 </div>
                             </td>
@@ -282,47 +300,168 @@
     </div>
 </main>
 
-<script>
-    function updateQueryStringParameter(uri, key, value) {
-        var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
-        var separator = uri.indexOf('?') !== -1 ? "&" : "?";
-        if (uri.match(re)) {
-            return uri.replace(re, '$1' + key + "=" + value + '$2');
-        } else {
-            return uri + separator + key + "=" + value;
-        }
-    }
-    window.onclick = function(e) {
-        if (e.target == document.getElementById('infoModal')) document.getElementById('infoModal').classList.add('hidden');
-    }
-</script>
+<!-- Floating Dropdown (di-render di body agar tidak terpotong tabel) -->
+<div id="floatingDropdown" class="hidden fixed bg-white rounded-xl shadow-2xl border border-slate-100 w-48 text-left" style="z-index:99999;">
+    <a id="ddDetail" href="#" class="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600">
+        <i class="fa-solid fa-eye w-4 text-center text-slate-400"></i> Lihat Detail
+    </a>
+    <div class="border-t border-slate-100"></div>
+    <button id="ddDelete" class="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 transition">
+        <i class="fa-solid fa-trash-can w-4 text-center"></i> Hapus
+    </button>
+</div>
+
+<!-- Modal Ubah Status -->
+<div id="statusModal" class="hidden fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+            <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-arrows-rotate text-blue-500"></i> Ubah Status Pendaftar</h3>
+            <button onclick="document.getElementById('statusModal').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-slate-200 text-slate-500 hover:bg-slate-300 flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form action="/ppdb/registrations/set-status" method="POST" class="p-6 space-y-4">
+            <?= \App\Core\Csrf::input() ?>
+            <input type="hidden" name="id" id="statusId">
+            <p class="text-sm text-slate-600">Pendaftar: <strong id="statusName" class="text-slate-800"></strong></p>
+            <div>
+                <label class="block text-sm font-semibold text-slate-600 mb-2">Status Baru</label>
+                <select name="status" id="statusSelect" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
+                    <option value="PENDING">Pending</option>
+                    <option value="PAID">Lunas</option>
+                    <option value="VERIFIED">Terverifikasi</option>
+                    <option value="ACCEPTED">Diterima ✓</option>
+                    <option value="REJECTED">Ditolak ✗</option>
+                </select>
+            </div>
+            <p class="text-xs text-slate-400"><i class="fa-brands fa-whatsapp text-green-500 mr-1"></i>Notifikasi WA otomatis dikirim jika status DITERIMA atau DITOLAK.</p>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('statusModal').classList.add('hidden')" class="flex-1 bg-slate-100 text-slate-600 py-2.5 rounded-xl font-bold hover:bg-slate-200 transition text-sm">Batal</button>
+                <button type="submit" class="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-bold hover:bg-blue-700 shadow-md shadow-blue-500/20 transition text-sm">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Kirim WA -->
+<div id="waModal" class="hidden fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="p-5 border-b border-slate-100 bg-green-50 flex justify-between items-center">
+            <h3 class="font-bold text-green-800 flex items-center gap-2"><i class="fa-brands fa-whatsapp text-green-600"></i> Kirim Pesan WhatsApp</h3>
+            <button onclick="document.getElementById('waModal').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-green-100 text-green-600 hover:bg-green-200 flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form action="/ppdb/registrations/notify" method="POST" class="p-6 space-y-4">
+            <?= \App\Core\Csrf::input() ?>
+            <input type="hidden" name="id" id="waId">
+            <p class="text-sm text-slate-600">Kepada: <strong id="waName" class="text-slate-800"></strong> (<span id="waPhone" class="font-mono text-green-700"></span>)</p>
+            <div>
+                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Pesan</label>
+                <textarea name="message" rows="4" placeholder="Ketik pesan WhatsApp..."
+                    class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-green-500/50 outline-none resize-none" required></textarea>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('waModal').classList.add('hidden')" class="flex-1 bg-slate-100 text-slate-600 py-2.5 rounded-xl font-bold hover:bg-slate-200 transition text-sm">Batal</button>
+                <button type="submit" class="flex-1 bg-green-600 text-white py-2.5 rounded-xl font-bold hover:bg-green-700 shadow-md shadow-green-500/20 transition text-sm"><i class="fa-brands fa-whatsapp mr-1"></i> Kirim</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Tambah Manual -->
+<div id="addModal" class="hidden fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+        <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+            <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-plus text-blue-500"></i> Tambah Pendaftar Manual</h3>
+            <button onclick="document.getElementById('addModal').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-slate-200 text-slate-500 hover:bg-slate-300 flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form action="/ppdb/registrations/store" method="POST" class="p-6 space-y-4">
+            <?= \App\Core\Csrf::input() ?>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2">
+                    <label class="block text-sm font-semibold text-slate-600 mb-1.5">Nama Lengkap</label>
+                    <input type="text" name="full_name" placeholder="Nama lengkap calon santri" required
+                        class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-1.5">Jenis Kelamin</label>
+                    <select name="gender" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
+                        <option value="L">Laki-laki</option>
+                        <option value="P">Perempuan</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-1.5">No. WhatsApp</label>
+                    <input type="text" name="whatsapp_number" placeholder="08xx..." required
+                        class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none">
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-sm font-semibold text-slate-600 mb-1.5">Jalur Pendaftaran</label>
+                    <select name="ppdb_track_id" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none" required>
+                        <?php foreach ($tracks as $t): ?>
+                            <option value="<?= $t['id'] ?>"><?= htmlspecialchars($t['name']) ?> (<?= $t['level'] ?>)</option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="flex-1 bg-slate-100 text-slate-600 py-2.5 rounded-xl font-bold hover:bg-slate-200 transition text-sm">Batal</button>
+                <button type="submit" class="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-bold hover:bg-blue-700 shadow-md shadow-blue-500/20 transition text-sm">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Form hapus (hidden) -->
+<form id="deleteForm" action="/ppdb/registrations/delete" method="POST" class="hidden">
+    <?= \App\Core\Csrf::input() ?>
+    <input type="hidden" name="id" id="deleteId">
+</form>
 
 <!-- Modal Info -->
-<div id="infoModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+<div id="infoModal" class="hidden fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
         <div class="p-5 border-b border-slate-100 bg-blue-50 flex justify-between items-center">
             <h3 class="font-bold text-blue-800 flex items-center gap-2"><i class="fa-solid fa-circle-info text-blue-500"></i> Panduan Data Pendaftar PPDB</h3>
             <button onclick="document.getElementById('infoModal').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-blue-100 text-blue-500 hover:bg-blue-200 flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <div class="p-6 space-y-5 text-sm text-slate-600">
+        <div class="p-6 space-y-5 text-sm text-slate-600 max-h-[70vh] overflow-y-auto">
             <div>
-                <h4 class="font-bold text-slate-800 mb-2 flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">1</span> Cara Penggunaan</h4>
-                <ol class="list-decimal list-inside space-y-1.5 text-slate-500">
-                    <li>Gunakan filter <strong class="text-slate-700">Nama/NISN</strong>, <strong class="text-slate-700">Status</strong>, dan <strong class="text-slate-700">Jalur</strong> untuk menyaring data.</li>
-                    <li>Klik nama pendaftar untuk melihat detail lengkap dan mengubah status kelulusan.</li>
-                    <li>Klik ikon <strong class="text-slate-700">titik tiga</strong> untuk aksi tambahan (edit/hapus).</li>
-                </ol>
-            </div>
-            <div>
-                <h4 class="font-bold text-slate-800 mb-2 flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">2</span> Relasi ke Menu Lain</h4>
+                <h4 class="font-bold text-slate-800 mb-2 flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">1</span> Tombol Aksi di Tabel</h4>
                 <div class="space-y-2">
                     <div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                        <i class="fa-solid fa-signs-post text-blue-400 w-5 text-center"></i>
-                        <div><div class="font-semibold text-slate-700 text-xs">Jalur & Periode PPDB</div><div class="text-[11px] text-slate-400">Dikelola di <strong>PPDB → Konfigurasi PPDB</strong>.</div></div>
+                        <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><i class="fa-solid fa-arrows-rotate text-xs"></i></div>
+                        <div class="text-xs"><strong class="text-slate-700">Ubah Status</strong> — Ubah status pendaftar (Pending → Lunas → Terverifikasi → Diterima/Ditolak). Notif WA otomatis dikirim saat status DITERIMA atau DITOLAK.</div>
                     </div>
                     <div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                        <div class="w-7 h-7 rounded-lg bg-green-50 text-green-600 flex items-center justify-center shrink-0"><i class="fa-brands fa-whatsapp text-xs"></i></div>
+                        <div class="text-xs"><strong class="text-slate-700">Kirim WA</strong> — Kirim pesan WhatsApp manual ke nomor pendaftar.</div>
+                    </div>
+                    <div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                        <div class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0"><i class="fa-solid fa-ellipsis-vertical text-xs"></i></div>
+                        <div class="text-xs"><strong class="text-slate-700">Menu (⋮)</strong> — Lihat detail lengkap atau hapus pendaftar. Pendaftar berstatus DITERIMA tidak dapat dihapus.</div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <h4 class="font-bold text-slate-800 mb-2 flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">2</span> Alur Status Pendaftar</h4>
+                <div class="flex flex-wrap gap-1.5 items-center text-xs">
+                    <span class="px-2 py-1 bg-slate-100 text-slate-600 rounded font-bold">PENDING</span>
+                    <i class="fa-solid fa-arrow-right text-slate-300"></i>
+                    <span class="px-2 py-1 bg-green-50 text-green-700 rounded font-bold">LUNAS</span>
+                    <i class="fa-solid fa-arrow-right text-slate-300"></i>
+                    <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded font-bold">TERVERIFIKASI</span>
+                    <i class="fa-solid fa-arrow-right text-slate-300"></i>
+                    <span class="px-2 py-1 bg-emerald-50 text-emerald-700 rounded font-bold">DITERIMA</span>
+                </div>
+            </div>
+            <div>
+                <h4 class="font-bold text-slate-800 mb-2 flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">3</span> Relasi ke Menu Lain</h4>
+                <div class="space-y-2">
+                    <div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
                         <i class="fa-solid fa-graduation-cap text-green-400 w-5 text-center"></i>
-                        <div><div class="font-semibold text-slate-700 text-xs">Data Santri</div><div class="text-[11px] text-slate-400">Pendaftar yang diterima dapat dipindahkan ke <strong>Kesiswaan → Data Santri</strong>.</div></div>
+                        <div><div class="font-semibold text-slate-700 text-xs">Data Santri</div><div class="text-[11px] text-slate-400">Pendaftar DITERIMA dapat dipromosikan ke <strong>Kesiswaan → Data Santri</strong> via halaman Detail.</div></div>
+                    </div>
+                    <div class="flex items-center gap-3 p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                        <i class="fa-solid fa-signs-post text-blue-400 w-5 text-center"></i>
+                        <div><div class="font-semibold text-slate-700 text-xs">Jalur & Periode PPDB</div><div class="text-[11px] text-slate-400">Dikelola di <strong>PPDB → Jalur Pendaftaran</strong> dan <strong>PPDB → Periode PPDB</strong>.</div></div>
                     </div>
                 </div>
             </div>
@@ -332,5 +471,61 @@
         </div>
     </div>
 </div>
+
+<script>
+// Floating dropdown
+let _ddActive = null;
+function toggleDropdown(id, btn) {
+    const dd = document.getElementById('floatingDropdown');
+    if (_ddActive === id && !dd.classList.contains('hidden')) {
+        dd.classList.add('hidden'); _ddActive = null; return;
+    }
+    _ddActive = id;
+    const rect = btn.getBoundingClientRect();
+    dd.style.top  = (rect.bottom + window.scrollY + 4) + 'px';
+    dd.style.left = (rect.right  + window.scrollX - 192) + 'px'; // 192 = w-48
+    document.getElementById('ddDetail').href = '/ppdb/registrations/detail?id=' + id;
+    document.getElementById('ddDelete').onclick = function() {
+        dd.classList.add('hidden');
+        confirmDelete(id, btn.closest('tr').querySelector('a[href*="detail"]')?.innerText || '');
+    };
+    dd.classList.remove('hidden');
+}
+document.addEventListener('click', function(e) {
+    const dd = document.getElementById('floatingDropdown');
+    if (!dd.contains(e.target) && !e.target.closest('[onclick*="toggleDropdown"]')) {
+        dd.classList.add('hidden'); _ddActive = null;
+    }
+});
+
+function openStatusModal(id, currentStatus, name) {
+    document.getElementById('statusId').value = id;
+    document.getElementById('statusName').innerText = name;
+    document.getElementById('statusSelect').value = currentStatus;
+    document.getElementById('statusModal').classList.remove('hidden');
+}
+function openWaModal(id, name, phone) {
+    document.getElementById('waId').value = id;
+    document.getElementById('waName').innerText = name;
+    document.getElementById('waPhone').innerText = phone || '-';
+    document.getElementById('waModal').classList.remove('hidden');
+}
+function confirmDelete(id, name) {
+    if (confirm('Hapus pendaftar "' + name + '"? Tindakan ini tidak dapat dibatalkan.')) {
+        document.getElementById('deleteId').value = id;
+        document.getElementById('deleteForm').submit();
+    }
+}
+function updateQueryStringParameter(uri, key, value) {
+    var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+    var sep = uri.indexOf('?') !== -1 ? "&" : "?";
+    return uri.match(re) ? uri.replace(re, '$1' + key + "=" + value + '$2') : uri + sep + key + "=" + value;
+}
+window.onclick = function(e) {
+    ['infoModal','statusModal','waModal','addModal'].forEach(function(id) {
+        if (e.target == document.getElementById(id)) document.getElementById(id).classList.add('hidden');
+    });
+}
+</script>
 
 <?php require __DIR__ . '/../../layouts/footer.php'; ?>

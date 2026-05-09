@@ -75,20 +75,19 @@ function isActive($url) {
         '/settings/school'              => '/school/profile',
         '/master/classrooms'            => '/academic/classrooms',
         '/finance'                      => '/finance/billing',
-        '/report/print'                 => '/reports/students',
     ];
 
     if ($uri === $url) return true;
-    // URL yang harus exact match (tidak boleh prefix-match ke sub-URL)
-    static $exactOnly = ['/finance', '/students', '/parents', '/counseling', '/achievements', '/homeroom'];
-    if (in_array($url, $exactOnly)) return false;
-    if (strpos($uri, rtrim($url, '/') . '/') === 0) return true;
-
+    // Cek alias langsung (menu URL → actual URL)
     if (isset($aliases[$url])) {
         $aliasUrl = $aliases[$url];
         if ($uri === $aliasUrl) return true;
         if (strpos($uri, rtrim($aliasUrl, '/') . '/') === 0) return true;
     }
+    // URL yang harus exact match (tidak boleh prefix-match ke sub-URL)
+    static $exactOnly = ['/finance', '/students', '/parents', '/counseling', '/achievements', '/homeroom'];
+    if (in_array($url, $exactOnly)) return false;
+    if (strpos($uri, rtrim($url, '/') . '/') === 0) return true;
 
     foreach ($aliases as $menuUrl => $aliasUrl) {
         if ($url === $menuUrl) continue;

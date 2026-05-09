@@ -30,7 +30,6 @@ class FinanceController {
         $month  = $_GET['month'] ?? date('Y-m');
         $year   = substr($month, 0, 4);
         $mon    = substr($month, 5, 2);
-
         // Pemasukan per bulan
         $income = $db->query(
             "SELECT b.title, SUM(b.amount) as total, COUNT(*) as count
@@ -134,65 +133,144 @@ class FinanceController {
     // 2. HALAMAN DETAIL TAGIHAN (SETELAH CARI NIS)
     public function billing() {
         $nis = $_GET['nis'] ?? null;
-        if (!$nis) {
-            header('Location: /finance'); // Kalau gak ada NIS, tendang ke pencarian
-            exit;
-        }
+        if (!$nis) { header('Location: /finance'); exit; }
 
-        $db = Database::getInstance();
-        
-        // Ambil Data Siswa
-        $student = $db->query("SELECT * FROM students WHERE nis = ?", [$nis])->fetch();
-        
+        $db      = Database::getInstance();
+        $student = $db->query(
+            "SELECT s.*, c.name as class_name FROM students s LEFT JOIN classrooms c ON s.classroom_id = c.id WHERE s.nis = ?",
+            [$nis]
+        )->fetch();
+
         if (!$student) {
             Session::setFlash('error', 'Siswa dengan NIS tersebut tidak ditemukan.');
-            header('Location: /finance');
-            exit;
-        }
-
-        // Ambil Tagihan
-        $bills = $db->query("SELECT * FROM bills WHERE student_id = ? ORDER BY created_at DESC", [$student['id']])->fetchAll();
-
-        View::render('finance/billing', [
-            'title' => 'Detail Keuangan',
-            'student' => $student,
-            'bills' => $bills
-        ]);
-    }
-
-    // 3. PROSES BUAT TAGIHAN (MENGATASI 404)
-    public function createBill() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: /finance'); exit;
         }
 
-        $nis = $_POST['student_nis'] ?? '';
-        $title = $_POST['title'];
-        $amount = $_POST['amount'];
-        $desc = $_POST['description'];
+        $bills    = $db->query(
+            "SELECT b.*, ft.name as fee_type_name FROM bills b LEFT JOIN fee_types ft ON b.fee_type_id = ft.id WHERE b.student_id = ? ORDER BY b.created_at DESC",
+            [$student['id']]
+        )->fetchAll();
+        $feeTypes = $db->query("SELECT * FROM fee_types ORDER BY name")->fetchAll();
 
-        $db = Database::getInstance();
-        
-        // Cari ID Siswa berdasarkan NIS
+        // Ringkasan
+        $totalUnpaid = array_sum(array_column(array_filter($bills, fn($b) => $b['status'] === 'UNPAID'), 'amount'));
+        $totalPaid   = array_sum(array_column(array_filter($bills, fn($b) => $b['status'] === 'PAID'), 'amount'));
+
+        View::render('finance/billing', [
+            'title'       => 'Info Keuangan & Tagihan',
+            'student'     => $student,
+            'bills'       => $bills,
+            'feeTypes'    => $feeTypes,
+            'totalUnpaid' => $totalUnpaid,
+            'totalPaid'   => $totalPaid,
+        ]);
+    }
+
+    // 3. PROSES BUAT TAGIHAN
+    public function createBill() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: /finance'); exit; }
+
+        $nis     = $_POST['student_nis'] ?? '';
+        $db      = Database::getInstance();
         $student = $db->query("SELECT id FROM students WHERE nis = ?", [$nis])->fetch();
-        
+
         if ($student) {
-            // Insert Tagihan
-            $sql = "INSERT INTO bills (student_id, title, description, amount, status, created_at) VALUES (?, ?, ?, ?, 'UNPAID', NOW())";
-            $db->query($sql, [$student['id'], $title, $desc, $amount]);
-            
+            $feeTypeId = !empty($_POST['fee_type_id']) ? $_POST['fee_type_id'] : null;
+            $title     = $_POST['title'] ?: ($db->query("SELECT name FROM fee_types WHERE id=?", [$feeTypeId])->fetchColumn() ?: 'Tagihan');
+            $db->query(
+                "INSERT INTO bills (student_id, fee_type_id, title, description, amount, due_date, status, created_at) VALUES (?,?,?,?,?,?,  'UNPAID', NOW())",
+                [$student['id'], $feeTypeId, $title, $_POST['description'] ?? null, $_POST['amount'], $_POST['due_date'] ?: null]
+            );
+            // Notifikasi WA ke orang tua
+            $parent = $db->query("SELECT full_name, COALESCE(parent_phone, father_phone, mother_phone, guardian_phone) as phone FROM students WHERE id=?", [$student['id']])->fetch();
+            if (!empty($parent['phone'])) {
+                $msg = "Assalamu'alaikum,\n\nTagihan baru telah dibuat untuk *{$parent['full_name']}*:\n"
+                     . "*{$title}*\nNominal: *Rp " . number_format($_POST['amount'], 0, ',', '.') . "*"
+                     . (!empty($_POST['due_date']) ? "\nJatuh Tempo: " . date('d M Y', strtotime($_POST['due_date'])) : "")
+                     . "\n\nMohon segera melakukan pembayaran.\n— SIAKAD Parabek";
+                try { \App\Models\WhatsappService::send($parent['phone'], $msg); } catch (\Exception $e) {}
+            }
             Session::setFlash('success', 'Tagihan berhasil dibuat.');
         } else {
             Session::setFlash('error', 'Gagal: Data siswa tidak valid.');
         }
-
-        // Kembali ke halaman detail
-        header('Location: /finance/billing?nis=' . $nis);
+        header('Location: /finance/billing?nis=' . urlencode($nis));
     }
 
-    // 4. PROSES BAYAR (ADMIN KONFIRMASI MANUAL) - Opsional jika admin klik bayar
+    // 4. TANDAI LUNAS (TUNAI / TRANSFER)
     public function markAsPaid() {
-        // Logic jika admin ingin menandai lunas manual (bisa ditambahkan nanti)
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: /finance'); exit; }
+        $db     = Database::getInstance();
+        $billId = (int)$_POST['bill_id'];
+        $method = in_array($_POST['payment_method'] ?? '', ['CASH','TRANSFER']) ? $_POST['payment_method'] : 'CASH';
+        $bill   = $db->query("SELECT * FROM bills WHERE id=?", [$billId])->fetch();
+        if (!$bill) { Session::setFlash('error', 'Tagihan tidak ditemukan.'); header('Location: /finance'); exit; }
+
+        $db->query("UPDATE bills SET status='PAID', updated_at=NOW() WHERE id=?", [$billId]);
+        $db->query("INSERT INTO transactions (bill_id, amount_paid, payment_method, payment_date, notes, admin_id) VALUES (?,?,?,CURDATE(),?,?)", [
+            $billId, $bill['amount'], $method, $_POST['notes'] ?? null, Session::get('user_id')
+        ]);
+        $nis = $db->query("SELECT nis FROM students WHERE id=?", [$bill['student_id']])->fetchColumn();
+        Session::setFlash('success', 'Tagihan berhasil ditandai lunas.');
+        header('Location: /finance/billing?nis=' . urlencode($nis));
+    }
+
+    // 4b. VERIFIKASI BUKTI BAYAR (UPLOAD)
+    public function verifyPayment() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: /finance'); exit; }
+        $db     = Database::getInstance();
+        $billId = (int)$_POST['bill_id'];
+        $action = $_POST['action'] ?? 'approve'; // approve | reject
+        $bill   = $db->query("SELECT * FROM bills WHERE id=?", [$billId])->fetch();
+        if (!$bill) { Session::setFlash('error', 'Tagihan tidak ditemukan.'); header('Location: /finance'); exit; }
+
+        if ($action === 'approve') {
+            $db->query("UPDATE bills SET status='PAID', updated_at=NOW() WHERE id=?", [$billId]);
+            $db->query("INSERT INTO transactions (bill_id, amount_paid, payment_method, payment_date, notes, admin_id) VALUES (?,?,?,CURDATE(),?,?)", [
+                $billId, $bill['amount'], 'TRANSFER', 'Verifikasi bukti transfer', Session::get('user_id')
+            ]);
+            Session::setFlash('success', 'Pembayaran diverifikasi & disetujui.');
+        } else {
+            $db->query("UPDATE bills SET status='UNPAID', payment_proof=NULL WHERE id=?", [$billId]);
+            Session::setFlash('warning', 'Bukti bayar ditolak. Tagihan dikembalikan ke BELUM BAYAR.');
+        }
+        $nis = $db->query("SELECT nis FROM students WHERE id=?", [$bill['student_id']])->fetchColumn();
+        header('Location: /finance/billing?nis=' . urlencode($nis));
+    }
+
+    // 4c. HAPUS TAGIHAN
+    public function deleteBill() {
+        $db     = Database::getInstance();
+        $billId = (int)($_GET['id'] ?? 0);
+        $bill   = $db->query("SELECT b.*, s.nis FROM bills b JOIN students s ON b.student_id=s.id WHERE b.id=?", [$billId])->fetch();
+        if ($bill && $bill['status'] === 'UNPAID') {
+            $db->query("DELETE FROM bills WHERE id=?", [$billId]);
+            Session::setFlash('success', 'Tagihan berhasil dihapus.');
+        } else {
+            Session::setFlash('error', 'Tagihan lunas tidak dapat dihapus.');
+        }
+        header('Location: /finance/billing?nis=' . urlencode($bill['nis'] ?? ''));
+    }
+
+    // 5. CETAK KUITANSI
+    public function printReceipt() {
+        $db    = Database::getInstance();
+        $billId = (int)($_GET['bill_id'] ?? 0);
+        $trx   = $db->query(
+            "SELECT t.*, b.title as fee_name, b.amount, s.full_name, s.nis, c.name as class_name, u.name as admin_name
+             FROM transactions t
+             JOIN bills b ON t.bill_id = b.id
+             JOIN students s ON b.student_id = s.id
+             LEFT JOIN classrooms c ON s.classroom_id = c.id
+             LEFT JOIN users u ON t.admin_id = u.id
+             WHERE t.bill_id = ?
+             ORDER BY t.id DESC LIMIT 1",
+            [$billId]
+        )->fetch();
+        if (!$trx) { echo 'Kuitansi tidak ditemukan.'; exit; }
+        // Gunakan amount_paid dari transaksi, fallback ke amount bill
+        if (empty($trx['amount_paid'])) $trx['amount_paid'] = $trx['amount'];
+        View::render('finance/print_receipt', ['trx' => $trx]);
     }
 // ==========================================================
     // 5. MASTER JENIS TAGIHAN (Fee Types)
@@ -249,24 +327,33 @@ class FinanceController {
     public function exportReports() {
         $db = Database::getInstance();
 
-        $search   = $_GET['search']    ?? '';
-        $status   = $_GET['status']    ?? '';
-        $dateFrom = $_GET['date_from'] ?? '';
-        $dateTo   = $_GET['date_to']   ?? '';
-        $format   = $_GET['format']    ?? 'excel';
+        $search    = $_GET['search']      ?? '';
+        $status    = $_GET['status']      ?? '';
+        $dateFrom  = $_GET['date_from']   ?? '';
+        $dateTo    = $_GET['date_to']     ?? '';
+        $classId   = $_GET['class_id']    ?? '';
+        $feeTypeId = $_GET['fee_type_id'] ?? '';
+        $format    = $_GET['format']      ?? 'excel';
 
-        $where = "WHERE 1=1";
+        $where  = "WHERE 1=1";
         $params = [];
-        if (!empty($search))   { $where .= " AND (s.full_name LIKE ? OR s.nis LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
-        if (!empty($status))   { $where .= " AND b.status = ?"; $params[] = $status; }
-        if (!empty($dateFrom)) { $where .= " AND DATE(b.created_at) >= ?"; $params[] = $dateFrom; }
-        if (!empty($dateTo))   { $where .= " AND DATE(b.created_at) <= ?"; $params[] = $dateTo; }
+        if (!empty($search))    { $where .= " AND (s.full_name LIKE ? OR s.nis LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
+        if (!empty($status))    { $where .= " AND b.status = ?";            $params[] = $status; }
+        if (!empty($dateFrom))  { $where .= " AND DATE(b.created_at) >= ?"; $params[] = $dateFrom; }
+        if (!empty($dateTo))    { $where .= " AND DATE(b.created_at) <= ?"; $params[] = $dateTo; }
+        if (!empty($classId))   { $where .= " AND s.classroom_id = ?";      $params[] = $classId; }
+        if (!empty($feeTypeId)) { $where .= " AND b.fee_type_id = ?";       $params[] = $feeTypeId; }
 
-        $rows = $db->query("
-            SELECT b.created_at, s.full_name, s.nis, b.title, b.amount, b.status
-            FROM bills b JOIN students s ON b.student_id = s.id
-            $where ORDER BY b.created_at DESC
-        ", $params)->fetchAll();
+        $rows = $db->query(
+            "SELECT b.created_at, s.full_name, s.nis, c.name as class_name,
+                    COALESCE(ft.name, b.title) as fee_name, b.amount, b.status, t.payment_method
+             FROM bills b JOIN students s ON b.student_id = s.id
+             LEFT JOIN classrooms c ON s.classroom_id = c.id
+             LEFT JOIN fee_types ft ON b.fee_type_id = ft.id
+             LEFT JOIN transactions t ON t.bill_id = b.id
+             $where ORDER BY b.created_at DESC",
+            $params
+        )->fetchAll();
 
         $totalIncome = array_sum(array_column(array_filter($rows, fn($r) => $r['status'] == 'PAID'), 'amount'));
         $totalUnpaid = array_sum(array_column(array_filter($rows, fn($r) => $r['status'] == 'UNPAID'), 'amount'));
@@ -275,23 +362,22 @@ class FinanceController {
             header('Content-Type: application/vnd.ms-excel; charset=utf-8');
             header('Content-Disposition: attachment; filename="laporan-keuangan-' . date('Ymd') . '.xls"');
             header('Cache-Control: max-age=0');
-            echo "\xEF\xBB\xBF"; // BOM UTF-8
-            echo "Tanggal\tNama Siswa\tNIS\tKeterangan\tNominal\tStatus\n";
+            echo "\xEF\xBB\xBF";
+            echo "Tanggal\tNama Siswa\tNIS\tKelas\tKeterangan\tMetode\tNominal\tStatus\n";
             foreach ($rows as $r) {
                 echo date('d/m/Y', strtotime($r['created_at'])) . "\t"
-                    . $r['full_name'] . "\t"
-                    . $r['nis'] . "\t"
-                    . ($r['title'] ?? 'Tagihan') . "\t"
-                    . $r['amount'] . "\t"
-                    . $r['status'] . "\n";
+                    . $r['full_name'] . "\t" . $r['nis'] . "\t"
+                    . ($r['class_name'] ?? '-') . "\t"
+                    . ($r['fee_name'] ?? 'Tagihan') . "\t"
+                    . ($r['payment_method'] ?? '-') . "\t"
+                    . $r['amount'] . "\t" . $r['status'] . "\n";
             }
-            echo "\t\t\t\t\t\n";
-            echo "\t\t\tTotal Lunas\t" . $totalIncome . "\t\n";
-            echo "\t\t\tTotal Belum Bayar\t" . $totalUnpaid . "\t\n";
+            echo "\t\t\t\t\t\t\t\n";
+            echo "\t\t\t\tTotal Lunas\t\t" . $totalIncome . "\t\n";
+            echo "\t\t\t\tTotal Belum Bayar\t\t" . $totalUnpaid . "\t\n";
             exit;
         }
 
-        // PDF — render HTML print-friendly
         View::render('finance/reports_print', [
             'rows'         => $rows,
             'totalIncome'  => $totalIncome,
@@ -306,45 +392,92 @@ class FinanceController {
     public function reports() {
         $db = Database::getInstance();
 
-        $search    = $_GET['search'] ?? '';
-        $dateFrom  = $_GET['date_from'] ?? '';
-        $dateTo    = $_GET['date_to'] ?? '';
-        $status    = $_GET['status'] ?? '';
-        $page      = (int)($_GET['page'] ?? 1);
+        $search    = $_GET['search']      ?? '';
+        $dateFrom  = $_GET['date_from']   ?? '';
+        $dateTo    = $_GET['date_to']     ?? '';
+        $status    = $_GET['status']      ?? '';
+        $classId   = $_GET['class_id']    ?? '';
+        $feeTypeId = $_GET['fee_type_id'] ?? '';
+        $page      = (int)($_GET['page']  ?? 1);
         $limit     = (int)($_GET['limit'] ?? 20);
         $offset    = ($page - 1) * $limit;
 
-        $where = "WHERE 1=1";
+        $where  = "WHERE 1=1";
         $params = [];
-        if (!empty($search))   { $where .= " AND (s.full_name LIKE ? OR s.nis LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
-        if (!empty($status))   { $where .= " AND b.status = ?"; $params[] = $status; }
-        if (!empty($dateFrom)) { $where .= " AND DATE(b.created_at) >= ?"; $params[] = $dateFrom; }
-        if (!empty($dateTo))   { $where .= " AND DATE(b.created_at) <= ?"; $params[] = $dateTo; }
+        if (!empty($search))    { $where .= " AND (s.full_name LIKE ? OR s.nis LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
+        if (!empty($status))    { $where .= " AND b.status = ?";           $params[] = $status; }
+        if (!empty($dateFrom))  { $where .= " AND DATE(b.created_at) >= ?"; $params[] = $dateFrom; }
+        if (!empty($dateTo))    { $where .= " AND DATE(b.created_at) <= ?"; $params[] = $dateTo; }
+        if (!empty($classId))   { $where .= " AND s.classroom_id = ?";     $params[] = $classId; }
+        if (!empty($feeTypeId)) { $where .= " AND b.fee_type_id = ?";      $params[] = $feeTypeId; }
 
-        $totalIncome = $db->query("SELECT COALESCE(SUM(amount),0) FROM bills WHERE status = 'PAID'")->fetchColumn();
-        $totalUnpaid = $db->query("SELECT COALESCE(SUM(amount),0) FROM bills WHERE status = 'UNPAID'")->fetchColumn();
-        $totalData   = $db->query("SELECT COUNT(*) FROM bills b JOIN students s ON b.student_id = s.id $where", $params)->fetchColumn();
-        $totalPages  = ceil($totalData / $limit);
+        // Summary mengikuti filter
+        $summaryRow = $db->query(
+            "SELECT
+                COALESCE(SUM(CASE WHEN b.status='PAID'   THEN b.amount ELSE 0 END), 0) as total_income,
+                COALESCE(SUM(CASE WHEN b.status='UNPAID' THEN b.amount ELSE 0 END), 0) as total_unpaid,
+                COUNT(*) as total_data
+             FROM bills b JOIN students s ON b.student_id = s.id $where",
+            $params
+        )->fetch();
 
-        $transactions = $db->query("
-            SELECT b.*, s.full_name, s.nis
-            FROM bills b JOIN students s ON b.student_id = s.id
-            $where ORDER BY b.created_at DESC LIMIT $limit OFFSET $offset
-        ", $params)->fetchAll();
+        // Rekap per kelas (mengikuti filter kecuali class_id)
+        $whereClass  = str_replace(" AND s.classroom_id = ?", "", $where);
+        $paramsClass = array_values(array_filter($params, fn($v, $k) => !($classId && $params[$k] === $classId), ARRAY_FILTER_USE_BOTH));
+        // Rebuild params tanpa classId
+        $paramsClass = [];
+        if (!empty($search))    { $paramsClass[] = "%$search%"; $paramsClass[] = "%$search%"; }
+        if (!empty($status))    { $paramsClass[] = $status; }
+        if (!empty($dateFrom))  { $paramsClass[] = $dateFrom; }
+        if (!empty($dateTo))    { $paramsClass[] = $dateTo; }
+        if (!empty($feeTypeId)) { $paramsClass[] = $feeTypeId; }
+
+        $byClass = $db->query(
+            "SELECT c.name as class_name,
+                    SUM(CASE WHEN b.status='PAID'   THEN b.amount ELSE 0 END) as paid,
+                    SUM(CASE WHEN b.status='UNPAID' THEN b.amount ELSE 0 END) as unpaid,
+                    COUNT(*) as total
+             FROM bills b JOIN students s ON b.student_id = s.id
+             LEFT JOIN classrooms c ON s.classroom_id = c.id
+             $whereClass GROUP BY c.id, c.name ORDER BY c.name",
+            $paramsClass
+        )->fetchAll();
+
+        $totalPages = max(1, ceil($summaryRow['total_data'] / $limit));
+
+        $transactions = $db->query(
+            "SELECT b.*, s.full_name, s.nis, c.name as class_name, ft.name as fee_type_name,
+                    t.payment_method, t.payment_date
+             FROM bills b
+             JOIN students s ON b.student_id = s.id
+             LEFT JOIN classrooms c ON s.classroom_id = c.id
+             LEFT JOIN fee_types ft ON b.fee_type_id = ft.id
+             LEFT JOIN transactions t ON t.bill_id = b.id
+             $where ORDER BY b.created_at DESC LIMIT $limit OFFSET $offset",
+            $params
+        )->fetchAll();
+
+        $classes  = $db->query("SELECT id, name FROM classrooms ORDER BY name")->fetchAll();
+        $feeTypes = $db->query("SELECT id, name FROM fee_types ORDER BY name")->fetchAll();
 
         View::render('finance/reports', [
-            'title'               => 'Laporan Keuangan',
-            'total_income'        => $totalIncome,
-            'total_unpaid'        => $totalUnpaid,
-            'transactions'        => $transactions,
-            'search'              => $search,
-            'statusFilter'        => $status,
-            'dateFrom'            => $dateFrom,
-            'dateTo'              => $dateTo,
-            'totalData'           => $totalData,
-            'totalPages'          => $totalPages,
-            'currentPage'         => $page,
-            'limit'               => $limit,
+            'title'        => 'Laporan Keuangan',
+            'total_income' => $summaryRow['total_income'],
+            'total_unpaid' => $summaryRow['total_unpaid'],
+            'totalData'    => $summaryRow['total_data'],
+            'byClass'      => $byClass,
+            'transactions' => $transactions,
+            'classes'      => $classes,
+            'feeTypes'     => $feeTypes,
+            'search'       => $search,
+            'statusFilter' => $status,
+            'dateFrom'     => $dateFrom,
+            'dateTo'       => $dateTo,
+            'classId'      => $classId,
+            'feeTypeId'    => $feeTypeId,
+            'totalPages'   => $totalPages,
+            'currentPage'  => $page,
+            'limit'        => $limit,
         ]);
     }
     // ==========================================================

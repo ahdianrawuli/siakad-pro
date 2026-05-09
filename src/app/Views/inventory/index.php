@@ -4,34 +4,55 @@
 <main class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
 
     <!-- Header -->
-    <div class="mb-8 flex flex-col md:flex-row md:justify-between md:items-end gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+    <div class="mb-6 flex flex-col md:flex-row md:justify-between md:items-end gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div>
             <h3 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Inventaris Aset</h3>
             <p class="text-slate-500 text-sm mt-1 font-medium">Manajemen sarana dan prasarana sekolah.</p>
-            <div class="mt-3 flex items-center gap-2">
+            <div class="mt-3 flex flex-wrap items-center gap-2">
                 <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-bold border border-green-100">
                     <i class="fa-solid fa-boxes-stacked"></i> <?= $summary['total_item'] ?? 0 ?> Item | Rp <?= number_format($summary['total_asset'] ?? 0, 0, ',', '.') ?>
                 </div>
-                <button onclick="document.getElementById('infoModal').classList.remove('hidden')"
-                    class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-colors border border-slate-200" title="Panduan Penggunaan">
-                    <i class="fa-solid fa-circle-info text-sm"></i>
-                </button>
+                <?php if ($activeLoan > 0): ?>
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold border border-blue-100">
+                    <i class="fa-solid fa-hand-holding-box"></i> <?= $activeLoan ?> Dipinjam
+                </div>
+                <?php endif; ?>
+                <?php if ($overdue > 0): ?>
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-xs font-bold border border-red-100">
+                    <i class="fa-solid fa-triangle-exclamation"></i> <?= $overdue ?> Terlambat
+                </div>
+                <?php endif; ?>
             </div>
         </div>
-        <button type="button" onclick="document.getElementById('addModal').classList.remove('hidden')"
-            class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-2 w-fit">
-            <i class="fa-solid fa-plus"></i> Tambah Aset
-        </button>
+        <div class="flex flex-wrap gap-2">
+            <a href="/finance/inventory/loans" class="px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-500/20 hover:bg-indigo-700 transition-all flex items-center gap-2">
+                <i class="fa-solid fa-hand-holding-box"></i> Peminjaman
+            </a>
+            <a href="/finance/inventory/mutations" class="px-4 py-2.5 bg-amber-500 text-white rounded-xl text-sm font-semibold shadow-md shadow-amber-500/20 hover:bg-amber-600 transition-all flex items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left"></i> Riwayat Mutasi
+            </a>
+            <a href="/finance/inventory/export" target="_blank" class="px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-emerald-500/20 hover:bg-emerald-700 transition-all flex items-center gap-2">
+                <i class="fa-solid fa-print"></i> Cetak Laporan
+            </a>
+            <form method="POST" action="/finance/inventory/notify-damaged" class="inline" onsubmit="return confirm('Kirim notifikasi WA kondisi aset rusak/hilang ke admin?')">
+                <?= \App\Core\Csrf::input() ?>
+                <button type="submit" class="px-4 py-2.5 bg-orange-500 text-white rounded-xl text-sm font-semibold shadow-md shadow-orange-500/20 hover:bg-orange-600 transition-all flex items-center gap-2">
+                    <i class="fa-brands fa-whatsapp"></i> Notif Rusak/Hilang
+                </button>
+            </form>
+            <button type="button" onclick="document.getElementById('addModal').classList.remove('hidden')"
+                class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-2">
+                <i class="fa-solid fa-plus"></i> Tambah Aset
+            </button>
+        </div>
     </div>
 
     <?php \App\Core\Session::flash(); ?>
 
     <div class="flex flex-col gap-6">
-
         <!-- Filter -->
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
             <form method="GET" class="flex flex-wrap items-center gap-3">
-                <input type="hidden" name="limit" value="<?= $limit ?? 10 ?>">
                 <div class="flex-1 min-w-[200px] relative">
                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span>
                     <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Cari nama / kode / merk..."
@@ -59,7 +80,7 @@
             </form>
         </div>
 
-        <!-- Table Card -->
+        <!-- Table -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
             <div class="overflow-x-auto">
                 <table class="min-w-full whitespace-nowrap text-left">
@@ -108,7 +129,11 @@
                                 </span>
                             </td>
                             <td class="px-5 py-4 text-center">
-                                <div class="flex items-center justify-center gap-2">
+                                <div class="flex items-center justify-center gap-1.5">
+                                    <a href="/finance/inventory/mutations?item_id=<?= $i['id'] ?>"
+                                        class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white inline-flex items-center justify-center transition-colors shadow-sm" title="Riwayat Mutasi">
+                                        <i class="fa-solid fa-clock-rotate-left text-xs"></i>
+                                    </a>
                                     <button onclick='editItem(<?= json_encode($i) ?>)'
                                         class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white inline-flex items-center justify-center transition-colors shadow-sm" title="Edit">
                                         <i class="fa-solid fa-pen-to-square text-sm"></i>
@@ -125,26 +150,17 @@
                     </tbody>
                 </table>
             </div>
-
-            <!-- Pagination Footer -->
-            <div class="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div class="flex items-center gap-3">
-                    <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Show:</span>
-                    <select onchange="window.location.href=updateQS(window.location.href,'limit',this.value)"
-                        class="border border-slate-300 rounded-lg px-2 py-1 text-sm outline-none bg-white font-medium">
-                        <option value="10" <?= ($limit??10) == 10 ? 'selected' : '' ?>>10 entries</option>
-                        <option value="50" <?= ($limit??10) == 50 ? 'selected' : '' ?>>50 entries</option>
-                    </select>
-                </div>
-                <?php if (($totalPages??1) > 1): ?>
+            <!-- Pagination -->
+            <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-4">
+                <span class="text-xs text-slate-500">Halaman <?= $currentPage ?> / <?= $totalPages ?></span>
+                <?php if ($totalPages > 1): ?>
                 <div class="flex items-center gap-1.5">
-                    <?php $qs = "&limit=".($limit??10)."&search=" . urlencode($search) . "&category_id=$catId&condition=$cond"; ?>
+                    <?php $qs = "&search=" . urlencode($search) . "&category_id=$catId&condition=$cond"; ?>
                     <?php if ($currentPage > 1): ?>
-                        <a href="?page=<?= $currentPage - 1 . $qs ?>" class="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm"><i class="fa-solid fa-chevron-left"></i></a>
+                        <a href="?page=<?= $currentPage - 1 . $qs ?>" class="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors shadow-sm"><i class="fa-solid fa-chevron-left"></i></a>
                     <?php endif; ?>
-                    <span class="text-xs font-bold text-slate-600 px-2">Hal <?= $currentPage ?> / <?= $totalPages ?></span>
                     <?php if ($currentPage < $totalPages): ?>
-                        <a href="?page=<?= $currentPage + 1 . $qs ?>" class="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm"><i class="fa-solid fa-chevron-right"></i></a>
+                        <a href="?page=<?= $currentPage + 1 . $qs ?>" class="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors shadow-sm"><i class="fa-solid fa-chevron-right"></i></a>
                     <?php endif; ?>
                 </div>
                 <?php endif; ?>
@@ -152,38 +168,6 @@
         </div>
     </div>
 </main>
-
-<!-- Modal Info -->
-<div id="infoModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-        <div class="p-5 border-b border-slate-100 bg-blue-50 flex justify-between items-center">
-            <h3 class="font-bold text-blue-800 flex items-center gap-2"><i class="fa-solid fa-circle-info text-blue-500"></i> Panduan Inventaris Aset</h3>
-            <button onclick="document.getElementById('infoModal').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-blue-100 text-blue-500 hover:bg-blue-200 flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="p-6 space-y-5 text-sm text-slate-600">
-            <div>
-                <h4 class="font-bold text-slate-800 mb-2 flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">1</span> Cara Penggunaan</h4>
-                <ol class="list-decimal list-inside space-y-1.5 text-slate-500">
-                    <li>Klik <strong class="text-slate-700">Tambah Aset</strong> untuk mendaftarkan barang baru.</li>
-                    <li>Gunakan filter <strong class="text-slate-700">Kategori</strong> atau <strong class="text-slate-700">Kondisi</strong> untuk menyaring data.</li>
-                    <li>Klik ikon edit untuk memperbarui data aset.</li>
-                </ol>
-            </div>
-            <div>
-                <h4 class="font-bold text-slate-800 mb-2 flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">2</span> Status Kondisi</h4>
-                <div class="flex flex-wrap gap-2">
-                    <span class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-green-50 text-green-700 border border-green-200">BAIK</span>
-                    <span class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-yellow-50 text-yellow-700 border border-yellow-200">RUSAK RINGAN</span>
-                    <span class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-red-50 text-red-700 border border-red-200">RUSAK BERAT</span>
-                    <span class="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-slate-100 text-slate-500 border border-slate-200">HILANG</span>
-                </div>
-            </div>
-        </div>
-        <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
-            <button onclick="document.getElementById('infoModal').classList.add('hidden')" class="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition">Mengerti</button>
-        </div>
-    </div>
-</div>
 
 <!-- Modal Tambah/Edit -->
 <div id="addModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
@@ -230,7 +214,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-slate-600 mb-1.5">Harga Satuan (Rp)</label>
-                    <input type="number" name="price" id="inpPrice" value="0" placeholder="cth: 5000000"
+                    <input type="number" name="price" id="inpPrice" value="0"
                         class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
                 </div>
                 <div>
@@ -260,6 +244,12 @@
                 <input type="text" name="location" id="inpLoc" placeholder="cth: Lab Komputer 1, Ruang Guru"
                     class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all">
             </div>
+            <!-- Catatan mutasi (hanya tampil saat edit) -->
+            <div id="mutationNotesWrap" class="hidden">
+                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Catatan Perubahan Kondisi <span class="text-slate-400 font-normal">(Opsional)</span></label>
+                <input type="text" name="mutation_notes" id="inpMutNotes" placeholder="cth: Layar retak akibat terjatuh"
+                    class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all">
+            </div>
             <div>
                 <label class="block text-sm font-semibold text-slate-600 mb-1.5">Deskripsi / Spesifikasi <span class="text-slate-400 font-normal">(Opsional)</span></label>
                 <textarea name="description" id="inpDesc" rows="2" placeholder="cth: Core i5, RAM 8GB, SSD 256GB"
@@ -274,43 +264,38 @@
 </div>
 
 <script>
-    function closeModal() {
-        document.getElementById('addModal').classList.add('hidden');
-        document.getElementById('inventoryForm').reset();
-        document.getElementById('modalTitle').innerText = 'Tambah Aset Baru';
-        document.getElementById('inventoryForm').action = '/finance/inventory/store';
-        document.getElementById('inpCode').readOnly = false;
-        document.getElementById('inpCode').classList.remove('bg-slate-200');
-    }
-    function editItem(item) {
-        document.getElementById('addModal').classList.remove('hidden');
-        document.getElementById('modalTitle').innerText = 'Edit Data Aset';
-        document.getElementById('inventoryForm').action = '/finance/inventory/update';
-        document.getElementById('inpId').value = item.id;
-        document.getElementById('inpCode').value = item.code;
-        document.getElementById('inpCode').readOnly = true;
-        document.getElementById('inpCode').classList.add('bg-slate-200');
-        document.getElementById('inpName').value = item.name;
-        document.getElementById('inpCat').value = item.category_id;
-        document.getElementById('inpBrand').value = item.brand;
-        document.getElementById('inpQty').value = item.quantity;
-        document.getElementById('inpPrice').value = item.price;
-        document.getElementById('inpCond').value = item.condition_status;
-        document.getElementById('inpSource').value = item.source_fund;
-        document.getElementById('inpDate').value = item.acquisition_date;
-        document.getElementById('inpLoc').value = item.location;
-        document.getElementById('inpDesc').value = item.description;
-    }
-    function updateQS(uri, key, value) {
-        var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
-        var sep = uri.indexOf('?') !== -1 ? "&" : "?";
-        return uri.match(re) ? uri.replace(re, '$1' + key + "=" + value + '$2') : uri + sep + key + "=" + value;
-    }
-    window.onclick = function(e) {
-        ['addModal','infoModal'].forEach(function(id) {
-            if (e.target == document.getElementById(id)) document.getElementById(id).classList.add('hidden');
-        });
-    }
+function closeModal() {
+    document.getElementById('addModal').classList.add('hidden');
+    document.getElementById('inventoryForm').reset();
+    document.getElementById('modalTitle').innerText = 'Tambah Aset Baru';
+    document.getElementById('inventoryForm').action = '/finance/inventory/store';
+    document.getElementById('inpCode').readOnly = false;
+    document.getElementById('inpCode').classList.remove('bg-slate-200');
+    document.getElementById('mutationNotesWrap').classList.add('hidden');
+}
+function editItem(item) {
+    document.getElementById('addModal').classList.remove('hidden');
+    document.getElementById('modalTitle').innerText = 'Edit Data Aset';
+    document.getElementById('inventoryForm').action = '/finance/inventory/update';
+    document.getElementById('inpId').value = item.id;
+    document.getElementById('inpCode').value = item.code;
+    document.getElementById('inpCode').readOnly = true;
+    document.getElementById('inpCode').classList.add('bg-slate-200');
+    document.getElementById('inpName').value = item.name;
+    document.getElementById('inpCat').value = item.category_id;
+    document.getElementById('inpBrand').value = item.brand;
+    document.getElementById('inpQty').value = item.quantity;
+    document.getElementById('inpPrice').value = item.price;
+    document.getElementById('inpCond').value = item.condition_status;
+    document.getElementById('inpSource').value = item.source_fund;
+    document.getElementById('inpDate').value = item.acquisition_date;
+    document.getElementById('inpLoc').value = item.location;
+    document.getElementById('inpDesc').value = item.description;
+    document.getElementById('mutationNotesWrap').classList.remove('hidden');
+}
+window.onclick = function(e) {
+    if (e.target == document.getElementById('addModal')) closeModal();
+}
 </script>
 
 <?php require __DIR__ . '/../layouts/footer.php'; ?>
