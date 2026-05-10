@@ -5,6 +5,7 @@ use App\Core\View;
 use App\Core\Session;
 use App\Core\Middleware;
 use App\Core\Database;
+use App\Core\ScopeFilter;
 
 class ClassroomManageController {
     public function __construct() {
@@ -29,6 +30,9 @@ public function index() {
     // 2. Bangun Query String untuk Filter
     $whereClauses = [];
     $params = [];
+
+    [$sw, $sp] = ScopeFilter::apply('c');
+    if ($sw) { $whereClauses[] = ltrim($sw, ' AND '); $params = array_merge($params, $sp); }
 
     if (!empty($search)) {
         $whereClauses[] = "c.name LIKE ?";

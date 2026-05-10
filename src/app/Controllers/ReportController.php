@@ -4,6 +4,7 @@ namespace App\Controllers;
 use App\Core\View;
 use App\Core\Middleware;
 use App\Core\Database;
+use App\Core\ScopeFilter;
 
 class ReportController {
     public function __construct() {
@@ -102,6 +103,8 @@ class ReportController {
 
         $where = "WHERE s.status = 'ACTIVE'";
         $params = [];
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $where .= $sw; $params = array_merge($params, $sp);
         if (!empty($search))      { $where .= " AND (s.full_name LIKE ? OR s.nis LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
         if (!empty($classroomId)) { $where .= " AND s.classroom_id = ?"; $params[] = $classroomId; }
 

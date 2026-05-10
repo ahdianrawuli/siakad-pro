@@ -5,6 +5,7 @@ use App\Core\View;
 use App\Core\Session;
 use App\Core\Middleware;
 use App\Core\Database;
+use App\Core\ScopeFilter;
 
 class ParentsController {
     public function __construct() {
@@ -22,29 +23,33 @@ class ParentsController {
         $search = $_GET['search'] ?? '';
 
         // Base Condition (Hanya siswa aktif)
-        $whereClause = "WHERE status = 'ACTIVE'";
+        $whereClause = "WHERE s.status = 'ACTIVE'";
         $params = [];
+
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $whereClause .= $sw; $params = array_merge($params, $sp);
 
         // Logika Pencarian (Cari Siswa, Ayah, Ibu, atau Wali)
         if (!empty($search)) {
-            $whereClause .= " AND (full_name LIKE ? OR father_name LIKE ? OR mother_name LIKE ? OR guardian_name LIKE ?)";
+            $whereClause .= " AND (s.full_name LIKE ? OR s.father_name LIKE ? OR s.mother_name LIKE ? OR s.guardian_name LIKE ?)";
             $searchTerm = "%$search%";
-            $params = [$searchTerm, $searchTerm, $searchTerm, $searchTerm];
+            $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, $searchTerm]);
         }
 
         // Hitung Total Data (Untuk Pagination)
-        $countSql = "SELECT COUNT(*) as total FROM students $whereClause";
+        $countSql = "SELECT COUNT(*) as total FROM students s LEFT JOIN classrooms c ON s.classroom_id = c.id $whereClause";
         $totalData = $db->query($countSql, $params)->fetch()['total'];
         $totalPages = ceil($totalData / $limit);
 
         // Ambil Data
-        $sql = "SELECT id, full_name, nis, 
-                       father_name, father_phone, father_job,
-                       mother_name, mother_phone, mother_job,
-                       guardian_name, guardian_phone, guardian_relation 
-                FROM students 
+        $sql = "SELECT s.id, s.full_name, s.nis, 
+                       s.father_name, s.father_phone, s.father_job,
+                       s.mother_name, s.mother_phone, s.mother_job,
+                       s.guardian_name, s.guardian_phone, s.guardian_relation 
+                FROM students s
+                LEFT JOIN classrooms c ON s.classroom_id = c.id
                 $whereClause 
-                ORDER BY full_name ASC 
+                ORDER BY s.full_name ASC 
                 LIMIT $limit OFFSET $offset";
         
         $parents = $db->query($sql, $params)->fetchAll();
@@ -195,12 +200,16 @@ class ParentsController {
         $db = Database::getInstance();
 
         $activeYear = $db->query("SELECT id, name FROM academic_years WHERE is_active=1 LIMIT 1")->fetch();
+        $weights = $activeYear ? ($db->query("SELECT * FROM grading_weights WHERE academic_year_id = ?", [$activeYear['id']])->fetch() ?: ['weight_daily'=>40,'weight_uts'=>30,'weight_uas'=>30]) : ['weight_daily'=>40,'weight_uts'=>30,'weight_uas'=>30];
+        $wd = $weights['weight_daily'] / 100;
+        $wu = $weights['weight_uts']   / 100;
+        $wa = $weights['weight_uas']   / 100;
+
         $grades = ($student && $activeYear) ? $db->query(
             "SELECT sub.name as subject_name, sub.kkm,
-                    MAX(CASE WHEN g.type='TUGAS' THEN g.score END) as task_score,
-                    MAX(CASE WHEN g.type='UTS'   THEN g.score END) as mid_score,
-                    MAX(CASE WHEN g.type='UAS'   THEN g.score END) as final_exam_score,
-                    AVG(g.score) as final_score
+                    ROUND(AVG(CASE WHEN g.type IN ('TUGAS','UH1','UH2','UH3') THEN g.score END), 1) as task_score,
+                    MAX(CASE WHEN g.type='UTS' THEN g.score END) as mid_score,
+                    MAX(CASE WHEN g.type='UAS' THEN g.score END) as final_exam_score
              FROM student_grades g
              JOIN schedules sc ON g.schedule_id = sc.id
              JOIN subjects sub ON sc.subject_id = sub.id
@@ -209,6 +218,16 @@ class ParentsController {
              ORDER BY sub.name",
             [$student['id'], $activeYear['id']]
         )->fetchAll() : [];
+
+        foreach ($grades as &$g) {
+            $daily = $g['task_score'] ?? null;
+            $uts   = $g['mid_score'] ?? null;
+            $uas   = $g['final_exam_score'] ?? null;
+            $g['final_score'] = ($daily !== null || $uts !== null || $uas !== null)
+                ? round((($daily ?? 0) * $wd) + (($uts ?? 0) * $wu) + (($uas ?? 0) * $wa), 1)
+                : null;
+        }
+        unset($g);
 
         View::render('parents/portal_nilai', [
             'title'      => 'Nilai',

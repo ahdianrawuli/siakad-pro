@@ -18,10 +18,16 @@
                 </button>
             </div>
         </div>
-        <button onclick="document.getElementById('addModal').classList.remove('hidden')"
-            class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-2 w-fit">
-            <i class="fa-solid fa-plus"></i> Catat Peminjaman
-        </button>
+        <div class="flex flex-wrap gap-2">
+            <button onclick="document.getElementById('addBookModal').classList.remove('hidden')"
+                class="px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold shadow-md hover:bg-emerald-700 transition flex items-center gap-2 w-fit">
+                <i class="fa-solid fa-book-medical"></i> Tambah Buku
+            </button>
+            <button onclick="document.getElementById('addModal').classList.remove('hidden')"
+                class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-2 w-fit">
+                <i class="fa-solid fa-plus"></i> Catat Peminjaman
+            </button>
+        </div>
     </div>
 
     <?php \App\Core\Session::flash(); ?>
@@ -259,19 +265,11 @@
     </div>
 </div>
 
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
-<style>
-    .select2-container--default .select2-selection--single { border-color: #e2e8f0; height: 42px; padding-top: 6px; border-radius: 0.75rem; background-color: #f8fafc; }
-    .select2-container--default .select2-selection--single .select2-selection__arrow { height: 40px; }
-    .select2-dropdown { border-color: #e2e8f0; border-radius: 0.75rem; overflow: hidden; }
-    .select2-search--dropdown .select2-search__field { border-radius: 0.5rem; border-color: #e2e8f0; padding: 6px 10px; }
-    .select2-container { width: 100% !important; }
-</style>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-    $('#studentLibSelect').select2({ placeholder: '-- Cari santri...', allowClear: true, dropdownParent: $('#addModal') });
-    $('#bookSelect').select2({ placeholder: '-- Cari buku...', allowClear: true, dropdownParent: $('#addModal') });
+    $(document).ready(function() {
+        $('#studentLibSelect').select2({ placeholder: '-- Cari santri...', allowClear: true, dropdownParent: $('#addModal'), width: '100%' });
+        $('#bookSelect').select2({ placeholder: '-- Cari buku...', allowClear: true, dropdownParent: $('#addModal'), width: '100%' });
+    });
 
     function openReturnModal(id) {
         document.getElementById('return_id').value = id;
@@ -283,11 +281,57 @@
         return uri.match(re) ? uri.replace(re, '$1' + key + "=" + value + '$2') : uri + sep + key + "=" + value;
     }
     window.onclick = function(e) {
-        ['addModal','returnModal','infoModal'].forEach(function(id) {
+        ['addModal','returnModal','infoModal','addBookModal'].forEach(function(id) {
             var el = document.getElementById(id);
             if (el && e.target == el) el.classList.add('hidden');
         });
     }
 </script>
+
+<!-- Modal Tambah Buku -->
+<div id="addBookModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="p-5 border-b border-slate-100 bg-emerald-50 flex justify-between items-center">
+            <h3 class="font-bold text-emerald-800 flex items-center gap-2"><i class="fa-solid fa-book-medical text-emerald-600"></i> Tambah Buku</h3>
+            <button onclick="document.getElementById('addBookModal').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 hover:bg-emerald-200 flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form action="/library/books/store" method="POST" class="p-6 space-y-4">
+            <?= \App\Core\Csrf::input() ?>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Kode Buku</label>
+                    <input type="text" name="code" placeholder="cth: BK-001" required
+                        class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/50 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Stok</label>
+                    <input type="number" name="stock" value="1" min="1"
+                        class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1.5">Judul Buku</label>
+                <input type="text" name="title" placeholder="Judul lengkap buku" required
+                    class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/50 outline-none">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Pengarang</label>
+                    <input type="text" name="author" placeholder="Nama pengarang"
+                        class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Kategori</label>
+                    <input type="text" name="category" placeholder="cth: Agama, Sains"
+                        class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
+                </div>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('addBookModal').classList.add('hidden')" class="flex-1 bg-slate-100 text-slate-600 py-2.5 rounded-xl font-bold text-sm">Batal</button>
+                <button type="submit" class="flex-1 bg-emerald-600 text-white py-2.5 rounded-xl font-bold hover:bg-emerald-700 transition text-sm">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <?php require __DIR__ . '/../layouts/footer.php'; ?>

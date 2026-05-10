@@ -163,6 +163,12 @@ if ($isCandidate) {
                         <i class="fa-solid fa-chevron-down text-xs"></i>
                     </div>
                 </div>
+                <?php if ($activeScope !== 'GLOBAL'): ?>
+                <div class="mt-1.5 flex items-center gap-1.5 text-[10px] text-yellow-300 font-bold">
+                    <i class="fa-solid fa-filter text-[9px]"></i>
+                    Filter aktif: data hanya menampilkan jenjang <span class="text-yellow-200"><?= $activeScope ?></span>
+                </div>
+                <?php endif; ?>
             </form>
         </div>
     <?php endif; ?>

@@ -4,6 +4,7 @@ use App\Core\View;
 use App\Core\Session;
 use App\Core\Middleware;
 use App\Core\Database;
+use App\Core\ScopeFilter;
 use App\Models\WhatsappService;
 
 class DisciplineController {
@@ -87,8 +88,13 @@ class DisciplineController {
             $where .= " AND sv.date = ?";
             $params[] = $dateFilter;
         }
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $where .= $sw; $params = array_merge($params, $sp);
 
-        $countSql = "SELECT COUNT(*) as total FROM student_violations sv JOIN students s ON sv.student_id = s.id $where";
+        $countSql = "SELECT COUNT(*) as total FROM student_violations sv
+                     JOIN students s ON sv.student_id = s.id
+                     LEFT JOIN classrooms c ON s.classroom_id = c.id
+                     $where";
         $totalData = $db->query($countSql, $params)->fetch()['total'];
         $totalPages = ceil($totalData / $limit);
 
@@ -104,7 +110,11 @@ class DisciplineController {
 
         $violations = $db->query($sql, $params)->fetchAll();
         $types = $db->query("SELECT * FROM violation_types ORDER BY points ASC")->fetchAll();
-        $students = $db->query("SELECT id, full_name, nis FROM students WHERE status='ACTIVE' ORDER BY full_name ASC")->fetchAll();
+        [$sw2, $sp2] = ScopeFilter::apply('c');
+        $students = $db->query(
+            "SELECT s.id, s.full_name, s.nis FROM students s LEFT JOIN classrooms c ON s.classroom_id = c.id WHERE s.status='ACTIVE' $sw2 ORDER BY s.full_name ASC",
+            $sp2
+        )->fetchAll();
 
         View::render('discipline/index', [
             'title' => 'Kedisiplinan Siswa', 
@@ -172,8 +182,13 @@ class DisciplineController {
             $params[] = "%$search%";
             $params[] = "%$search%";
         }
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $where .= $sw; $params = array_merge($params, $sp);
 
-        $countSql = "SELECT COUNT(*) as total FROM student_achievements sa JOIN students s ON sa.student_id = s.id $where";
+        $countSql = "SELECT COUNT(*) as total FROM student_achievements sa
+                     JOIN students s ON sa.student_id = s.id
+                     LEFT JOIN classrooms c ON s.classroom_id = c.id
+                     $where";
         $totalData = $db->query($countSql, $params)->fetch()['total'];
         $totalPages = ceil($totalData / $limit);
 
@@ -186,7 +201,11 @@ class DisciplineController {
                 LIMIT $limit OFFSET $offset";
 
         $achievements = $db->query($sql, $params)->fetchAll();
-        $students = $db->query("SELECT id, full_name, nis FROM students WHERE status='ACTIVE' ORDER BY full_name ASC")->fetchAll();
+        [$sw2, $sp2] = ScopeFilter::apply('c');
+        $students = $db->query(
+            "SELECT s.id, s.full_name, s.nis FROM students s LEFT JOIN classrooms c ON s.classroom_id = c.id WHERE s.status='ACTIVE' $sw2 ORDER BY s.full_name ASC",
+            $sp2
+        )->fetchAll();
 
         View::render('discipline/achievements', [
             'title' => 'Prestasi Siswa',
@@ -280,7 +299,11 @@ class DisciplineController {
                 LIMIT $limit OFFSET $offset";
 
         $logs = $db->query($sql, $params)->fetchAll();
-        $students = $db->query("SELECT id, full_name, nis FROM students WHERE status='ACTIVE' ORDER BY full_name ASC")->fetchAll();
+        [$sw2, $sp2] = ScopeFilter::apply('c');
+        $students = $db->query(
+            "SELECT s.id, s.full_name, s.nis FROM students s LEFT JOIN classrooms c ON s.classroom_id = c.id WHERE s.status='ACTIVE' $sw2 ORDER BY s.full_name ASC",
+            $sp2
+        )->fetchAll();
 
         View::render('discipline/counseling', [
             'title' => 'Bimbingan Konseling', 

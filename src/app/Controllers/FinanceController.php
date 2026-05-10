@@ -5,6 +5,7 @@ use App\Core\View;
 use App\Core\Session;
 use App\Core\Database;
 use App\Core\Middleware;
+use App\Core\ScopeFilter;
 
 class FinanceController {
     
@@ -18,10 +19,34 @@ class FinanceController {
         }
     }
 
-    public function otherFees() {
-        View::render('finance/other_fees', [
-            'title' => 'Biaya Lain lain'
+    // ==========================================================
+    // SPP — Master Data SPP per Kelas
+    // ==========================================================
+    public function spp() {
+        $db = Database::getInstance();
+        $sppList = $db->query("SELECT * FROM fee_types WHERE type = 'MONTHLY' ORDER BY name")->fetchAll();
+        $classrooms = $db->query("SELECT id, name FROM classrooms ORDER BY name")->fetchAll();
+        View::render('finance/spp', [
+            'title'      => 'Data SPP',
+            'sppList'    => $sppList,
+            'classrooms' => $classrooms,
         ]);
+    }
+
+    public function storeSpp() {
+        $db = Database::getInstance();
+        $db->query("INSERT INTO fee_types (name, amount, type) VALUES (?, ?, 'MONTHLY')", [
+            $_POST['name'], $_POST['amount']
+        ]);
+        Session::setFlash('success', 'Data SPP berhasil ditambahkan.');
+        header('Location: /finance/spp');
+    }
+
+    public function deleteSpp() {
+        $db = Database::getInstance();
+        $db->query("DELETE FROM fee_types WHERE id = ? AND type = 'MONTHLY'", [(int)$_GET['id']]);
+        Session::setFlash('success', 'Data SPP dihapus.');
+        header('Location: /finance/spp');
     }
 
     public function treasurerReports() {
@@ -50,6 +75,7 @@ class FinanceController {
         $totalUnpaid = array_sum(array_column($unpaid, 'total'));
 
         // Rekap per kelas
+        [$sw, $sp] = ScopeFilter::apply('c');
         $byClass = $db->query(
             "SELECT c.name as class_name,
                     SUM(CASE WHEN b.status='PAID' THEN b.amount ELSE 0 END) as paid,
@@ -57,9 +83,9 @@ class FinanceController {
              FROM bills b
              JOIN students s ON b.student_id = s.id
              LEFT JOIN classrooms c ON s.classroom_id = c.id
-             WHERE YEAR(b.created_at) = ?
+             WHERE YEAR(b.created_at) = ? $sw
              GROUP BY c.name ORDER BY c.name",
-            [$year]
+            array_merge([$year], $sp)
         )->fetchAll();
 
         // Transaksi terbaru
@@ -67,9 +93,9 @@ class FinanceController {
             "SELECT b.*, s.full_name, s.nis, c.name as class_name
              FROM bills b JOIN students s ON b.student_id = s.id
              LEFT JOIN classrooms c ON s.classroom_id = c.id
-             WHERE b.status = 'PAID' AND YEAR(b.updated_at) = ? AND MONTH(b.updated_at) = ?
+             WHERE b.status = 'PAID' AND YEAR(b.updated_at) = ? AND MONTH(b.updated_at) = ? $sw
              ORDER BY b.updated_at DESC LIMIT 20",
-            [$year, $mon]
+            array_merge([$year, $mon], $sp)
         )->fetchAll();
 
         View::render('finance/treasurer_reports', [
@@ -404,6 +430,8 @@ class FinanceController {
 
         $where  = "WHERE 1=1";
         $params = [];
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $where .= $sw; $params = array_merge($params, $sp);
         if (!empty($search))    { $where .= " AND (s.full_name LIKE ? OR s.nis LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
         if (!empty($status))    { $where .= " AND b.status = ?";           $params[] = $status; }
         if (!empty($dateFrom))  { $where .= " AND DATE(b.created_at) >= ?"; $params[] = $dateFrom; }

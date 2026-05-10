@@ -5,6 +5,7 @@ use App\Core\View;
 use App\Core\Session;
 use App\Core\Middleware;
 use App\Core\Database;
+use App\Core\ScopeFilter;
 
 class StudentAffairsController {
     public function __construct() {
@@ -22,8 +23,10 @@ class StudentAffairsController {
         $classId   = $_GET['class_id']  ?? '';
         $status    = $_GET['status']    ?? 'ACTIVE';
 
-        $where  = "WHERE 1=1";
-        $params = [];
+        [$scopeWhere, $scopeParams] = ScopeFilter::apply('c');
+
+        $where  = "WHERE 1=1" . $scopeWhere;
+        $params = $scopeParams;
         if (!empty($search))  { $where .= " AND (s.full_name LIKE ? OR s.nis LIKE ? OR c.name LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; $params[] = "%$search%"; }
         if (!empty($classId)) { $where .= " AND s.classroom_id = ?"; $params[] = $classId; }
         if ($status !== 'ALL') { $where .= " AND s.status = ?"; $params[] = $status ?: 'ACTIVE'; }
@@ -260,6 +263,9 @@ class StudentAffairsController {
         $where = "WHERE 1=1";
         $params = [];
 
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $where .= $sw; $params = array_merge($params, $sp);
+
         // Logika Filter
         if (!empty($search)) {
             $where .= " AND (s.full_name LIKE ? OR s.nis LIKE ?)";
@@ -277,7 +283,8 @@ class StudentAffairsController {
 
         // Hitung Total Data
         $countSql = "SELECT COUNT(*) as total FROM attendances a 
-                     JOIN students s ON a.student_id = s.id 
+                     JOIN students s ON a.student_id = s.id
+                     LEFT JOIN classrooms c ON s.classroom_id = c.id
                      $where";
         $totalData = $db->query($countSql, $params)->fetch()['total'];
         $totalPages = ceil($totalData / $limit);
@@ -319,28 +326,24 @@ class StudentAffairsController {
         $existing = [];
 
         if ($classId) {
-            // Ambil Siswa di Kelas Tersebut
             $students = $db->query("SELECT * FROM students WHERE classroom_id = ? AND status = 'ACTIVE' ORDER BY full_name ASC", [$classId])->fetchAll();
-            
-            // Cek data yang sudah ada (untuk Edit Mode)
             $logs = $db->query("SELECT student_id, status, notes FROM attendances WHERE classroom_id = ? AND date = ?", [$classId, $date])->fetchAll();
             foreach($logs as $l) {
-                $existing[$l['student_id']] = [
-                    'status' => $l['status'],
-                    'notes' => $l['notes']
-                ];
+                $existing[$l['student_id']] = ['status' => $l['status'], 'notes' => $l['notes']];
             }
         }
 
-        $classrooms = $db->query("SELECT * FROM classrooms ORDER BY name ASC")->fetchAll();
+        // Filter dropdown kelas berdasarkan scope
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $classrooms = $db->query("SELECT c.* FROM classrooms c WHERE 1=1 $sw ORDER BY c.name ASC", $sp)->fetchAll();
 
         View::render('student_affairs/attendance_form', [
-            'title' => 'Input Absensi Harian',
-            'classrooms' => $classrooms,
-            'students' => $students,
+            'title'         => 'Input Absensi Harian',
+            'classrooms'    => $classrooms,
+            'students'      => $students,
             'selectedClass' => $classId,
-            'selectedDate' => $date,
-            'existing' => $existing
+            'selectedDate'  => $date,
+            'existing'      => $existing
         ]);
     }
 

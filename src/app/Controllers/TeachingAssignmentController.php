@@ -5,6 +5,7 @@ use App\Core\View;
 use App\Core\Session;
 use App\Core\Middleware;
 use App\Core\Database;
+use App\Core\ScopeFilter;
 
 class TeachingAssignmentController {
     public function __construct() { Middleware::auth(); }
@@ -20,6 +21,8 @@ class TeachingAssignmentController {
 
         $where = "1=1";
         $params = [];
+        [$sw, $sp] = ScopeFilter::apply('c');
+        if ($sw) { $where .= $sw; $params = array_merge($params, $sp); }
         if ($search) {
             $where .= " AND (u.name LIKE ? OR s.name LIKE ? OR c.name LIKE ?)";
             $params[] = "%$search%"; $params[] = "%$search%"; $params[] = "%$search%";
@@ -46,7 +49,8 @@ class TeachingAssignmentController {
         // Data Master untuk Modal
         $teachers = $db->query("SELECT id, name FROM users WHERE role_id = 3 AND status='active' ORDER BY name")->fetchAll();
         $subjects = $db->query("SELECT id, name FROM subjects ORDER BY name")->fetchAll();
-        $classrooms = $db->query("SELECT id, name FROM classrooms ORDER BY level, name")->fetchAll();
+        [$sw2, $sp2] = ScopeFilter::apply('c2');
+        $classrooms = $db->query("SELECT c2.id, c2.name FROM classrooms c2 WHERE 1=1 $sw2 ORDER BY c2.level, c2.name", $sp2)->fetchAll();
         $years = $db->query("SELECT id, name, semester FROM academic_years ORDER BY id DESC")->fetchAll();
 
         View::render('academic/assignments/index', [

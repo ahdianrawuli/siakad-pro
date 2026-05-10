@@ -5,6 +5,7 @@ use App\Core\View;
 use App\Core\Session;
 use App\Core\Middleware;
 use App\Core\Database;
+use App\Core\ScopeFilter;
 
 class BoardingController {
     public function __construct() { Middleware::auth(); }
@@ -222,31 +223,49 @@ class BoardingController {
         $page   = max(1, (int)($_GET['page'] ?? 1));
         $offset = ($page - 1) * $limit;
 
-        $where  = "1=1";
+        $where  = "hr.source = 'ASRAMA'";
         $params = [];
+
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $where .= $sw; $params = array_merge($params, $sp);
+
         if ($search !== '') {
             $where   .= " AND (s.full_name LIKE ? OR s.nis LIKE ?)";
             $params[] = "%$search%"; $params[] = "%$search%";
         }
-        if ($status !== '') {
-            $where   .= " AND hr.status = ?";
-            $params[] = $status;
-        }
+        if ($status !== '') { $where .= " AND hr.status = ?"; $params[] = $status; }
 
-        $total = $db->query("SELECT COUNT(*) FROM health_records hr JOIN students s ON hr.student_id = s.id WHERE $where", $params)->fetchColumn();
+        $total = $db->query(
+            "SELECT COUNT(*) FROM health_records hr
+             JOIN students s ON hr.student_id = s.id
+             LEFT JOIN classrooms c ON s.classroom_id = c.id
+             WHERE $where",
+            $params
+        )->fetchColumn();
 
-        $records = $db->query("
-            SELECT hr.*, s.full_name, s.nis, u.name as officer_name
-            FROM health_records hr
-            JOIN students s ON hr.student_id = s.id
-            JOIN users u ON hr.officer_id = u.id
-            WHERE $where ORDER BY hr.date DESC LIMIT $limit OFFSET $offset
-        ", $params)->fetchAll();
+        $records = $db->query(
+            "SELECT hr.*, s.full_name, s.nis, d.name as dorm_name, u.name as officer_name
+             FROM health_records hr
+             JOIN students s ON hr.student_id = s.id
+             LEFT JOIN classrooms c ON s.classroom_id = c.id
+             LEFT JOIN dorms d ON s.dorm_id = d.id
+             LEFT JOIN users u ON hr.officer_id = u.id
+             WHERE $where ORDER BY hr.date DESC LIMIT $limit OFFSET $offset",
+            $params
+        )->fetchAll();
 
-        $students = $db->query("SELECT id, full_name, nis FROM students WHERE status='ACTIVE' ORDER BY full_name")->fetchAll();
+        [$sw2, $sp2] = ScopeFilter::apply('c');
+        $students = $db->query(
+            "SELECT s.id, s.full_name, s.nis, d.name as dorm_name
+             FROM students s
+             LEFT JOIN classrooms c ON s.classroom_id = c.id
+             LEFT JOIN dorms d ON s.dorm_id = d.id
+             WHERE s.status='ACTIVE' $sw2 ORDER BY s.full_name",
+            $sp2
+        )->fetchAll();
 
         View::render('boarding/health', [
-            'title'       => 'Poskestren',
+            'title'       => 'Laporan Kesehatan Asrama',
             'records'     => $records,
             'students'    => $students,
             'search'      => $search,
@@ -259,15 +278,18 @@ class BoardingController {
     }
 
     public function storeHealth() {
-        $db = Database::getInstance();
-        $userId = Session::get('user_id'); // Perbaikan Session
+        $db     = Database::getInstance();
+        $userId = Session::get('user_id');
 
-        $db->query("INSERT INTO health_records (student_id, date, complaint, diagnosis, treatment, status, officer_id) VALUES (?, ?, ?, ?, ?, ?, ?)", [
-            $_POST['student_id'], $_POST['date'], $_POST['complaint'], 
-            $_POST['diagnosis'], $_POST['treatment'], $_POST['status'], $userId
-        ]);
-        
-        Session::setFlash('success', 'Data kesehatan santri dicatat.');
+        $db->query(
+            "INSERT INTO health_records (student_id, date, complaint, treatment, status, officer_id, source) VALUES (?,?,?,?,?,?,'ASRAMA')",
+            [
+                $_POST['student_id'], $_POST['date'], $_POST['complaint'],
+                $_POST['treatment'] ?? null, $_POST['status'] ?? 'RAWAT_JALAN', $userId
+            ]
+        );
+
+        Session::setFlash('success', 'Laporan kesehatan santri dicatat.');
         header('Location: /boarding/health');
     }
 

@@ -5,6 +5,7 @@ use App\Core\View;
 use App\Core\Middleware;
 use App\Core\Database;
 use App\Core\Session;
+use App\Core\ScopeFilter;
 
 class ExtracurricularController {
     public function __construct() { Middleware::auth(); }

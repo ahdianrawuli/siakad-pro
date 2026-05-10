@@ -443,12 +443,16 @@ class StudentController {
         if (!$student) { header('Location: /student/dashboard'); exit; }
 
         $activeYear = $db->query("SELECT id, name FROM academic_years WHERE is_active = 1 LIMIT 1")->fetch();
+        $weights = $activeYear ? ($db->query("SELECT * FROM grading_weights WHERE academic_year_id = ?", [$activeYear['id']])->fetch() ?: ['weight_daily'=>40,'weight_uts'=>30,'weight_uas'=>30]) : ['weight_daily'=>40,'weight_uts'=>30,'weight_uas'=>30];
+        $wd = $weights['weight_daily'] / 100;
+        $wu = $weights['weight_uts']   / 100;
+        $wa = $weights['weight_uas']   / 100;
+
         $grades = $db->query(
             "SELECT s.name as subject_name, s.kkm,
-                MAX(CASE WHEN sg.type IN ('TUGAS','UH1','UH2','UH3') THEN sg.score END) as task_score,
+                ROUND(AVG(CASE WHEN sg.type IN ('TUGAS','UH1','UH2','UH3') THEN sg.score END), 1) as task_score,
                 MAX(CASE WHEN sg.type = 'UTS' THEN sg.score END) as mid_score,
-                MAX(CASE WHEN sg.type = 'UAS' THEN sg.score END) as final_exam_score,
-                ROUND(AVG(sg.score), 1) as final_score
+                MAX(CASE WHEN sg.type = 'UAS' THEN sg.score END) as final_exam_score
              FROM student_grades sg
              JOIN schedules sch ON sg.schedule_id = sch.id
              JOIN subjects s ON sch.subject_id = s.id
@@ -457,6 +461,21 @@ class StudentController {
              ORDER BY s.name ASC",
             [$student['id']]
         )->fetchAll();
+
+        // Hitung nilai akhir berbobot
+        foreach ($grades as &$g) {
+            $daily = $g['task_score'] ?? null;
+            $uts   = $g['mid_score'] ?? null;
+            $uas   = $g['final_exam_score'] ?? null;
+            if ($daily !== null || $uts !== null || $uas !== null) {
+                $g['final_score'] = round(
+                    (($daily ?? 0) * $wd) + (($uts ?? 0) * $wu) + (($uas ?? 0) * $wa), 1
+                );
+            } else {
+                $g['final_score'] = null;
+            }
+        }
+        unset($g);
 
         View::render('student/grades', [
             'title'       => 'Nilai Akademik',

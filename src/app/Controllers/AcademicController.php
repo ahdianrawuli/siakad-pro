@@ -5,6 +5,7 @@ use App\Core\View;
 use App\Core\Session;
 use App\Core\Middleware;
 use App\Core\Database;
+use App\Core\ScopeFilter;
 
 class AcademicController {
     public function __construct() {
@@ -126,6 +127,9 @@ class AcademicController {
 
         $where = "WHERE sch.academic_year_id = ?";
         $params = [$activeYearId];
+
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $where .= $sw; $params = array_merge($params, $sp);
 
         if (!empty($classId)) {
             $where .= " AND sch.classroom_id = ?";
@@ -276,6 +280,9 @@ class AcademicController {
             $where .= " AND sch.teacher_id = ?";
             $params[] = $userId;
         }
+
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $where .= $sw; $params = array_merge($params, $sp);
 
         if (!empty($search)) {
             $where .= " AND (s.name LIKE ? OR c.name LIKE ?)";

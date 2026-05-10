@@ -194,6 +194,8 @@ $router->get('/school/alumni',              [AlumniController::class, 'index']);
 $router->get('/library',                    [LibraryController::class, 'index']);
 $router->post('/library/store',             [LibraryController::class, 'store']);
 $router->post('/library/return',            [LibraryController::class, 'returnBook']);
+$router->post('/library/books/store',       [LibraryController::class, 'storeBook']);
+$router->get('/library/books/delete',       [LibraryController::class, 'deleteBook']);
 $router->get('/school/alumni/create',       [AlumniController::class, 'create']);
 $router->post('/school/alumni/store',       [AlumniController::class, 'store']);
 $router->get('/school/alumni/edit',         [AlumniController::class, 'edit']);
@@ -394,10 +396,9 @@ $router->get('/staff/structure/delete',  [SchoolStructureController::class, 'del
 // ============================================================================
 
 // Keuangan (Updated)
-$router->get('/finance/spp',                [SyllabusController::class, 'index']);
-$router->post('/finance/spp/store',         [SyllabusController::class, 'store']);
-$router->get('/finance/spp/delete',         [SyllabusController::class, 'delete']);
-$router->get('/finance/spp/download',       [SyllabusController::class, 'download']);
+$router->get('/finance/spp',                [FinanceController::class, 'spp']);
+$router->post('/finance/spp/store',         [FinanceController::class, 'storeSpp']);
+$router->get('/finance/spp/delete',         [FinanceController::class, 'deleteSpp']);
 
 $router->get('/finance/other-fees',         [FinanceController::class, 'otherFees']);
 $router->get('/finance/treasurer-reports',  [FinanceController::class, 'treasurerReports']);

@@ -6,8 +6,8 @@
     <!-- Header -->
     <div class="mb-8 flex flex-col md:flex-row md:justify-between md:items-end gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div>
-            <h3 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Poskestren (Klinik Santri)</h3>
-            <p class="text-slate-500 text-sm mt-1 font-medium">Pencatatan kesehatan dan riwayat kunjungan santri.</p>
+            <h3 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Laporan Kesehatan Asrama</h3>
+            <p class="text-slate-500 text-sm mt-1 font-medium">Pencatatan santri sakit yang dilaporkan wali asrama. Kasus serius dirujuk ke Poskestren.</p>
             <div class="mt-3 flex items-center gap-2">
                 <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-bold border border-green-100">
                     <i class="fa-solid fa-stethoscope"></i> Total Kunjungan: <?= $totalData ?>
@@ -166,71 +166,60 @@
 
 <!-- Modal Periksa Santri -->
 <div id="addModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-            <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-stethoscope text-green-500"></i> Periksa Santri</h3>
+            <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-house-medical text-teal-500"></i> Laporan Santri Sakit</h3>
             <button onclick="document.getElementById('addModal').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-slate-200 text-slate-500 hover:bg-slate-300 flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <form action="/boarding/health/store" method="POST" class="p-6 overflow-y-auto space-y-4">
+        <form action="/boarding/health/store" method="POST" class="p-6 space-y-4">
             <?= \App\Core\Csrf::input() ?>
+            <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
+                <i class="fa-solid fa-circle-info mr-1"></i> Untuk diagnosa & tindakan medis lengkap, gunakan menu <strong>Kesiswaan → Poskestren</strong>.
+            </div>
             <div>
-                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Pasien (Santri)</label>
+                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Santri</label>
                 <select name="student_id" id="studentHealthSelect" class="w-full" required>
                     <option value="">-- Cari santri... --</option>
                     <?php foreach ($students as $s): ?>
-                        <option value="<?= $s['id'] ?>"><?= $s['nis'] ?> — <?= htmlspecialchars($s['full_name']) ?></option>
+                        <option value="<?= $s['id'] ?>"><?= $s['nis'] ?> — <?= htmlspecialchars($s['full_name']) ?><?= !empty($s['dorm_name']) ? ' (' . $s['dorm_name'] . ')' : '' ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <div>
                 <label class="block text-sm font-semibold text-slate-600 mb-1.5">Tanggal</label>
                 <input type="date" name="date" value="<?= date('Y-m-d') ?>"
-                    class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all">
+                    class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
             </div>
             <div>
                 <label class="block text-sm font-semibold text-slate-600 mb-1.5">Keluhan</label>
-                <textarea name="complaint" rows="2" placeholder="Pusing, mual, panas..."
-                    class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all resize-none" required></textarea>
+                <textarea name="complaint" rows="2" placeholder="cth: Pusing, mual, panas sejak kemarin..."
+                    class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none resize-none" required></textarea>
             </div>
             <div>
-                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Diagnosa</label>
-                <input type="text" name="diagnosis" placeholder="cth: Flu, Demam, Maag"
-                    class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all">
+                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Tindakan Awal</label>
+                <textarea name="treatment" rows="2" placeholder="cth: Diberi obat panas, istirahat di kamar..."
+                    class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none resize-none"></textarea>
             </div>
             <div>
-                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Tindakan / Obat</label>
-                <textarea name="treatment" rows="2" placeholder="Paracetamol 3x1, istirahat..."
-                    class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all resize-none"></textarea>
-            </div>
-            <div>
-                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Status Rawat</label>
+                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Status</label>
                 <select name="status" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
-                    <option value="RAWAT_JALAN">Rawat Jalan (Balik Asrama)</option>
-                    <option value="RAWAT_INAP">Rawat Inap (Di Poskestren)</option>
-                    <option value="RUJUK_RS">Rujuk ke RS/Puskesmas</option>
+                    <option value="RAWAT_JALAN">Istirahat di Kamar</option>
+                    <option value="RAWAT_INAP">Dirujuk ke Poskestren</option>
+                    <option value="RUJUK_RS">Dirujuk ke RS/Puskesmas</option>
                 </select>
             </div>
             <div class="flex gap-3 pt-2">
-                <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="flex-1 bg-slate-100 text-slate-600 py-2.5 rounded-xl font-bold hover:bg-slate-200 transition text-sm">Batal</button>
-                <button type="submit" class="flex-1 bg-green-600 text-white py-2.5 rounded-xl font-bold hover:bg-green-700 shadow-md shadow-green-500/20 transition text-sm">Simpan</button>
+                <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="flex-1 bg-slate-100 text-slate-600 py-2.5 rounded-xl font-bold text-sm">Batal</button>
+                <button type="submit" class="flex-1 bg-teal-600 text-white py-2.5 rounded-xl font-bold hover:bg-teal-700 transition text-sm">Simpan</button>
             </div>
         </form>
     </div>
 </div>
 
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
-<style>
-    .select2-container--default .select2-selection--single { border-color: #e2e8f0; height: 42px; padding-top: 6px; border-radius: 0.75rem; background-color: #f8fafc; }
-    .select2-container--default .select2-selection--single .select2-selection__arrow { height: 40px; }
-    .select2-dropdown { border-color: #e2e8f0; border-radius: 0.75rem; overflow: hidden; }
-    .select2-search--dropdown .select2-search__field { border-radius: 0.5rem; border-color: #e2e8f0; padding: 6px 10px; }
-    .select2-container { width: 100% !important; }
-</style>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-    $('#studentHealthSelect').select2({ placeholder: '-- Cari santri...', allowClear: true, dropdownParent: $('#addModal') });
-
+    $(document).ready(function() {
+        $('#studentHealthSelect').select2({ placeholder: '-- Cari santri...', allowClear: true, dropdownParent: $('#addModal'), width: '100%' });
+    });
     function updateQS(uri, key, value) {
         var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
         var sep = uri.indexOf('?') !== -1 ? "&" : "?";

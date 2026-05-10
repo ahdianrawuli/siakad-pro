@@ -5,6 +5,7 @@ use App\Core\View;
 use App\Core\Session;
 use App\Core\Middleware;
 use App\Core\Database;
+use App\Core\ScopeFilter;
 
 class BoardingReportController {
     public function __construct() { Middleware::auth(); }
@@ -12,16 +13,13 @@ class BoardingReportController {
     public function index() {
         $db = Database::getInstance();
         $classId = $_GET['classroom_id'] ?? '';
-        
-        // Ambil Data Kelas
-        $classrooms = $db->query("SELECT * FROM classrooms ORDER BY level, name")->fetchAll();
+
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $classrooms = $db->query("SELECT c.* FROM classrooms c WHERE 1=1 $sw ORDER BY c.level, c.name", $sp)->fetchAll();
         $students = [];
-        
-        // Ambil Tahun Ajaran Aktif
         $activeYear = $db->query("SELECT id, name, semester FROM academic_years WHERE is_active=1")->fetch();
 
         if ($classId && $activeYear) {
-            // Ambil Siswa & Nilai Asrama mereka (Left Join)
             $students = $db->query("
                 SELECT s.id, s.full_name, s.nis, bg.tahfidz_grade, bg.language_grade, bg.character_grade
                 FROM students s

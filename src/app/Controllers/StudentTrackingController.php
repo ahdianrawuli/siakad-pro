@@ -5,6 +5,7 @@ use App\Core\View;
 use App\Core\Session;
 use App\Core\Middleware;
 use App\Core\Database;
+use App\Core\ScopeFilter;
 
 class StudentTrackingController {
     public function __construct() { Middleware::auth(); }
@@ -24,6 +25,9 @@ class StudentTrackingController {
         $where = "WHERE DATE(sal.logged_at) = ?";
         $params = [$date];
 
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $where .= $sw; $params = array_merge($params, $sp);
+
         if (!empty($search)) {
             $where .= " AND (s.full_name LIKE ? OR sal.location LIKE ?)";
             $params[] = "%$search%";
@@ -33,7 +37,8 @@ class StudentTrackingController {
         // Hitung Total Data (Pagination)
         $countSql = "SELECT COUNT(*) as total 
                      FROM student_activity_logs sal 
-                     JOIN students s ON sal.student_id = s.id 
+                     JOIN students s ON sal.student_id = s.id
+                     LEFT JOIN classrooms c ON s.classroom_id = c.id
                      $where";
         $totalData = $db->query($countSql, $params)->fetch()['total'];
         $totalPages = ceil($totalData / $limit);
@@ -42,13 +47,18 @@ class StudentTrackingController {
         $sql = "SELECT sal.*, s.full_name, s.nis, u.name as reporter_name 
                 FROM student_activity_logs sal
                 JOIN students s ON sal.student_id = s.id
+                LEFT JOIN classrooms c ON s.classroom_id = c.id
                 LEFT JOIN users u ON sal.created_by = u.id
                 $where
                 ORDER BY sal.logged_at DESC
                 LIMIT $limit OFFSET $offset";
 
         $logs = $db->query($sql, $params)->fetchAll();
-        $students = $db->query("SELECT id, full_name, nis FROM students WHERE status='ACTIVE' ORDER BY full_name")->fetchAll();
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $students = $db->query(
+            "SELECT s.id, s.full_name, s.nis FROM students s LEFT JOIN classrooms c ON s.classroom_id = c.id WHERE s.status='ACTIVE' $sw ORDER BY s.full_name",
+            $sp
+        )->fetchAll();
 
         View::render('discipline/tracking/index', [
             'title' => 'Pelacakan Aktivitas Santri',

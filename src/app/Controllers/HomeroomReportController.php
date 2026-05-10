@@ -5,6 +5,7 @@ use App\Core\View;
 use App\Core\Session;
 use App\Core\Middleware;
 use App\Core\Database;
+use App\Core\ScopeFilter;
 
 class HomeroomReportController {
     public function __construct() { Middleware::auth(); }
@@ -21,9 +22,11 @@ class HomeroomReportController {
         $search = $_GET['search'] ?? '';
         $level = $_GET['level'] ?? '';
 
-        // Base Query
         $where = "WHERE 1=1";
         $params = [];
+
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $where .= $sw; $params = array_merge($params, $sp);
 
         // Logika Filter
         if (!empty($search)) {
