@@ -18,18 +18,33 @@ class BoardingController {
         $gender = $_GET['gender'] ?? '';
         $unit   = $_GET['unit'] ?? '';
 
+        $scope = ScopeFilter::get(); // GLOBAL | MTS | MA | PDF
+
         $where = "WHERE 1=1";
         $params = [];
         if (!empty($search)) { $where .= " AND d.name LIKE ?"; $params[] = "%$search%"; }
         if (!empty($gender))  { $where .= " AND d.gender = ?"; $params[] = $gender; }
-        if (!empty($unit))    { $where .= " AND d.unit = ?";   $params[] = $unit; }
+
+        // Scope filter: jika scope aktif, paksa unit = scope (abaikan filter manual)
+        if ($scope !== 'GLOBAL') {
+            $where .= " AND d.unit = ?"; $params[] = $scope;
+        } elseif (!empty($unit)) {
+            $where .= " AND d.unit = ?"; $params[] = $unit;
+        }
 
         $dorms = $db->query("
             SELECT d.*, (SELECT COUNT(*) FROM students WHERE dorm_id = d.id) as occupied
             FROM dorms d $where ORDER BY d.unit, d.gender, d.name
         ", $params)->fetchAll();
 
-        $students = $db->query("SELECT id, full_name, nis FROM students WHERE dorm_id IS NULL AND status='ACTIVE' ORDER BY full_name")->fetchAll();
+        // Santri non-asrama mengikuti scope
+        $studentWhere = "dorm_id IS NULL AND status='ACTIVE'";
+        $studentParams = [];
+        if ($scope !== 'GLOBAL') {
+            $studentWhere .= " AND s.classroom_id IN (SELECT id FROM classrooms WHERE major = ?)";
+            $studentParams[] = $scope;
+        }
+        $students = $db->query("SELECT s.id, s.full_name, s.nis FROM students s WHERE $studentWhere ORDER BY s.full_name", $studentParams)->fetchAll();
 
         View::render('boarding/dorms', [
             'title'        => 'Manajemen Asrama',
@@ -38,6 +53,7 @@ class BoardingController {
             'search'       => $search,
             'genderFilter' => $gender,
             'unitFilter'   => $unit,
+            'scope'        => $scope,
             'totalDorms'   => $db->query("SELECT COUNT(*) FROM dorms")->fetchColumn(),
         ]);
     }
@@ -150,6 +166,7 @@ class BoardingController {
     // --- 2. PERIZINAN (IZIN KELUAR) ---
     public function permits() {
         $db = Database::getInstance();
+        $scope = ScopeFilter::get();
 
         $search = $_GET['search'] ?? '';
         $status = $_GET['status'] ?? '';
@@ -159,6 +176,10 @@ class BoardingController {
 
         $where = "WHERE 1=1";
         $params = [];
+        if ($scope !== 'GLOBAL') {
+            $where .= " AND s.classroom_id IN (SELECT id FROM classrooms WHERE major = ?)";
+            $params[] = $scope;
+        }
         if (!empty($search)) { $where .= " AND (s.full_name LIKE ? OR s.nis LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
         if (!empty($status))  { $where .= " AND p.status = ?"; $params[] = $status; }
 
@@ -173,7 +194,14 @@ class BoardingController {
             $where ORDER BY p.created_at DESC LIMIT $limit OFFSET $offset
         ", $params)->fetchAll();
 
-        $students = $db->query("SELECT id, full_name, nis FROM students WHERE status='ACTIVE' ORDER BY full_name")->fetchAll();
+        // Dropdown santri mengikuti scope
+        $sWhere = "status='ACTIVE'";
+        $sParams = [];
+        if ($scope !== 'GLOBAL') {
+            $sWhere .= " AND s.classroom_id IN (SELECT id FROM classrooms WHERE major = ?)";
+            $sParams[] = $scope;
+        }
+        $students = $db->query("SELECT s.id, s.full_name, s.nis FROM students s WHERE $sWhere ORDER BY s.full_name", $sParams)->fetchAll();
 
         View::render('boarding/permits', [
             'title'        => 'Perizinan Santri',
@@ -181,6 +209,7 @@ class BoardingController {
             'students'     => $students,
             'search'       => $search,
             'statusFilter' => $status,
+            'scope'        => $scope,
             'totalData'    => $totalData,
             'totalPages'   => $totalPages,
             'currentPage'  => $page,
@@ -216,6 +245,7 @@ class BoardingController {
     // --- 3. POSKESTREN (KESEHATAN) ---
     public function health() {
         $db = Database::getInstance();
+        $scope = ScopeFilter::get();
 
         $search = trim($_GET['search'] ?? '');
         $status = $_GET['status'] ?? '';
@@ -270,6 +300,7 @@ class BoardingController {
             'students'    => $students,
             'search'      => $search,
             'status'      => $status,
+            'scope'       => $scope,
             'limit'       => $limit,
             'currentPage' => $page,
             'totalPages'  => $limit > 0 ? (int)ceil($total / $limit) : 1,
@@ -298,6 +329,7 @@ class BoardingController {
         $db = Database::getInstance();
         $userId   = Session::get('user_id');
         $userRole = Session::get('user_role');
+        $scope    = ScopeFilter::get();
         $search   = $_GET['search'] ?? '';
         $type     = $_GET['type'] ?? '';
         $page     = (int)($_GET['page'] ?? 1);
@@ -306,6 +338,10 @@ class BoardingController {
 
         $where = "WHERE 1=1";
         $params = [];
+        if ($scope !== 'GLOBAL') {
+            $where .= " AND s.classroom_id IN (SELECT id FROM classrooms WHERE major = ?)";
+            $params[] = $scope;
+        }
         if ($userRole == 'guru') { $where .= " AND wl.teacher_id = ?"; $params[] = $userId; }
         if (!empty($search)) { $where .= " AND (s.full_name LIKE ? OR wl.surah_name LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
         if (!empty($type))   { $where .= " AND wl.type = ?"; $params[] = $type; }
@@ -314,7 +350,11 @@ class BoardingController {
         $totalPages = ceil($totalData / $limit);
 
         $logs = $db->query("SELECT wl.*, s.full_name, s.nis FROM worship_logs wl JOIN students s ON wl.student_id = s.id $where ORDER BY wl.date DESC LIMIT $limit OFFSET $offset", $params)->fetchAll();
-        $students = $db->query("SELECT id, full_name, nis FROM students WHERE status='ACTIVE' ORDER BY full_name")->fetchAll();
+
+        $sWhere = "status='ACTIVE'";
+        $sParams = [];
+        if ($scope !== 'GLOBAL') { $sWhere .= " AND s.classroom_id IN (SELECT id FROM classrooms WHERE major = ?)"; $sParams[] = $scope; }
+        $students = $db->query("SELECT s.id, s.full_name, s.nis FROM students s WHERE $sWhere ORDER BY s.full_name", $sParams)->fetchAll();
 
         View::render('boarding/tahfidz', [
             'title'       => 'Setoran Hafalan',
@@ -322,6 +362,7 @@ class BoardingController {
             'students'    => $students,
             'search'      => $search,
             'typeFilter'  => $type,
+            'scope'       => $scope,
             'totalData'   => $totalData,
             'totalPages'  => $totalPages,
             'currentPage' => $page,

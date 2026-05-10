@@ -5,12 +5,14 @@ use App\Core\View;
 use App\Core\Session;
 use App\Core\Middleware;
 use App\Core\Database;
+use App\Core\ScopeFilter;
 
 class BoardingSupervisorController {
     public function __construct() { Middleware::auth(); }
 
     public function index() {
         $db = Database::getInstance();
+        $scope = ScopeFilter::get();
 
         $search = $_GET['search'] ?? '';
         $page   = (int)($_GET['page'] ?? 1);
@@ -19,13 +21,14 @@ class BoardingSupervisorController {
 
         $where = "WHERE ds.status = 'ACTIVE'";
         $params = [];
+        if ($scope !== 'GLOBAL') { $where .= " AND d.unit = ?"; $params[] = $scope; }
         if (!empty($search)) { $where .= " AND (u.name LIKE ? OR d.name LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
 
         $totalData  = $db->query("SELECT COUNT(*) FROM dorm_supervisors ds JOIN dorms d ON ds.dorm_id = d.id JOIN users u ON ds.user_id = u.id $where", $params)->fetchColumn();
         $totalPages = ceil($totalData / $limit);
 
         $supervisors = $db->query("
-            SELECT ds.*, d.name as dorm_name, u.name as user_name, r.slug as role_name
+            SELECT ds.*, d.name as dorm_name, d.unit as dorm_unit, u.name as user_name, r.slug as role_name
             FROM dorm_supervisors ds
             JOIN dorms d ON ds.dorm_id = d.id
             JOIN users u ON ds.user_id = u.id
@@ -33,7 +36,11 @@ class BoardingSupervisorController {
             $where ORDER BY d.name ASC LIMIT $limit OFFSET $offset
         ", $params)->fetchAll();
 
-        $dorms = $db->query("SELECT * FROM dorms ORDER BY name")->fetchAll();
+        // Dropdown dorms mengikuti scope
+        $dormWhere = $scope !== 'GLOBAL' ? "WHERE unit = ?" : "";
+        $dormParams = $scope !== 'GLOBAL' ? [$scope] : [];
+        $dorms = $db->query("SELECT * FROM dorms $dormWhere ORDER BY name", $dormParams)->fetchAll();
+
         $users = $db->query("SELECT u.id, u.name, r.slug FROM users u JOIN roles r ON u.role_id = r.id WHERE r.slug IN ('guru', 'staff') AND u.status='active' ORDER BY u.name")->fetchAll();
 
         View::render('boarding/supervisors/index', [
@@ -42,6 +49,7 @@ class BoardingSupervisorController {
             'dorms'       => $dorms,
             'users'       => $users,
             'search'      => $search,
+            'scope'       => $scope,
             'totalData'   => $totalData,
             'totalPages'  => $totalPages,
             'currentPage' => $page,
@@ -53,8 +61,7 @@ class BoardingSupervisorController {
         $db = Database::getInstance();
         $adminId = Session::get('user_id');
 
-        // Cek duplikasi
-        $check = $db->query("SELECT id FROM dorm_supervisors WHERE dorm_id = ? AND user_id = ? AND status = 'ACTIVE'", 
+        $check = $db->query("SELECT id FROM dorm_supervisors WHERE dorm_id = ? AND user_id = ? AND status = 'ACTIVE'",
                             [$_POST['dorm_id'], $_POST['user_id']])->fetch();
 
         if ($check) {
@@ -71,9 +78,9 @@ class BoardingSupervisorController {
 
     public function delete() {
         $db = Database::getInstance();
-        // Hard delete untuk membersihkan data
         $db->query("DELETE FROM dorm_supervisors WHERE id = ?", [$_GET['id']]);
         Session::setFlash('success', 'Penugasan dihapus.');
         header('Location: /asrama/supervisors');
     }
 }
+

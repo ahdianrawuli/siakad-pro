@@ -21,6 +21,11 @@
                 <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold border border-blue-100">
                     <i class="fa-solid fa-user-shield"></i> Total Wali Aktif: <?= $totalData ?>
                 </div>
+                <?php if ($scope !== 'GLOBAL'): ?>
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold border border-amber-200">
+                    <i class="fa-solid fa-filter"></i> Unit: <?= $scope ?>
+                </div>
+                <?php endif; ?>
                 <button onclick="document.getElementById('infoModal').classList.remove('hidden')"
                     class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-colors border border-slate-200" title="Panduan Penggunaan">
                     <i class="fa-solid fa-circle-info text-sm"></i>
@@ -62,6 +67,7 @@
                     <thead>
                         <tr class="bg-slate-50 border-b border-slate-200">
                             <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Asrama</th>
+                            <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Unit</th>
                             <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Wali (Musyrif)</th>
                             <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Jabatan</th>
                             <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Ditugaskan</th>
@@ -71,11 +77,16 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                         <?php if (empty($supervisors)): ?>
-                            <tr><td colspan="6" class="px-5 py-16 text-center text-slate-400 text-sm font-medium">Belum ada wali asrama yang ditugaskan.</td></tr>
+                            <tr><td colspan="7" class="px-5 py-16 text-center text-slate-400 text-sm font-medium">Belum ada wali asrama yang ditugaskan.</td></tr>
                         <?php endif; ?>
                         <?php foreach ($supervisors as $s): ?>
                         <tr class="hover:bg-slate-50/80 transition-colors text-sm">
-                            <td class="px-5 py-4 font-extrabold text-slate-800"><?= $s['dorm_name'] ?></td>
+                            <td class="px-5 py-4 font-extrabold text-slate-800"><?= htmlspecialchars($s['dorm_name']) ?></td>
+                            <td class="px-5 py-4">
+                                <span class="px-2.5 py-1 text-[10px] font-bold rounded-lg border <?= $s['dorm_unit']==='MTS' ? 'bg-green-50 text-green-700 border-green-200' : ($s['dorm_unit']==='MA' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-amber-50 text-amber-700 border-amber-200') ?>">
+                                    <?= $s['dorm_unit'] ?>
+                                </span>
+                            </td>
                             <td class="px-5 py-4 font-semibold text-blue-600"><?= $s['user_name'] ?></td>
                             <td class="px-5 py-4">
                                 <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-lg border border-slate-200 uppercase"><?= $s['role_name'] ?></span>

@@ -19,36 +19,6 @@ class FinanceController {
         }
     }
 
-    // ==========================================================
-    // SPP — Master Data SPP per Kelas
-    // ==========================================================
-    public function spp() {
-        $db = Database::getInstance();
-        $sppList = $db->query("SELECT * FROM fee_types WHERE type = 'MONTHLY' ORDER BY name")->fetchAll();
-        $classrooms = $db->query("SELECT id, name FROM classrooms ORDER BY name")->fetchAll();
-        View::render('finance/spp', [
-            'title'      => 'Data SPP',
-            'sppList'    => $sppList,
-            'classrooms' => $classrooms,
-        ]);
-    }
-
-    public function storeSpp() {
-        $db = Database::getInstance();
-        $db->query("INSERT INTO fee_types (name, amount, type) VALUES (?, ?, 'MONTHLY')", [
-            $_POST['name'], $_POST['amount']
-        ]);
-        Session::setFlash('success', 'Data SPP berhasil ditambahkan.');
-        header('Location: /finance/spp');
-    }
-
-    public function deleteSpp() {
-        $db = Database::getInstance();
-        $db->query("DELETE FROM fee_types WHERE id = ? AND type = 'MONTHLY'", [(int)$_GET['id']]);
-        Session::setFlash('success', 'Data SPP dihapus.');
-        header('Location: /finance/spp');
-    }
-
     public function treasurerReports() {
         $db = Database::getInstance();
 
@@ -430,8 +400,11 @@ class FinanceController {
 
         $where  = "WHERE 1=1";
         $params = [];
-        [$sw, $sp] = ScopeFilter::apply('c');
-        $where .= $sw; $params = array_merge($params, $sp);
+        $scope = ScopeFilter::get();
+        if ($scope !== 'GLOBAL') {
+            $where .= " AND s.classroom_id IN (SELECT id FROM classrooms WHERE major = ?)";
+            $params[] = $scope;
+        }
         if (!empty($search))    { $where .= " AND (s.full_name LIKE ? OR s.nis LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
         if (!empty($status))    { $where .= " AND b.status = ?";           $params[] = $status; }
         if (!empty($dateFrom))  { $where .= " AND DATE(b.created_at) >= ?"; $params[] = $dateFrom; }
@@ -451,9 +424,8 @@ class FinanceController {
 
         // Rekap per kelas (mengikuti filter kecuali class_id)
         $whereClass  = str_replace(" AND s.classroom_id = ?", "", $where);
-        $paramsClass = array_values(array_filter($params, fn($v, $k) => !($classId && $params[$k] === $classId), ARRAY_FILTER_USE_BOTH));
-        // Rebuild params tanpa classId
         $paramsClass = [];
+        if ($scope !== 'GLOBAL') { $paramsClass[] = $scope; }
         if (!empty($search))    { $paramsClass[] = "%$search%"; $paramsClass[] = "%$search%"; }
         if (!empty($status))    { $paramsClass[] = $status; }
         if (!empty($dateFrom))  { $paramsClass[] = $dateFrom; }
@@ -485,7 +457,8 @@ class FinanceController {
             $params
         )->fetchAll();
 
-        $classes  = $db->query("SELECT id, name FROM classrooms ORDER BY name")->fetchAll();
+        $cWhere = $scope !== 'GLOBAL' ? "WHERE major = '$scope'" : "";
+        $classes  = $db->query("SELECT id, name FROM classrooms $cWhere ORDER BY name")->fetchAll();
         $feeTypes = $db->query("SELECT id, name FROM fee_types ORDER BY name")->fetchAll();
 
         View::render('finance/reports', [

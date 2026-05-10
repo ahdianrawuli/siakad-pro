@@ -21,6 +21,11 @@
                 <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold border border-blue-100">
                     <i class="fa-solid fa-door-open"></i> Total Izin: <?= $totalData ?>
                 </div>
+                <?php if (($scope ?? 'GLOBAL') !== 'GLOBAL'): ?>
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-bold border border-amber-200">
+                    <i class="fa-solid fa-filter"></i> Unit: <?= $scope ?>
+                </div>
+                <?php endif; ?>
                 <button onclick="document.getElementById('infoModal').classList.remove('hidden')"
                     class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-colors border border-slate-200" title="Panduan Penggunaan">
                     <i class="fa-solid fa-circle-info text-sm"></i>

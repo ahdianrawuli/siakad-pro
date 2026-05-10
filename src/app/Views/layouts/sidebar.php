@@ -113,10 +113,31 @@ if ($isCandidate) {
     $headerTitle = "PANEL SANTRI";
     $headerIcon  = "fa-user-graduate";
 } else {
-    $bgSidebar = "bg-primary";
-    $bgHeader  = "bg-green-800";
-    $hoverColor = "hover:bg-secondary";
-    $activeColor = "bg-secondary";
+    switch ($activeScope) {
+        case 'MTS':
+            $bgSidebar  = "bg-scope-mts";
+            $bgHeader   = "bg-scope-mts-dark";
+            $hoverColor = "hover:bg-scope-mts-dark";
+            $activeColor = "bg-scope-mts-dark";
+            break;
+        case 'MA':
+            $bgSidebar  = "bg-scope-ma";
+            $bgHeader   = "bg-scope-ma-dark";
+            $hoverColor = "hover:bg-scope-ma-dark";
+            $activeColor = "bg-scope-ma-dark";
+            break;
+        case 'PDF':
+            $bgSidebar  = "bg-scope-pdf";
+            $bgHeader   = "bg-scope-pdf-dark";
+            $hoverColor = "hover:bg-scope-pdf-dark";
+            $activeColor = "bg-scope-pdf-dark";
+            break;
+        default: // GLOBAL
+            $bgSidebar  = "bg-primary";
+            $bgHeader   = "bg-green-800";
+            $hoverColor = "hover:bg-secondary";
+            $activeColor = "bg-secondary";
+    }
     $headerTitle = "SIAKAD PARABEK";
     $headerIcon  = "fa-graduation-cap";
 }
@@ -153,7 +174,15 @@ if ($isCandidate) {
             <form action="/change-scope" method="POST">
                 <label class="text-[10px] uppercase text-gray-400 font-bold tracking-wider mb-1 block">Mode Tampilan</label>
                 <div class="relative">
-                    <select name="scope" onchange="this.form.submit()" class="w-full bg-secondary text-white text-xs font-bold py-2 pl-3 pr-8 rounded border border-green-700 focus:outline-none focus:border-green-400 appearance-none cursor-pointer hover:bg-green-800 transition">
+                    <?php
+                    $selectBorder = match($activeScope) {
+                        'MTS' => 'border-blue-600',
+                        'MA'  => 'border-pink-700',
+                        'PDF' => 'border-orange-600',
+                        default => 'border-green-700',
+                    };
+                    ?>
+                    <select name="scope" onchange="this.form.submit()" class="w-full bg-black/20 text-white text-xs font-bold py-2 pl-3 pr-8 rounded border <?= $selectBorder ?> focus:outline-none appearance-none cursor-pointer hover:bg-black/30 transition">
                         <option value="GLOBAL" <?= $activeScope == 'GLOBAL' ? 'selected' : '' ?>>🌐 Semua Jenjang</option>
                         <option value="MTS"    <?= $activeScope == 'MTS'    ? 'selected' : '' ?>>🏫 MTS (Tsanawiyah)</option>
                         <option value="MA"     <?= $activeScope == 'MA'     ? 'selected' : '' ?>>🎓 MA (Aliyah)</option>

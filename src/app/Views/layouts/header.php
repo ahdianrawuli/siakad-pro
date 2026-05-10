@@ -93,9 +93,16 @@
                     colors: {
                         primary: '#15803d',   // green-700 — sidebar bg
                         secondary: '#16a34a', // green-600 — sidebar hover/active
-                        accent: '#16a34a',    // green-600 — accent
+                        accent: '#16a34a',
                         'santri': '#16a34a',
                         'santri-dark': '#15803d',
+                        // Scope colors
+                        'scope-mts':      '#1d4ed8', // blue-700
+                        'scope-mts-dark': '#1e40af', // blue-800
+                        'scope-ma':       '#9d174d', // pink-800
+                        'scope-ma-dark':  '#831843', // pink-900
+                        'scope-pdf':      '#c2410c', // orange-700
+                        'scope-pdf-dark': '#9a3412', // orange-800
                     }
                 }
             }
@@ -199,28 +206,6 @@
             background: #f0fdf4 !important;
         }
 
-        /* Semua tombol biru → hijau */
-        .bg-blue-600, .bg-blue-500 { background-color: #16a34a !important; }
-        .hover\:bg-blue-700:hover, .hover\:bg-blue-600:hover { background-color: #15803d !important; }
-        .bg-blue-50 { background-color: #f0fdf4 !important; }
-        .bg-blue-100 { background-color: #dcfce7 !important; }
-        .text-blue-600 { color: #16a34a !important; }
-        .text-blue-500 { color: #22c55e !important; }
-        .text-blue-700 { color: #15803d !important; }
-        .hover\:text-blue-700:hover { color: #15803d !important; }
-        .border-blue-500 { border-color: #16a34a !important; }
-        .border-blue-200 { border-color: #bbf7d0 !important; }
-        .ring-blue-500, .focus\:ring-blue-500:focus { --tw-ring-color: #16a34a !important; }
-        .focus\:border-blue-500:focus { border-color: #16a34a !important; }
-        .shadow-blue-500\/20 { box-shadow: 0 4px 14px rgba(22,163,74,0.2) !important; }
-
-        /* Indigo & violet → emerald */
-        .bg-indigo-600, .bg-indigo-500 { background-color: #059669 !important; }
-        .hover\:bg-indigo-700:hover { background-color: #047857 !important; }
-        .text-indigo-600, .text-indigo-500 { color: #059669 !important; }
-        .bg-indigo-50 { background-color: #ecfdf5 !important; }
-        .bg-indigo-100 { background-color: #d1fae5 !important; }
-        .border-indigo-500 { border-color: #059669 !important; }
     </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-900 antialiased selection:bg-santri selection:text-white" x-data="{ sidebarOpen: false }">

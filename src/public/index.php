@@ -396,9 +396,7 @@ $router->get('/staff/structure/delete',  [SchoolStructureController::class, 'del
 // ============================================================================
 
 // Keuangan (Updated)
-$router->get('/finance/spp',                [FinanceController::class, 'spp']);
-$router->post('/finance/spp/store',         [FinanceController::class, 'storeSpp']);
-$router->get('/finance/spp/delete',         [FinanceController::class, 'deleteSpp']);
+
 
 $router->get('/finance/other-fees',         [FinanceController::class, 'otherFees']);
 $router->get('/finance/treasurer-reports',  [FinanceController::class, 'treasurerReports']);

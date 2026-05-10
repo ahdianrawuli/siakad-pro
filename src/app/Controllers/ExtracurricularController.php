@@ -105,6 +105,7 @@ class ExtracurricularController {
     // --- HALAMAN 4: RAPOR EKSKUL ---
     public function report() {
         $db = Database::getInstance();
+        $scope = ScopeFilter::get();
         $selectedEkskul = $_GET['id'] ?? '';
         $month = $_GET['month'] ?? date('Y-m');
 
@@ -120,12 +121,14 @@ class ExtracurricularController {
         if ($selectedEkskul && $yearId) {
             $ekskulName = $db->query("SELECT name FROM extracurriculars WHERE id=?", [$selectedEkskul])->fetch()['name'] ?? '';
 
+            $scopeJoin = $scope !== 'GLOBAL' ? " AND c.major = '$scope'" : "";
+
             $members = $db->query("
                 SELECT s.id as student_id, s.full_name, s.nis, c.name as class_name
                 FROM student_extracurriculars se
                 JOIN students s ON se.student_id = s.id
                 LEFT JOIN classrooms c ON s.classroom_id = c.id
-                WHERE se.extracurricular_id = ? AND se.academic_year_id = ?
+                WHERE se.extracurricular_id = ? AND se.academic_year_id = ? $scopeJoin
                 ORDER BY s.full_name
             ", [$selectedEkskul, $yearId])->fetchAll();
 
@@ -145,56 +148,62 @@ class ExtracurricularController {
         }
 
         View::render('extracurricular/report', [
-            'title'         => 'Rapor Ekstrakurikuler',
-            'ekskuls'       => $ekskuls,
-            'selectedEkskul'=> $selectedEkskul,
-            'ekskulName'    => $ekskulName,
-            'month'         => $month,
-            'members'       => $members,
-            'summary'       => $summary,
+            'title'          => 'Rapor Ekstrakurikuler',
+            'ekskuls'        => $ekskuls,
+            'selectedEkskul' => $selectedEkskul,
+            'ekskulName'     => $ekskulName,
+            'month'          => $month,
+            'members'        => $members,
+            'summary'        => $summary,
+            'scope'          => $scope,
         ]);
     }
     public function members() {
         $db = Database::getInstance();
+        $scope = ScopeFilter::get();
         $selectedEkskul = $_GET['id'] ?? null;
-        
+
         $ekskuls = $db->query("SELECT * FROM extracurriculars WHERE status='ACTIVE'")->fetchAll();
         $members = [];
         $students = [];
 
-        // Ambil Tahun Ajaran Aktif
         $activeYear = $db->query("SELECT id FROM academic_years WHERE is_active = 1")->fetch();
         $yearId = $activeYear['id'] ?? null;
 
         if ($selectedEkskul && $yearId) {
-            // FILTER BY ACADEMIC YEAR (Agar data anggota valid per tahun)
+            $scopeJoin  = $scope !== 'GLOBAL' ? " AND c.major = '$scope'" : "";
+
             $members = $db->query("
                 SELECT se.id as record_id, s.full_name, s.nis, c.name as class_name
                 FROM student_extracurriculars se
                 JOIN students s ON se.student_id = s.id
                 LEFT JOIN classrooms c ON s.classroom_id = c.id
-                WHERE se.extracurricular_id = ? AND se.academic_year_id = ?
+                WHERE se.extracurricular_id = ? AND se.academic_year_id = ? $scopeJoin
                 ORDER BY s.full_name
             ", [$selectedEkskul, $yearId])->fetchAll();
 
-            // List siswa yang BELUM join di tahun ini
+            $scopeSub = $scope !== 'GLOBAL'
+                ? " AND s.classroom_id IN (SELECT id FROM classrooms WHERE major = '$scope')"
+                : "";
+
             $students = $db->query("
-                SELECT id, full_name, nis FROM students 
-                WHERE status='ACTIVE' 
-                AND id NOT IN (
-                    SELECT student_id FROM student_extracurriculars 
+                SELECT s.id, s.full_name, s.nis FROM students s
+                WHERE s.status='ACTIVE' $scopeSub
+                AND s.id NOT IN (
+                    SELECT student_id FROM student_extracurriculars
                     WHERE extracurricular_id = ? AND academic_year_id = ?
                 )
-                ORDER BY full_name
+                ORDER BY s.full_name
             ", [$selectedEkskul, $yearId])->fetchAll();
         }
 
         View::render('extracurricular/members', [
-            'title' => 'Anggota Ekstrakurikuler',
-            'ekskuls' => $ekskuls,
+            'title'          => 'Anggota Ekstrakurikuler',
+            'ekskuls'        => $ekskuls,
             'selectedEkskul' => $selectedEkskul,
-            'members' => $members,
-            'students' => $students
+            'members'        => $members,
+            'students'       => $students,
+            'scope'          => $scope,
         ]);
     }
 
@@ -228,42 +237,44 @@ class ExtracurricularController {
     // --- HALAMAN 3: ABSENSI EKSKUL ---
     public function attendance() {
         $db = Database::getInstance();
+        $scope = ScopeFilter::get();
         $selectedEkskul = $_GET['id'] ?? '';
         $date = $_GET['date'] ?? date('Y-m-d');
-        
+
         $ekskuls = $db->query("SELECT * FROM extracurriculars WHERE status='ACTIVE'")->fetchAll();
         $members = [];
         $existingAttendance = [];
 
-        // Ambil Tahun Ajaran Aktif untuk menampilkan siswa yang terdaftar SAJA
         $activeYear = $db->query("SELECT id FROM academic_years WHERE is_active = 1")->fetch();
         $yearId = $activeYear['id'] ?? null;
 
         if ($selectedEkskul && $yearId) {
+            $scopeJoin = $scope !== 'GLOBAL' ? " AND c.major = '$scope'" : "";
+
             $members = $db->query("
                 SELECT se.student_id, s.full_name, s.nis, c.name as class_name
                 FROM student_extracurriculars se
                 JOIN students s ON se.student_id = s.id
                 LEFT JOIN classrooms c ON s.classroom_id = c.id
-                WHERE se.extracurricular_id = ? AND se.academic_year_id = ?
+                WHERE se.extracurricular_id = ? AND se.academic_year_id = ? $scopeJoin
                 ORDER BY s.full_name
             ", [$selectedEkskul, $yearId])->fetchAll();
 
-            $logs = $db->query("SELECT * FROM extracurricular_attendances WHERE extracurricular_id = ? AND date = ?", 
+            $logs = $db->query("SELECT * FROM extracurricular_attendances WHERE extracurricular_id = ? AND date = ?",
                 [$selectedEkskul, $date])->fetchAll();
-            
-            foreach($logs as $log) {
+            foreach ($logs as $log) {
                 $existingAttendance[$log['student_id']] = $log['status'];
             }
         }
 
         View::render('extracurricular/attendance', [
-            'title' => 'Absensi Ekstrakurikuler',
-            'ekskuls' => $ekskuls,
-            'selectedEkskul' => $selectedEkskul,
-            'date' => $date,
-            'members' => $members,
-            'existingAttendance' => $existingAttendance
+            'title'              => 'Absensi Ekstrakurikuler',
+            'ekskuls'            => $ekskuls,
+            'selectedEkskul'     => $selectedEkskul,
+            'date'               => $date,
+            'members'            => $members,
+            'existingAttendance' => $existingAttendance,
+            'scope'              => $scope,
         ]);
     }
 

@@ -59,7 +59,7 @@
                     <select name="dorm_id" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none" required>
                         <option value="">-- Pilih Kamar --</option>
                         <?php foreach ($dorms as $d): ?>
-                            <option value="<?= $d['id'] ?>"><?= $d['name'] ?> (Sisa: <?= $d['capacity'] - $d['occupied'] ?>)</option>
+                            <option value="<?= $d['id'] ?>"><?= htmlspecialchars($d['name']) ?> [<?= $d['unit'] ?>] (Sisa: <?= $d['capacity'] - $d['occupied'] ?>)</option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -85,12 +85,18 @@
                         <option value="L" <?= $genderFilter == 'L' ? 'selected' : '' ?>>Putra (Ikhwan)</option>
                         <option value="P" <?= $genderFilter == 'P' ? 'selected' : '' ?>>Putri (Akhwat)</option>
                     </select>
+                    <?php if ($scope === 'GLOBAL'): ?>
                     <select name="unit" class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
                         <option value="">Semua Unit</option>
                         <option value="MTS" <?= ($unitFilter??'')==='MTS' ? 'selected' : '' ?>>MTS</option>
                         <option value="MA"  <?= ($unitFilter??'')==='MA'  ? 'selected' : '' ?>>MA</option>
                         <option value="PDF" <?= ($unitFilter??'')==='PDF' ? 'selected' : '' ?>>PDF</option>
                     </select>
+                    <?php else: ?>
+                    <span class="px-3 py-2.5 bg-blue-50 border border-blue-200 rounded-xl text-sm font-bold text-blue-700">
+                        <i class="fa-solid fa-filter mr-1"></i> Unit: <?= $scope ?>
+                    </span>
+                    <?php endif; ?>
                     <button type="submit" class="bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-900 transition-colors">Terapkan</button>
                     <?php if (!empty($search) || !empty($genderFilter) || !empty($unitFilter??'')): ?>
                         <a href="/asrama/dorms" class="flex items-center justify-center w-10 h-10 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition" title="Reset">
@@ -194,11 +200,18 @@
             </div>
             <div>
                 <label class="block text-sm font-semibold text-slate-600 mb-1.5">Unit</label>
+                <?php if ($scope !== 'GLOBAL'): ?>
+                    <input type="hidden" name="unit" value="<?= $scope ?>">
+                    <div class="w-full px-3 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-sm text-slate-600 font-bold">
+                        <?= $scope ?> <span class="text-xs font-normal text-slate-400">(mengikuti scope aktif)</span>
+                    </div>
+                <?php else: ?>
                 <select name="unit" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
                     <option value="MTS">MTS (Madrasah Tsanawiyah)</option>
                     <option value="MA">MA (Madrasah Aliyah)</option>
                     <option value="PDF">PDF (Diniyah Formal)</option>
                 </select>
+                <?php endif; ?>
             </div>
             <div class="flex gap-3 pt-2">
                 <button type="button" onclick="document.getElementById('modalAddDorm').classList.add('hidden')" class="flex-1 bg-slate-100 text-slate-600 py-2.5 rounded-xl font-bold hover:bg-slate-200 transition text-sm">Batal</button>
