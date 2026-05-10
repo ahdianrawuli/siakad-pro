@@ -100,5 +100,37 @@ $c = match($scope) {
     }
 })();
 </script>
+<!-- Page Loading Overlay -->
+<div id="page-loader" style="display:none;position:fixed;inset:0;z-index:9999;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);background:rgba(255,255,255,0.4);align-items:center;justify-content:center;">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+        <div style="width:48px;height:48px;border:4px solid rgba(0,0,0,0.1);border-top-color:<?= $c['main'] ?>;border-radius:50%;animation:spin .7s linear infinite;"></div>
+        <span style="font-size:13px;font-weight:600;color:<?= $c['main'] ?>;letter-spacing:.5px;">Memuat...</span>
+    </div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+<script>
+(function(){
+    var loader = document.getElementById('page-loader');
+    function show(){ loader.style.display = 'flex'; }
+
+    // Intercept semua klik <a> kecuali: target blank, anchor (#), javascript:, download
+    document.addEventListener('click', function(e){
+        var a = e.target.closest('a[href]');
+        if (!a) return;
+        var href = a.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('javascript') || a.target === '_blank' || a.hasAttribute('download') || a.getAttribute('onclick')) return;
+        show();
+    }, true);
+
+    // Intercept form submit
+    document.addEventListener('submit', function(e){
+        if (e.target.method && e.target.method.toLowerCase() === 'get') return; // filter GET (search/filter jangan blur)
+        show();
+    }, true);
+
+    // Sembunyikan saat back/forward
+    window.addEventListener('pageshow', function(){ loader.style.display = 'none'; });
+})();
+</script>
 </div> </body>
 </html>
