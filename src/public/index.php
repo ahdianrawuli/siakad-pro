@@ -140,13 +140,13 @@ $router->post('/school/ppdb/batch/store',      [PpdbAdminController::class, 'sto
 $router->post('/school/ppdb/batch/activate/(.*)', [PpdbAdminController::class, 'activateBatch']);
 
 // PPDB Master Data (Admin)
-$router->get('/ppdb/periods',           [PpdbAdminController::class, 'periods']);
+$router->get('/ppdb/periods',           function(){ header('Location: /ppdb/settings?tab=periode'); exit; });
 $router->post('/ppdb/periods/store',    [PpdbAdminController::class, 'storePeriod']);
 $router->post('/ppdb/periods/update',   [PpdbAdminController::class, 'updatePeriod']);
 $router->post('/ppdb/periods/delete',   [PpdbAdminController::class, 'deletePeriod']);
 $router->get('/ppdb/periods/activate',  [PpdbAdminController::class, 'activatePeriod']);
 
-$router->get('/ppdb/tracks',            [PpdbAdminController::class, 'tracks']);
+$router->get('/ppdb/tracks',            function(){ header('Location: /ppdb/settings?tab=jalur'); exit; });
 $router->post('/ppdb/tracks/store',     [PpdbAdminController::class, 'storeTrack']);
 $router->post('/ppdb/tracks/update',    [PpdbAdminController::class, 'updateTrack']);
 $router->post('/ppdb/tracks/delete',    [PpdbAdminController::class, 'deleteTrack']);

@@ -52,16 +52,18 @@ class PpdbAdminController {
         }
 
         View::render('ppdb/admin/index', [
-            'title' => 'Data Pendaftar PPDB',
-            'candidates' => $candidates,
-            'tracks' => $tracks,
-            'totalData' => $totalData,
-            'totalPages' => ceil($totalData / $limit),
-            'currentPage' => $page,
-            'limit' => $limit,
-            'search' => $search,
-            'selectedStatus' => $status,
-            'selectedTrack' => $trackId
+            'title'         => 'Data Pendaftar PPDB',
+            'candidates'    => $candidates,
+            'tracks'        => $tracks,
+            'totalData'     => $totalData,
+            'totalPages'    => ceil($totalData / $limit),
+            'currentPage'   => $page,
+            'limit'         => $limit,
+            'search'        => $search,
+            'selectedStatus'=> $status,
+            'selectedTrack' => $trackId,
+            'activeBatch'   => $db->query("SELECT * FROM ppdb_batches WHERE is_active = 1 LIMIT 1")->fetch(),
+            'activeYear'    => $db->query("SELECT * FROM academic_years WHERE is_active = 1 LIMIT 1")->fetch(),
         ]);
     }
 

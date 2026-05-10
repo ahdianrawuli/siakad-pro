@@ -1,12 +1,25 @@
 <?php
 use App\Core\Session;
-$scope = Session::get('active_scope', 'GLOBAL');
+$scope     = Session::get('active_scope', 'GLOBAL');
+$prevScope = Session::get('prev_scope', null);
+// Hapus prev_scope setelah dibaca agar animasi hanya sekali
+if ($prevScope) Session::set('prev_scope', null);
+
+$palette = [
+    'GLOBAL' => ['#16a34a','#059669','#0d9488'],
+    'MTS'    => ['#1d4ed8','#2563eb','#3b82f6'],
+    'MA'     => ['#9d174d','#be185d','#db2777'],
+    'PDF'    => ['#c2410c','#ea580c','#f97316'],
+];
 $c = match($scope) {
     'MTS'  => ['main'=>'#1d4ed8','dark'=>'#1e40af','darker'=>'#1e3a8a','light'=>'#eff6ff','light2'=>'#dbeafe','text'=>'#1d4ed8','textL'=>'#3b82f6','textD'=>'#1e40af','border'=>'#93c5fd','shadow'=>'rgba(29,78,216,0.2)','g1'=>'#1d4ed8','g2'=>'#2563eb','g3'=>'#3b82f6','gText'=>'#bfdbfe'],
     'MA'   => ['main'=>'#9d174d','dark'=>'#831843','darker'=>'#500724','light'=>'#fdf2f8','light2'=>'#fce7f3','text'=>'#9d174d','textL'=>'#ec4899','textD'=>'#831843','border'=>'#f9a8d4','shadow'=>'rgba(157,23,77,0.2)','g1'=>'#9d174d','g2'=>'#be185d','g3'=>'#db2777','gText'=>'#fbcfe8'],
     'PDF'  => ['main'=>'#c2410c','dark'=>'#9a3412','darker'=>'#7c2d12','light'=>'#fff7ed','light2'=>'#ffedd5','text'=>'#c2410c','textL'=>'#f97316','textD'=>'#9a3412','border'=>'#fdba74','shadow'=>'rgba(194,65,12,0.2)','g1'=>'#c2410c','g2'=>'#ea580c','g3'=>'#f97316','gText'=>'#fed7aa'],
     default=> ['main'=>'#16a34a','dark'=>'#15803d','darker'=>'#14532d','light'=>'#f0fdf4','light2'=>'#dcfce7','text'=>'#16a34a','textL'=>'#22c55e','textD'=>'#15803d','border'=>'#bbf7d0','shadow'=>'rgba(22,163,74,0.2)','g1'=>'#16a34a','g2'=>'#059669','g3'=>'#0d9488','gText'=>'#a7f3d0'],
 };
+$fromColors = $palette[$prevScope ?? $scope];
+$toColors   = $palette[$scope];
+$doAnim     = $prevScope && $prevScope !== $scope;
 ?>
 <script>
 (function() {
@@ -132,5 +145,7 @@ $c = match($scope) {
     window.addEventListener('pageshow', function(){ loader.style.display = 'none'; });
 })();
 </script>
+<?php if ($doAnim): ?><!-- doAnim placeholder - animasi hanya di sidebar -->
+<?php endif; ?>
 </div> </body>
 </html>

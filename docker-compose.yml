@@ -8,6 +8,8 @@ services:
     restart: unless-stopped
     expose:
       - "80"
+    volumes:
+      - ./src:/var/www/html
     depends_on:
       - php_fpm
     networks:

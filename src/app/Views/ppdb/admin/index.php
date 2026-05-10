@@ -63,16 +63,16 @@
             </div>
             <div>
                 <p class="text-xs font-semibold text-blue-100 uppercase tracking-widest">Tahun Ajaran Aktif</p>
-                <h4 class="text-lg font-bold">2024 / 2025</h4>
+                <h4 class="text-lg font-bold"><?= htmlspecialchars($activeYear['name'] ?? '-') ?></h4>
             </div>
         </div>
         <div class="h-8 w-px bg-blue-400/50 hidden md:block mx-4"></div>
         <div class="flex items-center gap-3 mt-4 md:mt-0">
             <div>
                 <p class="text-xs font-semibold text-blue-100 uppercase tracking-widest text-right">Gelombang PPDB</p>
-                <h4 class="text-lg font-bold text-right">Gelombang 1 (Reguler & Prestasi)</h4>
+                <h4 class="text-lg font-bold text-right"><?= $activeBatch ? htmlspecialchars($activeBatch['name']) : '<span class="text-blue-200 text-sm font-normal">Belum ada gelombang aktif</span>' ?></h4>
             </div>
-            <a href="/ppdb/periods" class="px-3 py-1.5 bg-white text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-50 transition-colors whitespace-nowrap shadow-sm">
+            <a href="/ppdb/settings?tab=periode" class="px-3 py-1.5 bg-white text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-50 transition-colors whitespace-nowrap shadow-sm">
                 Ubah Pengaturan <i class="fa-solid fa-gear ml-1"></i>
             </a>
         </div>

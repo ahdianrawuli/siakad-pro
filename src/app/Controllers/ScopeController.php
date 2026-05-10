@@ -13,9 +13,11 @@ class ScopeController {
         $allowedScopes = ['GLOBAL', 'MTS', 'MA', 'PDF']; 
         
         if (in_array($scope, $allowedScopes)) {
+            // Simpan scope lama untuk animasi transisi
+            $prev = Session::get('active_scope', 'GLOBAL');
+            Session::set('prev_scope', $prev);
             Session::set('active_scope', $scope);
-            
-            // Opsional: Set flash message
+
             $label = ($scope == 'GLOBAL') ? 'Semua Jenjang' : "Jenjang $scope";
             Session::setFlash('success', "Mode tampilan diubah ke: $label");
         }

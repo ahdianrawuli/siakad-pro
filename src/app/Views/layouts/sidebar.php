@@ -145,7 +145,14 @@ if ($isCandidate) {
 
 <div class="fixed top-0 left-0 w-full h-16 <?= $bgSidebar ?> text-white flex items-center justify-between px-4 z-40 shadow-md md:hidden">
     <div class="flex items-center font-bold tracking-wide">
-        <i class="fa-solid <?= $headerIcon ?> mr-2"></i> <?= $headerTitle ?>
+        <?php if ($logoVal ?? false): ?>
+            <img src="/uploads/<?= htmlspecialchars($logoVal) ?>"
+                 class="h-8 w-8 object-contain rounded-full mr-2 flex-shrink-0"
+                 style="outline:2px solid rgba(255,255,255,0.8);outline-offset:1px;" alt="Logo">
+        <?php else: ?>
+            <i class="fa-solid <?= $headerIcon ?> mr-2"></i>
+        <?php endif; ?>
+        <?= $headerTitle ?>
         <?php if(!$isCandidate && $activeScope != 'GLOBAL'): ?>
             <span class="ml-2 bg-yellow-400 text-black text-[10px] px-1.5 py-0.5 rounded font-bold"><?= $activeScope ?></span>
         <?php endif; ?>
@@ -161,7 +168,18 @@ if ($isCandidate) {
        class="fixed inset-y-0 left-0 z-50 w-64 <?= $bgSidebar ?> text-white flex flex-col shadow-xl transition-transform duration-300 transform md:translate-x-0 md:static md:inset-0">
     
     <div class="h-16 flex items-center justify-center border-b border-white/10 font-bold text-lg tracking-wide px-2 text-center <?= $bgHeader ?> hidden md:flex">
-        <i class="fa-solid <?= $headerIcon ?> mr-2"></i> <?= $headerTitle ?>
+        <?php
+        $logoVal = \App\Models\AppConfig::get('school_logo');
+        if ($logoVal):
+        ?>
+            <img src="/uploads/<?= htmlspecialchars($logoVal) ?>"
+                 class="h-9 w-9 object-contain rounded-full flex-shrink-0"
+                 style="outline:2px solid rgba(255,255,255,0.8);outline-offset:1px;"
+                 alt="Logo">
+            <span class="ml-2 text-sm truncate max-w-[130px]"><?= $headerTitle ?></span>
+        <?php else: ?>
+            <i class="fa-solid <?= $headerIcon ?> mr-2"></i> <?= $headerTitle ?>
+        <?php endif; ?>
     </div>
 
     <div class="h-16 flex items-center justify-between px-6 border-b border-white/10 font-bold text-lg <?= $bgHeader ?> md:hidden">
@@ -182,7 +200,7 @@ if ($isCandidate) {
                         default => 'border-green-700',
                     };
                     ?>
-                    <select name="scope" onchange="this.form.submit()" class="w-full bg-black/20 text-white text-xs font-bold py-2 pl-3 pr-8 rounded border <?= $selectBorder ?> focus:outline-none appearance-none cursor-pointer hover:bg-black/30 transition">
+                    <select name="scope" onchange="scopeChange(this)" class="w-full bg-black/20 text-white text-xs font-bold py-2 pl-3 pr-8 rounded border <?= $selectBorder ?> focus:outline-none appearance-none cursor-pointer hover:bg-black/30 transition">
                         <option value="GLOBAL" <?= $activeScope == 'GLOBAL' ? 'selected' : '' ?>>🌐 Semua Jenjang</option>
                         <option value="MTS"    <?= $activeScope == 'MTS'    ? 'selected' : '' ?>>🏫 MTS (Tsanawiyah)</option>
                         <option value="MA"     <?= $activeScope == 'MA'     ? 'selected' : '' ?>>🎓 MA (Aliyah)</option>
@@ -288,3 +306,35 @@ if ($isCandidate) {
         </a>
     </div>
 </aside>
+
+<?php
+$scopeColors = [
+    'GLOBAL' => ['#16a34a','#059669','#0d9488'],
+    'MTS'    => ['#1d4ed8','#2563eb','#3b82f6'],
+    'MA'     => ['#9d174d','#be185d','#db2777'],
+    'PDF'    => ['#c2410c','#ea580c','#f97316'],
+];
+?>
+<!-- Overlay untuk animasi scope change -->
+<div id="scope-wipe" style="position:fixed;inset:0;z-index:99999;pointer-events:none;opacity:0;"></div>
+<style>
+@keyframes wipeIn {
+    0%   { opacity:0.7; clip-path:polygon(100% 0%, 100% 0%, 100% 100%, 100% 100%); }
+    80%  { opacity:0.7; clip-path:polygon(0%   0%, 100% 0%, 100% 100%, 0%   100%); }
+    100% { opacity:0;   clip-path:polygon(0%   0%, 100% 0%, 100% 100%, 0%   100%); }
+}
+</style>
+<script>
+var scopePalette = <?= json_encode($scopeColors) ?>;
+function scopeChange(sel) {
+    var newScope = sel.value;
+    var colors   = scopePalette[newScope] || scopePalette['GLOBAL'];
+    var overlay  = document.getElementById('scope-wipe');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;pointer-events:none;'
+        + 'background:linear-gradient(135deg,'+colors[0]+' 0%,'+colors[1]+' 50%,'+colors[2]+' 100%);'
+        + 'clip-path:polygon(100% 0%,100% 0%,100% 100%,100% 100%);opacity:0;'
+        + 'animation:wipeIn 0.7s cubic-bezier(0.7,0,0.3,1) forwards;';
+    // Submit tepat saat opacity mulai fade (80% dari 0.7s = ~560ms)
+    setTimeout(function(){ sel.closest('form').submit(); }, 560);
+}
+</script>
