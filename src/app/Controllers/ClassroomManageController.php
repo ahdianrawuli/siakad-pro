@@ -126,20 +126,23 @@ public function index() {
 
     public function promotion() {
         $db = Database::getInstance();
-        $classrooms = $db->query("SELECT * FROM classrooms ORDER BY level ASC, name ASC")->fetchAll();
-        
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $classrooms    = $db->query("SELECT c.* FROM classrooms c WHERE 1=1 $sw ORDER BY c.level ASC, c.name ASC", $sp)->fetchAll();
+        $allClassrooms = $db->query("SELECT * FROM classrooms ORDER BY level ASC, name ASC")->fetchAll();
+
         $students = [];
         $sourceClassId = $_GET['source_id'] ?? null;
-        
+
         if ($sourceClassId) {
             $students = $db->query("SELECT * FROM students WHERE classroom_id = ? AND status='ACTIVE' ORDER BY full_name", [$sourceClassId])->fetchAll();
         }
 
         View::render('academic/promotion', [
-            'title' => 'Kenaikan Kelas',
-            'classrooms' => $classrooms,
-            'students' => $students,
-            'sourceId' => $sourceClassId
+            'title'         => 'Kenaikan Kelas',
+            'classrooms'    => $classrooms,
+            'allClassrooms' => $allClassrooms,
+            'students'      => $students,
+            'sourceId'      => $sourceClassId
         ]);
     }
 
@@ -210,6 +213,8 @@ public function index() {
 
         $where = "WHERE 1=1";
         $params = [];
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $where .= $sw; $params = array_merge($params, $sp);
         if (!empty($search)) { $where .= " AND (c.name LIKE ? OR u.name LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
         if (!empty($level))  { $where .= " AND c.level = ?"; $params[] = $level; }
 

@@ -75,7 +75,7 @@
                     <label class="block text-sm font-semibold text-slate-600 mb-1.5">Kelas Tujuan</label>
                     <select name="target_class" class="select2-target w-full">
                         <option value="">-- Pilih Kelas Tujuan --</option>
-                        <?php foreach ($classrooms as $c): ?>
+                        <?php foreach ($allClassrooms as $c): ?>
                             <?php if ($c['id'] != $sourceId): ?>
                             <option value="<?= $c['id'] ?>">Kelas <?= $c['name'] ?> (<?= $c['level'] ?>)</option>
                             <?php endif; ?>

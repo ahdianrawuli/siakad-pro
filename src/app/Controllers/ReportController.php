@@ -107,12 +107,17 @@ class ReportController {
         $where .= $sw; $params = array_merge($params, $sp);
         if (!empty($search))      { $where .= " AND (s.full_name LIKE ? OR s.nis LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
         if (!empty($classroomId)) { $where .= " AND s.classroom_id = ?"; $params[] = $classroomId; }
+        if (!empty($yearId))      { $where .= " AND EXISTS (SELECT 1 FROM student_grades sg JOIN schedules sch ON sg.schedule_id = sch.id WHERE sg.student_id = s.id AND sch.academic_year_id = ?)"; $params[] = $yearId; }
 
         $totalData  = $db->query("SELECT COUNT(*) FROM students s LEFT JOIN classrooms c ON s.classroom_id = c.id $where", $params)->fetchColumn();
         $totalPages = ceil($totalData / $limit);
 
         $students   = $db->query("SELECT s.*, c.name as classroom_name, c.level FROM students s LEFT JOIN classrooms c ON s.classroom_id = c.id $where ORDER BY c.name, s.full_name LIMIT $limit OFFSET $offset", $params)->fetchAll();
-        $classrooms = $db->query("SELECT * FROM classrooms ORDER BY level, name")->fetchAll();
+
+        // Classrooms dropdown mengikuti scope
+        $cWhere = ''; $cParams = [];
+        [$cWhere, $cParams] = ScopeFilter::apply('c');
+        $classrooms = $db->query("SELECT * FROM classrooms c WHERE 1=1 $cWhere ORDER BY level, name", $cParams)->fetchAll();
         $years      = $db->query("SELECT * FROM academic_years ORDER BY id DESC")->fetchAll();
         $activeYear = $db->query("SELECT * FROM academic_years WHERE is_active = 1 LIMIT 1")->fetch();
 

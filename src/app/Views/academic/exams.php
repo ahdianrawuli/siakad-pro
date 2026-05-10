@@ -50,6 +50,15 @@
                     </select>
                 </div>
                 <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-1.5">Kelas <span class="text-slate-400 font-normal">(Opsional)</span></label>
+                    <select name="classroom_id" class="select2-class w-full">
+                        <option value="">-- Semua Kelas --</option>
+                        <?php foreach ($classrooms as $c): ?>
+                            <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
                     <label class="block text-sm font-semibold text-slate-600 mb-1.5">Judul / Materi</label>
                     <input type="text" name="title" placeholder="cth: Soal UAS Semester 1 – Matematika"
                         class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all" required>
@@ -110,6 +119,7 @@
                         <thead>
                             <tr class="bg-slate-50 border-b border-slate-200">
                                 <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Mapel & Judul</th>
+                                <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Kelas</th>
                                 <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Tipe</th>
                                 <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Uploader</th>
                                 <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Aksi</th>
@@ -117,7 +127,7 @@
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
                             <?php if (empty($exams)): ?>
-                                <tr><td colspan="4" class="px-5 py-16 text-center text-slate-400 text-sm font-medium">Belum ada soal yang diupload.</td></tr>
+                                <tr><td colspan="5" class="px-5 py-16 text-center text-slate-400 text-sm font-medium">Belum ada soal yang diupload.</td></tr>
                             <?php endif; ?>
                             <?php foreach ($exams as $e): ?>
                             <tr class="hover:bg-slate-50/80 transition-colors text-sm">
@@ -125,6 +135,13 @@
                                     <div class="font-bold text-blue-600 text-xs"><?= $e['subject_name'] ?></div>
                                     <div class="font-extrabold text-slate-800 mt-0.5"><?= $e['title'] ?></div>
                                     <div class="text-[10px] text-slate-400 mt-0.5"><?= date('d M Y', strtotime($e['created_at'])) ?></div>
+                                </td>
+                                <td class="px-5 py-4 text-xs text-slate-600">
+                                    <?php if (!empty($e['class_name'])): ?>
+                                        <span class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded border border-blue-200 font-semibold"><?= htmlspecialchars($e['class_name']) ?></span>
+                                    <?php else: ?>
+                                        <span class="text-slate-400">Semua Kelas</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="px-5 py-4">
                                     <?php
@@ -225,11 +242,10 @@
     </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     $(document).ready(function() {
-        $('.select2-subject').select2({ placeholder: '-- Pilih Mata Pelajaran --', allowClear: true });
+        $('.select2-subject').select2({ placeholder: '-- Pilih Mata Pelajaran --', allowClear: true, width: '100%' });
+        $('.select2-class').select2({ placeholder: '-- Semua Kelas --', allowClear: true, width: '100%' });
     });
     function updateQS(uri, key, value) {
         var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");

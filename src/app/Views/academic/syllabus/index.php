@@ -37,6 +37,12 @@
                     <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Cari judul atau mata pelajaran..."
                         class="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all">
                 </div>
+                <select name="classroom_id" class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
+                    <option value="">Semua Kelas</option>
+                    <?php foreach ($classrooms as $c): ?>
+                        <option value="<?= $c['id'] ?>" <?= $selectedClassroom == $c['id'] ? 'selected' : '' ?>><?= htmlspecialchars($c['name']) ?> (<?= $c['level'] ?>)</option>
+                    <?php endforeach; ?>
+                </select>
                 <select name="type" class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
                     <option value="">Semua Jenis</option>
                     <option value="SILABUS"  <?= $typeFilter == 'SILABUS'  ? 'selected' : '' ?>>Silabus</option>
@@ -45,7 +51,7 @@
                     <option value="PROSEM"   <?= $typeFilter == 'PROSEM'   ? 'selected' : '' ?>>Program Semester</option>
                 </select>
                 <button type="submit" class="bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-900 transition-colors">Terapkan</button>
-                <?php if (!empty($search) || !empty($typeFilter)): ?>
+                <?php if (!empty($search) || !empty($typeFilter) || !empty($selectedClassroom)): ?>
                     <a href="/academic/syllabus" class="flex items-center justify-center w-10 h-10 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition" title="Reset">
                         <i class="fa-solid fa-rotate-left"></i>
                     </a>
@@ -89,18 +95,18 @@
                             </td>
                             <td class="px-5 py-4 font-extrabold text-slate-800"><?= $doc['title'] ?></td>
                             <td class="px-5 py-4 text-xs">
-                                <div class="font-semibold text-slate-700"><?= $doc['subject_name'] ?></div>
-                                <div class="text-slate-400 mt-0.5">Kelas: <?= $doc['grade_level'] ?></div>
+                                <div class="font-semibold text-slate-700"><?= htmlspecialchars($doc['subject_name']) ?></div>
+                                <div class="text-slate-400 mt-0.5"><?= htmlspecialchars($doc['classroom_name']) ?> (<?= htmlspecialchars($doc['level']) ?>)</div>
                             </td>
                             <td class="px-5 py-4 text-slate-600 text-xs"><?= $doc['teacher_name'] ?></td>
                             <td class="px-5 py-4 text-center">
-                                <a href="/finance/spp/download?file=<?= $doc['file_path'] ?>"
+                                <a href="/academic/syllabus/download?file=<?= $doc['file_path'] ?>"
                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold border border-blue-200 hover:bg-blue-600 hover:text-white transition-colors">
                                     <i class="fa-solid fa-download"></i> Unduh
                                 </a>
                             </td>
                             <td class="px-5 py-4 text-center">
-                                <a href="/finance/spp/delete?id=<?= $doc['id'] ?>"
+                                <a href="/academic/syllabus/delete?id=<?= $doc['id'] ?>"
                                     onclick="return confirm('Hapus dokumen ini?')"
                                     class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white inline-flex items-center justify-center transition-colors shadow-sm" title="Hapus">
                                     <i class="fa-solid fa-trash-can text-sm"></i>
@@ -124,7 +130,7 @@
                 </div>
                 <?php if ($totalPages > 1): ?>
                 <div class="flex items-center gap-1.5">
-                    <?php $qs = "&limit=$limit&search=" . urlencode($search) . "&type=$typeFilter"; ?>
+                    <?php $qs = "&limit=$limit&search=" . urlencode($search) . "&type=$typeFilter&classroom_id=$selectedClassroom"; ?>
                     <?php if ($currentPage > 1): ?>
                         <a href="?page=<?= $currentPage - 1 . $qs ?>" class="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm"><i class="fa-solid fa-chevron-left"></i></a>
                     <?php endif; ?>
@@ -192,7 +198,7 @@
             <h3 class="font-bold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-upload text-slate-400"></i> Upload Dokumen Ajar</h3>
             <button onclick="document.getElementById('addModal').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-slate-200 text-slate-500 hover:bg-slate-300 flex items-center justify-center transition"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <form action="/finance/spp/store" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
+        <form action="/academic/syllabus/store" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
             <?= \App\Core\Csrf::input() ?>
             <input type="hidden" name="teacher_id" value="<?= $user['id'] ?>">
             <div>
@@ -211,10 +217,11 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-slate-600 mb-1.5">Tingkat Kelas</label>
-                    <select name="grade_level" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
-                        <?php foreach ([7,8,9,10,11,12] as $g): ?>
-                            <option value="<?= $g ?>">Kelas <?= $g ?></option>
+                    <label class="block text-sm font-semibold text-slate-600 mb-1.5">Kelas</label>
+                    <select name="classroom_id" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none" required>
+                        <option value="">-- Pilih Kelas --</option>
+                        <?php foreach ($classrooms as $c): ?>
+                            <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['name']) ?> (<?= $c['level'] ?>)</option>
                         <?php endforeach; ?>
                     </select>
                 </div>

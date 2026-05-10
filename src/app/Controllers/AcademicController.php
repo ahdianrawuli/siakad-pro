@@ -167,7 +167,8 @@ class AcademicController {
         $schedules = $db->query($sql, $params)->fetchAll();
 
         // Data Pendukung Dropdown
-        $classrooms = $db->query("SELECT * FROM classrooms ORDER BY level, name")->fetchAll();
+        [$swc, $spc] = ScopeFilter::apply('c2');
+        $classrooms = $db->query("SELECT c2.* FROM classrooms c2 WHERE 1=1 $swc ORDER BY c2.level, c2.name", $spc)->fetchAll();
         $subjects = $db->query("SELECT * FROM subjects ORDER BY name")->fetchAll();
         $teachers = $db->query("SELECT id, name FROM users WHERE role_id IN (1, 3) ORDER BY name")->fetchAll();
 
@@ -492,23 +493,28 @@ class AcademicController {
     public function journals() {
         $db = Database::getInstance();
         $userId = Session::get('user_id');
-        $role = Session::get('user_role');
+        $role   = Session::get('user_role');
         $yearId = $db->query("SELECT id FROM academic_years WHERE is_active = 1")->fetch()['id'] ?? 0;
 
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $scopeWhere = $sw ? "AND 1=1 $sw" : "";
+
         $sql = "
-            SELECT sch.*, s.name as subject_name, c.name as class_name, 
+            SELECT sch.*, s.name as subject_name, c.name as class_name,
                    (SELECT COUNT(*) FROM teaching_journals tj WHERE tj.schedule_id = sch.id) as total_entries
             FROM schedules sch
             JOIN subjects s ON sch.subject_id = s.id
             JOIN classrooms c ON sch.classroom_id = c.id
-            WHERE sch.academic_year_id = :yearId
+            WHERE sch.academic_year_id = ? $scopeWhere
         ";
 
+        $baseParams = [$yearId, ...$sp];
+
         if ($role == 'guru') {
-            $sql .= " AND sch.teacher_id = :uid";
-            $schedules = $db->query($sql, ['yearId' => $yearId, 'uid' => $userId])->fetchAll();
+            $sql .= " AND sch.teacher_id = ?";
+            $schedules = $db->query($sql, [...$baseParams, $userId])->fetchAll();
         } else {
-            $schedules = $db->query($sql, ['yearId' => $yearId])->fetchAll();
+            $schedules = $db->query($sql, $baseParams)->fetchAll();
         }
 
         View::render('academic/journal_index', ['title' => 'Jurnal Mengajar', 'schedules' => $schedules]);

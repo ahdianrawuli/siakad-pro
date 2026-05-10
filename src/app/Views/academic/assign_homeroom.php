@@ -46,14 +46,8 @@
                 <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Cari nama kelas atau wali kelas..."
                     class="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all">
             </div>
-            <select name="level" class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
-                <option value="">Semua Tingkat</option>
-                <?php foreach ($levels as $lvl): ?>
-                    <option value="<?= $lvl['level'] ?>" <?= $levelFilter == $lvl['level'] ? 'selected' : '' ?>>Level <?= $lvl['level'] ?></option>
-                <?php endforeach; ?>
-            </select>
             <button type="submit" class="bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-900 transition-colors">Terapkan</button>
-            <?php if (!empty($search) || !empty($levelFilter)): ?>
+            <?php if (!empty($search)): ?>
                 <a href="/academic/homeroom-assign" class="flex items-center justify-center w-10 h-10 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition" title="Reset">
                     <i class="fa-solid fa-rotate-left"></i>
                 </a>
