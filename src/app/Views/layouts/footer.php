@@ -17,8 +17,8 @@ $c = match($scope) {
     'PDF'  => ['main'=>'#c2410c','dark'=>'#9a3412','darker'=>'#7c2d12','light'=>'#fff7ed','light2'=>'#ffedd5','text'=>'#c2410c','textL'=>'#f97316','textD'=>'#9a3412','border'=>'#fdba74','shadow'=>'rgba(194,65,12,0.2)','g1'=>'#c2410c','g2'=>'#ea580c','g3'=>'#f97316','gText'=>'#fed7aa'],
     default=> ['main'=>'#16a34a','dark'=>'#15803d','darker'=>'#14532d','light'=>'#f0fdf4','light2'=>'#dcfce7','text'=>'#16a34a','textL'=>'#22c55e','textD'=>'#15803d','border'=>'#bbf7d0','shadow'=>'rgba(22,163,74,0.2)','g1'=>'#16a34a','g2'=>'#059669','g3'=>'#0d9488','gText'=>'#a7f3d0'],
 };
-$fromColors = $palette[$prevScope ?? $scope];
-$toColors   = $palette[$scope];
+$fromColors = $palette[$prevScope] ?? $palette['GLOBAL'];
+$toColors   = $palette[$scope]    ?? $palette['GLOBAL'];
 $doAnim     = $prevScope && $prevScope !== $scope;
 ?>
 <script>
