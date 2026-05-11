@@ -26,7 +26,7 @@ use App\Controllers\{
     HomeroomController, HomeroomReportController,
     DisciplineController, StudentTrackingController, ExtracurricularController,
     BoardingController, BoardingActivityController, BoardingSupervisorController,
-    BoardingMutationController, BoardingReportController,
+    BoardingMutationController, BoardingReportController, BoardingMapController,
     StaffController, StaffPositionController, StaffAttendanceController, SchoolStructureController,
     FinanceController, InventoryController, ReportController, PoskestrenController, AnnouncementController, TeacherController,
     PasswordResetController, GuidelineController
@@ -301,6 +301,7 @@ $router->get('/academic/subjects/delete',   [AcademicController::class, 'deleteS
 
 // Jadwal Pelajaran
 $router->get('/academic/schedules',         [AcademicController::class, 'schedules']);
+$router->get('/academic/schedules/print',   [AcademicController::class, 'printSchedule']);
 $router->post('/academic/schedules/store',  [AcademicController::class, 'storeSchedule']);
 $router->post('/academic/schedules/update', [AcademicController::class, 'updateSchedule']);
 $router->get('/academic/schedules/delete',  [AcademicController::class, 'deleteSchedule']);
@@ -455,6 +456,10 @@ $router->get('/asrama/supervisors/delete',  [BoardingSupervisorController::class
 // Routing Baru untuk Menu Asrama
 $router->get('/asrama/units',               [BoardingController::class, 'units']);
 $router->get('/asrama/tilawah-attendance',  [BoardingController::class, 'tilawah']);
+$router->get('/asrama/map',                 [BoardingMapController::class, 'map']);
+$router->get('/asrama/map/print',           [BoardingMapController::class, 'printMap']);
+$router->get('/asrama/violations',          [BoardingMapController::class, 'violations']);
+$router->get('/asrama/violations/print',    [BoardingMapController::class, 'printViolations']);
 
 // Program & Kesehatan (Kepesantrenan)
 

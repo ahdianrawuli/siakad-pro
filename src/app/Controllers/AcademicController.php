@@ -189,6 +189,41 @@ class AcademicController {
         ]);
     }
 
+    public function printSchedule() {
+        $db = Database::getInstance();
+        $activeYear = $db->query("SELECT * FROM academic_years WHERE is_active = 1")->fetch();
+        $activeYearId = $activeYear['id'] ?? 0;
+
+        $classId = $_GET['class_id'] ?? '';
+        $day     = $_GET['day'] ?? '';
+
+        $where  = "WHERE sch.academic_year_id = ?";
+        $params = [$activeYearId];
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $where .= $sw; $params = array_merge($params, $sp);
+        if ($classId) { $where .= " AND sch.classroom_id = ?"; $params[] = $classId; }
+        if ($day)     { $where .= " AND sch.day = ?";          $params[] = $day; }
+
+        $schedules = $db->query("
+            SELECT sch.*, s.name as subject_name, c.name as class_name, u.name as teacher_name
+            FROM schedules sch
+            JOIN subjects s ON sch.subject_id = s.id
+            JOIN classrooms c ON sch.classroom_id = c.id
+            JOIN users u ON sch.teacher_id = u.id
+            $where
+            ORDER BY c.name, FIELD(sch.day,'SENIN','SELASA','RABU','KAMIS','JUMAT','SABTU','AHAD'), sch.start_time
+        ", $params)->fetchAll();
+
+        $classroom = $classId ? $db->query("SELECT * FROM classrooms WHERE id = ?", [$classId])->fetch() : null;
+
+        View::render('academic/print_schedule', [
+            'schedules'  => $schedules,
+            'classroom'  => $classroom,
+            'day'        => $day,
+            'activeYear' => $activeYear,
+        ]);
+    }
+
     public function storeSchedule() {
         $this->processSchedule('store');
     }

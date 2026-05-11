@@ -1,13 +1,6 @@
 <?php require __DIR__ . '/../../layouts/header.php'; ?>
 <?php require __DIR__ . '/../../layouts/sidebar.php'; ?>
 
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<style>
-    .select2-container--default .select2-selection--single { border-color: #e2e8f0; height: 42px; padding-top: 6px; border-radius: 0.75rem; background-color: #f8fafc; }
-    .select2-container--default .select2-selection--single .select2-selection__arrow { height: 40px; }
-    .select2-container { width: 100% !important; }
-</style>
-
 <main class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
 
     <!-- Header Section -->
@@ -40,7 +33,7 @@
                 <?= \App\Core\Csrf::input() ?>
                 <div class="mb-4">
                     <label class="block text-sm font-semibold text-slate-600 mb-1.5">Jenjang</label>
-                    <select name="major" class="select2 w-full" required>
+                    <select name="major" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none" required>
                         <option value="MTS">MTS</option>
                         <option value="MA">MA</option>
                         <option value="PDF">PDF</option>
@@ -58,7 +51,7 @@
                 </div>
                 <div class="mb-6">
                     <label class="block text-sm font-semibold text-slate-600 mb-1.5">Wali Kelas</label>
-                    <select name="homeroom_teacher_id" class="select2 w-full">
+                    <select name="homeroom_teacher_id" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
                         <option value="">-- Pilih Guru --</option>
                         <?php foreach ($teachers as $t): ?>
                             <option value="<?= $t['id'] ?>"><?= $t['name'] ?></option>
@@ -178,11 +171,7 @@
 </main>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-    $(document).ready(function() {
-        $('.select2').select2({ placeholder: "-- Pilih --", allowClear: true });
-    });
     function updateQueryStringParameter(uri, key, value) {
         var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
         var separator = uri.indexOf('?') !== -1 ? "&" : "?";

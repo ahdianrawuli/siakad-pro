@@ -49,7 +49,7 @@
                     <select name="student_id" class="select2-student w-full" required>
                         <option value="">-- Cari & Pilih Santri --</option>
                         <?php foreach ($students as $s): ?>
-                            <option value="<?= $s['id'] ?>"><?= $s['full_name'] ?> (<?= $s['nis'] ?>)</option>
+                            <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['full_name']) ?> (<?= $s['nis'] ?>)</option>
                         <?php endforeach; ?>
                     </select>
                     <p class="text-[10px] text-slate-400 mt-1.5">*Hanya santri yang belum mendapat kamar.</p>
@@ -266,7 +266,20 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     $(document).ready(function() {
-        $('.select2-student').select2({ placeholder: '-- Cari & Pilih Santri --', allowClear: true });
+        $('.select2-student').select2({
+            placeholder: '-- Cari & Pilih Santri --',
+            allowClear: true,
+            width: '100%',
+            dropdownParent: $('.select2-student').parent()
+        });
+    });
+    // Cegah layout shift: kunci lebar body saat dropdown terbuka
+    $(document).on('select2:open', function() {
+        var w = document.body.offsetWidth;
+        document.body.style.overflowY = 'scroll';
+    });
+    $(document).on('select2:close', function() {
+        document.body.style.overflowY = '';
     });
     window.onclick = function(e) {
         ['modalAddDorm','infoModal'].forEach(function(id) {

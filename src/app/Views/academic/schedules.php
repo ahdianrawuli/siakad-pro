@@ -27,10 +27,18 @@
                 </button>
             </div>
         </div>
-        <button onclick="document.getElementById('addModal').classList.remove('hidden')"
-            class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-2 w-fit">
-            <i class="fa-solid fa-calendar-plus"></i> Buat Jadwal Baru
-        </button>
+        <div class="flex gap-2">
+            <?php if ($filterClass || $filterDay): ?>
+            <a href="/academic/schedules/print?class_id=<?= urlencode($filterClass) ?>&day=<?= urlencode($filterDay) ?>" target="_blank"
+                class="px-4 py-2.5 bg-slate-600 text-white rounded-xl text-sm font-semibold hover:bg-slate-700 transition-all flex items-center gap-2 w-fit">
+                <i class="fa-solid fa-print"></i> Cetak Jadwal
+            </a>
+            <?php endif; ?>
+            <button onclick="document.getElementById('addModal').classList.remove('hidden')"
+                class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-2 w-fit">
+                <i class="fa-solid fa-calendar-plus"></i> Buat Jadwal Baru
+            </button>
+        </div>
     </div>
 
     <?php \App\Core\Session::flash(); ?>
