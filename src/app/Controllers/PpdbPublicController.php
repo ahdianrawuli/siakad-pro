@@ -19,16 +19,10 @@ class PpdbPublicController {
 
     public function register() {
         $db = Database::getInstance();
-        // Fallback to empty array if table doesn't exist, as frontend uses hardcoded options
-        $tracks = [];
-        try {
-            $tracks = $db->query("SELECT * FROM school_school_registration_path WHERE status = 'ACTIVE'")->fetchAll();
-        } catch (\Exception $e) {
-            // Ignore if table not yet migrated
-        }
+        $tracks = $db->query("SELECT id, name, level FROM ppdb_tracks WHERE is_active = 1 ORDER BY level, name")->fetchAll();
 
         View::render('ppdb/public/register', [
-            'title' => 'Pendaftaran Santri Baru',
+            'title'  => 'Pendaftaran Santri Baru',
             'tracks' => $tracks
         ]);
     }

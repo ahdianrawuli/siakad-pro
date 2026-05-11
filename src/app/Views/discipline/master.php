@@ -47,13 +47,13 @@
                         <tr><td colspan="5" class="px-5 py-16 text-center text-slate-400">Belum ada data.</td></tr>
                     <?php endif; ?>
                     <?php foreach ($violations as $v):
-                        $bg = $v['severity']==='BERAT' ? 'bg-red-50 text-red-700 border-red-200' : ($v['severity']==='SEDANG' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 'bg-green-50 text-green-700 border-green-200');
+                        $bg = ($v['category']??'')==='BERAT' ? 'bg-red-50 text-red-700 border-red-200' : (($v['category']??'')==='SEDANG' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 'bg-green-50 text-green-700 border-green-200');
                     ?>
                     <tr class="hover:bg-slate-50/80 transition-colors">
-                        <td class="px-5 py-4 font-mono text-xs font-bold text-slate-700"><?= htmlspecialchars($v['code']) ?></td>
+                        <td class="px-5 py-4 font-mono text-xs font-bold text-slate-700"><?= htmlspecialchars($v['category'] ?? '-') ?></td>
                         <td class="px-5 py-4 font-semibold text-slate-800"><?= htmlspecialchars($v['name']) ?></td>
                         <td class="px-5 py-4 text-center">
-                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border <?= $bg ?>"><?= $v['severity'] ?></span>
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border <?= $bg ?>"><?= $v['category'] ?? 'RINGAN' ?></span>
                         </td>
                         <td class="px-5 py-4 text-center font-bold text-red-600">-<?= $v['points'] ?></td>
                         <td class="px-5 py-4 text-center flex items-center justify-center gap-2">
@@ -84,8 +84,6 @@
         </div>
         <form action="/discipline/master-violations/store" method="POST" class="p-6 space-y-4">
             <?= \App\Core\Csrf::input() ?>
-            <div><label class="block text-sm font-semibold text-slate-600 mb-1.5">Kode</label>
-                <input type="text" name="code" required placeholder="PL-001" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none"></div>
             <div><label class="block text-sm font-semibold text-slate-600 mb-1.5">Nama Pelanggaran</label>
                 <input type="text" name="name" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none"></div>
             <div class="grid grid-cols-2 gap-4">
@@ -114,8 +112,6 @@
         <form action="/discipline/master-violations/update" method="POST" class="p-6 space-y-4">
             <?= \App\Core\Csrf::input() ?>
             <input type="hidden" name="id" id="edit_id">
-            <div><label class="block text-sm font-semibold text-slate-600 mb-1.5">Kode</label>
-                <input type="text" name="code" id="edit_code" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none"></div>
             <div><label class="block text-sm font-semibold text-slate-600 mb-1.5">Nama Pelanggaran</label>
                 <input type="text" name="name" id="edit_name" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none"></div>
             <div class="grid grid-cols-2 gap-4">
@@ -137,10 +133,9 @@
 <script>
 function openEdit(v) {
     document.getElementById('edit_id').value       = v.id;
-    document.getElementById('edit_code').value     = v.code;
     document.getElementById('edit_name').value     = v.name;
     document.getElementById('edit_points').value   = v.points;
-    document.getElementById('edit_severity').value = v.severity;
+    document.getElementById('edit_severity').value = v.category || 'RINGAN';
     document.getElementById('editModal').classList.remove('hidden');
 }
 window.onclick = function(e) {

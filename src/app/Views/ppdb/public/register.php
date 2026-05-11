@@ -684,7 +684,9 @@
             // Init stepper UI
             updateStepperUI('tab-admin');
 
-            // Jalur Logic
+            // Jalur Logic — data dari DB
+            const trackData = <?= json_encode(array_map(fn($t) => ['id' => (string)$t['id'], 'name' => $t['name'], 'level' => $t['level']], $tracks)) ?>;
+
             function updateJalur() {
                 const unit = document.getElementById('education_unit').value;
                 const jalurSelect = document.getElementById('ppdb_track');
@@ -692,28 +694,15 @@
 
                 jalurSelect.innerHTML = '';
 
-                let options = [];
-                if (unit === 'MTs') {
-                    options = [
-                        {id: '1', name: 'Reguler (Umum)'},
-                        {id: '2', name: 'Prestasi Akademik'},
-                        {id: '3', name: 'Tahfiz (Minimal 2 Juz)'},
-                        {id: '4', name: 'Banuhampu'},
-                        {id: '5', name: 'Parabek'}
-                    ];
-                } else if (unit === 'MA') {
-                    options = [
-                        {id: '6', name: 'Aliyah Reguler'},
-                        {id: '7', name: 'Tahfiz (minimal 10 Juz)'}
-                    ];
-                } else if (unit === 'PDF') {
-                    options = [
-                        {id: '8', name: 'Pdf Reguler'},
-                        {id: '9', name: 'Kitab'}
-                    ];
-                } else {
-                    options = [{id: '', name: '-- Pilih Unit Pendidikan Dulu --'}];
-                }
+                // Map unit ke level di ppdb_tracks
+                const levelMap = { 'MTs': 'MTS', 'MA': 'MA', 'PDF': 'PDF' };
+                const targetLevel = levelMap[unit] || '';
+
+                let options = targetLevel
+                    ? trackData.filter(t => t.level === targetLevel)
+                    : [{id: '', name: '-- Pilih Unit Pendidikan Dulu --'}];
+
+                if (options.length === 0) options = [{id: '', name: '-- Tidak ada jalur tersedia --'}];
 
                 options.forEach(opt => {
                     const el = document.createElement('option');
@@ -724,8 +713,6 @@
 
                 jalurSelect.classList.remove('bg-gray-50');
                 if(unit === '') jalurSelect.classList.add('bg-gray-50');
-
-                // Set initial hidden track_name
                 trackNameInput.value = jalurSelect.options[jalurSelect.selectedIndex]?.text || '';
             }
 

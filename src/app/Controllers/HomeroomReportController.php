@@ -19,8 +19,8 @@ class HomeroomReportController {
         $limit = $_GET['limit'] ?? 10;
         $offset = ($page - 1) * $limit;
         
-        $search = $_GET['search'] ?? '';
-        $level = $_GET['level'] ?? '';
+        $search    = $_GET['search'] ?? '';
+        $classId   = $_GET['class_id'] ?? '';
 
         $where = "WHERE 1=1";
         $params = [];
@@ -28,16 +28,8 @@ class HomeroomReportController {
         [$sw, $sp] = ScopeFilter::apply('c');
         $where .= $sw; $params = array_merge($params, $sp);
 
-        // Logika Filter
-        if (!empty($search)) {
-            $where .= " AND (c.name LIKE ? OR u.name LIKE ?)";
-            $params[] = "%$search%";
-            $params[] = "%$search%";
-        }
-        if (!empty($level)) {
-            $where .= " AND c.level = ?";
-            $params[] = $level;
-        }
+        if (!empty($search))  { $where .= " AND (c.name LIKE ? OR u.name LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
+        if (!empty($classId)) { $where .= " AND c.id = ?"; $params[] = $classId; }
 
         // Hitung Total Data
         $countSql = "SELECT COUNT(*) as total 
@@ -58,19 +50,24 @@ class HomeroomReportController {
 
         $classrooms = $db->query($sql, $params)->fetchAll();
 
-        // Ambil Level untuk Dropdown Filter
+        // Dropdown kelas mengikuti scope
         $levels = $db->query("SELECT DISTINCT level FROM classrooms ORDER BY level")->fetchAll();
+        [$swc, $spc] = ScopeFilter::apply('c');
+        $allClassrooms = $db->query("SELECT id, name, level FROM classrooms c WHERE 1=1 $swc ORDER BY level, name", $spc)->fetchAll();
 
         View::render('homeroom/reports/index', [
-            'title' => 'Laporan Wali Kelas',
-            'classrooms' => $classrooms,
-            'levels' => $levels,
-            'totalData' => $totalData,
-            'totalPages' => $totalPages,
-            'currentPage' => $page,
-            'limit' => $limit,
-            'search' => $search,
-            'levelFilter' => $level
+            'title'        => 'Laporan Wali Kelas',
+            'classrooms'   => $classrooms,
+            'allClassrooms'=> $allClassrooms,
+            'levels'       => $levels,
+            'totalData'    => $totalData,
+            'totalPages'   => $totalPages,
+            'currentPage'  => $page,
+            'limit'        => $limit,
+            'search'       => $search,
+            'classId'      => $classId,
+            'majorFilter'  => '',
+            'levelFilter'  => '',
         ]);
     }
 

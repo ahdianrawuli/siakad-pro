@@ -16,45 +16,17 @@ class DisciplineController {
     public function master() {
         $db = Database::getInstance();
         $search = $_GET['search'] ?? '';
-
-        $sql = "SELECT * FROM master_violations WHERE 1=1";
+        $where = "WHERE 1=1";
         $params = [];
-
-        if (!empty($search)) {
-            $sql .= " AND (name LIKE ? OR code LIKE ?)";
-            $params[] = "%$search%";
-            $params[] = "%$search%";
-        }
-
-        $sql .= " ORDER BY severity DESC, name ASC";
-
-        try {
-            $violations = $db->query($sql, $params)->fetchAll();
-        } catch (\Exception $e) {
-            // Setup master table if not exists (fallback for UI testing)
-            $db->query("CREATE TABLE IF NOT EXISTS `master_violations` (
-                `id` int(11) NOT NULL AUTO_INCREMENT,
-                `code` varchar(50) NOT NULL,
-                `name` varchar(255) NOT NULL,
-                `points` int(11) NOT NULL DEFAULT 0,
-                `severity` enum('RINGAN','SEDANG','BERAT') DEFAULT 'RINGAN',
-                `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-                PRIMARY KEY (`id`)
-            )");
-            $violations = $db->query($sql, $params)->fetchAll();
-        }
-
-        View::render('discipline/master', [
-            'title' => 'Master Pelanggaran',
-            'violations' => $violations,
-            'search' => $search
-        ]);
+        if (!empty($search)) { $where .= " AND (name LIKE ? OR category LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
+        $violations = $db->query("SELECT * FROM violation_types $where ORDER BY points ASC", $params)->fetchAll();
+        View::render('discipline/master', ['title' => 'Master Pelanggaran', 'violations' => $violations, 'search' => $search]);
     }
 
     public function updateMaster() {
         $db = Database::getInstance();
-        $db->query("UPDATE master_violations SET code=?, name=?, points=?, severity=? WHERE id=?", [
-            $_POST['code'], $_POST['name'], $_POST['points'], $_POST['severity'], $_POST['id']
+        $db->query("UPDATE violation_types SET name=?, points=?, category=? WHERE id=?", [
+            $_POST['name'], $_POST['points'], $_POST['severity'], $_POST['id']
         ]);
         Session::setFlash('success', 'Data pelanggaran diperbarui.');
         header('Location: /discipline/master-violations');
@@ -62,21 +34,17 @@ class DisciplineController {
 
     public function deleteMaster() {
         $db = Database::getInstance();
-        $db->query("DELETE FROM master_violations WHERE id=?", [$_GET['id']]);
+        $db->query("DELETE FROM violation_types WHERE id=?", [$_GET['id']]);
         Session::setFlash('success', 'Data pelanggaran dihapus.');
         header('Location: /discipline/master-violations');
     }
 
     public function storeMaster() {
         $db = Database::getInstance();
-        try {
-            $db->query("INSERT INTO master_violations (code, name, points, severity) VALUES (?, ?, ?, ?)", [
-                $_POST['code'], $_POST['name'], $_POST['points'], $_POST['severity']
-            ]);
-            Session::setFlash('success', 'Master Pelanggaran berhasil ditambahkan.');
-        } catch (\Exception $e) {
-            Session::setFlash('error', 'Gagal menambah Master Pelanggaran: ' . $e->getMessage());
-        }
+        $db->query("INSERT INTO violation_types (name, points, category) VALUES (?, ?, ?)", [
+            $_POST['name'], $_POST['points'], $_POST['severity']
+        ]);
+        Session::setFlash('success', 'Master Pelanggaran berhasil ditambahkan.');
         header('Location: /discipline/master-violations');
     }
 

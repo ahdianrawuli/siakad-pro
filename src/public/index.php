@@ -282,6 +282,8 @@ $router->post('/announcements/delete',   [AnnouncementController::class, 'delete
 // Master Data Akademik (Tahun & Kelas)
 $router->get('/academic/years',             [AcademicController::class, 'years']);
 $router->post('/academic/years/store',      [AcademicController::class, 'storeYear']);
+$router->post('/academic/years/update',     [AcademicController::class, 'updateYear']);
+$router->get('/academic/years/delete',      [AcademicController::class, 'deleteYear']);
 $router->get('/academic/years/activate',    [AcademicController::class, 'activateYear']);
 
 $router->get('/academic/classrooms',          [ClassroomManageController::class, 'index']);

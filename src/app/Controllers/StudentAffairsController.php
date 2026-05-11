@@ -39,8 +39,10 @@ class StudentAffairsController {
             "SELECT s.*, c.name as class_name FROM students s LEFT JOIN classrooms c ON s.classroom_id = c.id $where ORDER BY c.name ASC, s.full_name ASC LIMIT $limit OFFSET $offset",
             $params
         )->fetchAll();
-        $classrooms = $db->query("SELECT * FROM classrooms ORDER BY name")->fetchAll();
-        $dorms      = $db->query("SELECT id, name FROM dorms ORDER BY name")->fetchAll();
+        $classrooms = $db->query("SELECT * FROM classrooms c WHERE 1=1 $scopeWhere ORDER BY name", $scopeParams)->fetchAll();
+        $scope      = ScopeFilter::get();
+        $dormWhere  = $scope !== 'GLOBAL' ? "WHERE unit = '$scope'" : "";
+        $dorms      = $db->query("SELECT id, name FROM dorms $dormWhere ORDER BY name")->fetchAll();
 
         View::render('student_affairs/index', [
             'title'       => 'Data Induk Siswa',

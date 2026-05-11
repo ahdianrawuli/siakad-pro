@@ -504,6 +504,28 @@ class AcademicController {
         header('Location: /academic/years');
     }
 
+    public function updateYear() {
+        $db = Database::getInstance();
+        $db->query("UPDATE academic_years SET name=?, semester=? WHERE id=?", [
+            $_POST['name'], $_POST['semester'], $_POST['id']
+        ]);
+        Session::setFlash('success', 'Tahun ajaran diperbarui.');
+        header('Location: /academic/years');
+    }
+
+    public function deleteYear() {
+        $id = (int)$_GET['id'];
+        $db = Database::getInstance();
+        $active = $db->query("SELECT is_active FROM academic_years WHERE id=?", [$id])->fetchColumn();
+        if ($active) {
+            Session::setFlash('error', 'Tidak bisa menghapus tahun ajaran yang sedang aktif.');
+        } else {
+            $db->query("DELETE FROM academic_years WHERE id=?", [$id]);
+            Session::setFlash('success', 'Tahun ajaran dihapus.');
+        }
+        header('Location: /academic/years');
+    }
+
     public function activateYear() {
         $id = $_GET['id'];
         $db = Database::getInstance();

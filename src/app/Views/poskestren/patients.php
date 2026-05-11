@@ -139,11 +139,11 @@
             </div>
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Diagnosis</label>
-                <input type="text" name="diagnosis" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/50">
+                <input type="text" name="diagnosis" required class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/50">
             </div>
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Tindakan / Pengobatan</label>
-                <textarea name="treatment" rows="2" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/50"></textarea>
+                <textarea name="treatment" required rows="2" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/50"></textarea>
             </div>
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Petugas</label>

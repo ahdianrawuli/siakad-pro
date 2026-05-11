@@ -84,6 +84,7 @@
                                 <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Semester</th>
                                 <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Status</th>
                                 <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Aksi</th>
+                                <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Edit/Hapus</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
@@ -124,6 +125,21 @@
                                             <i class="fa-solid fa-check text-white text-[10px]"></i>
                                         </div>
                                     <?php endif; ?>
+                                </td>
+                                <td class="px-5 py-4 text-center">
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <button onclick='openEditYear(<?= json_encode($row) ?>)'
+                                            class="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white flex items-center justify-center transition" title="Edit">
+                                            <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                        </button>
+                                        <?php if (!$row['is_active']): ?>
+                                        <a href="/academic/years/delete?id=<?= $row['id'] ?>"
+                                            onclick="return confirm('Hapus tahun ajaran ini?')"
+                                            class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition" title="Hapus">
+                                            <i class="fa-solid fa-trash-can text-xs"></i>
+                                        </a>
+                                        <?php endif; ?>
+                                    </div>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -211,5 +227,47 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Edit Tahun Ajaran -->
+<div id="editYearModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+            <h3 class="font-bold text-slate-700"><i class="fa-solid fa-pen-to-square text-slate-400 mr-2"></i>Edit Tahun Ajaran</h3>
+            <button onclick="document.getElementById('editYearModal').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-slate-200 text-slate-500 hover:bg-slate-300 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form action="/academic/years/update" method="POST" class="p-6 space-y-4">
+            <?= \App\Core\Csrf::input() ?>
+            <input type="hidden" name="id" id="ey_id">
+            <div>
+                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Nama Tahun Ajaran</label>
+                <input type="text" name="name" id="ey_name" required placeholder="2025/2026"
+                    class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Semester</label>
+                <select name="semester" id="ey_semester" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
+                    <option value="Ganjil">Ganjil</option>
+                    <option value="Genap">Genap</option>
+                </select>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('editYearModal').classList.add('hidden')" class="flex-1 bg-slate-100 text-slate-600 py-2.5 rounded-xl font-bold text-sm">Batal</button>
+                <button type="submit" class="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-bold hover:bg-blue-700 transition text-sm">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openEditYear(r) {
+    document.getElementById('ey_id').value       = r.id;
+    document.getElementById('ey_name').value     = r.name;
+    document.getElementById('ey_semester').value = r.semester;
+    document.getElementById('editYearModal').classList.remove('hidden');
+}
+window.addEventListener('click', function(e){
+    if (e.target == document.getElementById('editYearModal')) document.getElementById('editYearModal').classList.add('hidden');
+});
+</script>
 
 <?php require __DIR__ . '/../layouts/footer.php'; ?>

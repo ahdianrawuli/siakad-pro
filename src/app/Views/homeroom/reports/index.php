@@ -26,10 +26,10 @@
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
             <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 <input type="hidden" name="limit" value="<?= $limit ?>">
-                <select name="level" class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
-                    <option value="">Semua Tingkat</option>
-                    <?php foreach ($levels as $lvl): ?>
-                        <option value="<?= $lvl['level'] ?>" <?= $levelFilter == $lvl['level'] ? 'selected' : '' ?>>Level <?= $lvl['level'] ?></option>
+                <select name="class_id" class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
+                    <option value="">Semua Kelas</option>
+                    <?php foreach ($allClassrooms as $cl): ?>
+                        <option value="<?= $cl['id'] ?>" <?= ($classId??'')==$cl['id'] ? 'selected':'' ?>><?= htmlspecialchars($cl['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
                 <div class="md:col-span-2 relative">
@@ -39,7 +39,7 @@
                 </div>
                 <div class="flex gap-2">
                     <button type="submit" class="flex-1 bg-slate-800 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-slate-900 transition-colors">Terapkan</button>
-                    <?php if (!empty($search) || !empty($levelFilter)): ?>
+                    <?php if (!empty($search) || !empty($classId??'')): ?>
                         <a href="/homeroom/report-all" class="flex items-center justify-center w-10 h-10 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition" title="Reset">
                             <i class="fa-solid fa-rotate-left"></i>
                         </a>
@@ -106,7 +106,7 @@
                 </div>
                 <?php if ($totalPages > 1): ?>
                 <div class="flex items-center gap-1.5">
-                    <?php $qs = "&limit=$limit&search=" . urlencode($search) . "&level=$levelFilter"; ?>
+                    <?php $qs = "&limit=$limit&search=" . urlencode($search) . "&class_id=" . ($classId??''); ?>
                     <?php if ($currentPage > 1): ?>
                         <a href="?page=<?= $currentPage - 1 . $qs ?>" class="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm"><i class="fa-solid fa-chevron-left"></i></a>
                     <?php endif; ?>
