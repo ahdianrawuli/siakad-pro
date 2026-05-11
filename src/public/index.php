@@ -222,8 +222,10 @@ $router->post('/academic/kbm-permits/store', [KbmPermitController::class, 'store
 $router->get('/academic/kbm-permits/delete', [KbmPermitController::class, 'delete']);
 
 // Kedisiplinan (Dipindahkan ke Menu Kedisiplinan Khusus)
-$router->get('/discipline/master-violations',       [DisciplineController::class, 'master']);
-$router->post('/discipline/master-violations/store',[DisciplineController::class, 'storeMaster']);
+$router->get('/discipline/master-violations',        [DisciplineController::class, 'master']);
+$router->post('/discipline/master-violations/store', [DisciplineController::class, 'storeMaster']);
+$router->post('/discipline/master-violations/update',[DisciplineController::class, 'updateMaster']);
+$router->get('/discipline/master-violations/delete', [DisciplineController::class, 'deleteMaster']);
 $router->get('/discipline/student-violations',      [DisciplineController::class, 'index']);
 $router->post('/discipline/student-violations/store',[DisciplineController::class, 'storeViolation']);
 $router->get('/discipline/student-violations/delete',[DisciplineController::class, 'deleteViolation']);

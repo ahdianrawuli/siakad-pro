@@ -51,6 +51,22 @@ class DisciplineController {
         ]);
     }
 
+    public function updateMaster() {
+        $db = Database::getInstance();
+        $db->query("UPDATE master_violations SET code=?, name=?, points=?, severity=? WHERE id=?", [
+            $_POST['code'], $_POST['name'], $_POST['points'], $_POST['severity'], $_POST['id']
+        ]);
+        Session::setFlash('success', 'Data pelanggaran diperbarui.');
+        header('Location: /discipline/master-violations');
+    }
+
+    public function deleteMaster() {
+        $db = Database::getInstance();
+        $db->query("DELETE FROM master_violations WHERE id=?", [$_GET['id']]);
+        Session::setFlash('success', 'Data pelanggaran dihapus.');
+        header('Location: /discipline/master-violations');
+    }
+
     public function storeMaster() {
         $db = Database::getInstance();
         try {

@@ -1,104 +1,153 @@
 <?php require __DIR__ . '/../layouts/header.php'; ?>
 <?php require __DIR__ . '/../layouts/sidebar.php'; ?>
 
-<main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 p-4 md:p-6" x-data="{ addModal: false }">
-    <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+<main class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
+
+    <!-- Header -->
+    <div class="mb-8 flex flex-col md:flex-row md:justify-between md:items-end gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div>
-            <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Master Pelanggaran</h1>
-            <p class="text-sm text-gray-500">Kelola daftar aturan dan sanksi poin pelanggaran santri.</p>
+            <h3 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Master Pelanggaran</h3>
+            <p class="text-slate-500 text-sm mt-1 font-medium">Kelola daftar aturan dan sanksi poin pelanggaran santri.</p>
+            <div class="mt-3">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold border border-blue-100">
+                    <i class="fa-solid fa-list"></i> Total: <?= count($violations) ?> aturan
+                </div>
+            </div>
         </div>
-        <div class="flex gap-2">
-            <button @click="addModal = true" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition flex items-center">
-                <i class="fa-solid fa-plus mr-2"></i> Tambah Master Aturan
-            </button>
-        </div>
+        <button onclick="document.getElementById('addModal').classList.remove('hidden')"
+            class="px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold shadow-md hover:bg-red-700 transition flex items-center gap-2 w-fit">
+            <i class="fa-solid fa-plus"></i> Tambah Aturan
+        </button>
     </div>
 
     <?php \App\Core\Session::flash(); ?>
 
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="p-5 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-            <h2 class="font-bold text-gray-800">Daftar Aturan Disiplin</h2>
-            <form method="GET" class="w-full md:w-auto relative">
-                <input type="text" name="search" value="<?= htmlspecialchars($search ?? '') ?>" placeholder="Cari aturan..." class="w-full md:w-64 pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-400"></i>
+    <!-- Filter + Table -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <form method="GET" class="relative w-full sm:w-72">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
+                <input type="text" name="search" value="<?= htmlspecialchars($search ?? '') ?>" placeholder="Cari kode atau nama..."
+                    class="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
             </form>
         </div>
-
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse min-w-[600px]">
+            <table class="min-w-full text-left text-sm">
                 <thead>
-                    <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-                        <th class="p-4 font-bold border-b border-gray-100">Kode</th>
-                        <th class="p-4 font-bold border-b border-gray-100">Nama Pelanggaran</th>
-                        <th class="p-4 font-bold border-b border-gray-100 text-center">Tingkat Sanksi</th>
-                        <th class="p-4 font-bold border-b border-gray-100 text-center">Poin</th>
-                        <th class="p-4 font-bold border-b border-gray-100 text-center w-24">Aksi</th>
+                    <tr class="bg-slate-50 border-b border-slate-200">
+                        <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Kode</th>
+                        <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Pelanggaran</th>
+                        <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Tingkat</th>
+                        <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Poin</th>
+                        <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="text-sm text-gray-700 divide-y divide-gray-100">
-                    <?php if (!empty($violations)): foreach ($violations as $v): ?>
-                    <tr class="hover:bg-gray-50 transition">
-                        <td class="p-4 font-bold text-gray-800"><?= htmlspecialchars($v['code']) ?></td>
-                        <td class="p-4 font-medium"><?= htmlspecialchars($v['name']) ?></td>
-                        <td class="p-4 text-center">
-                            <?php
-                                $bg = $v['severity'] == 'BERAT' ? 'bg-red-100 text-red-700' : ($v['severity'] == 'SEDANG' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700');
-                            ?>
-                            <span class="px-2.5 py-1 rounded-full text-xs font-bold <?= $bg ?>"><?= $v['severity'] ?></span>
+                <tbody class="divide-y divide-slate-100">
+                    <?php if (empty($violations)): ?>
+                        <tr><td colspan="5" class="px-5 py-16 text-center text-slate-400">Belum ada data.</td></tr>
+                    <?php endif; ?>
+                    <?php foreach ($violations as $v):
+                        $bg = $v['severity']==='BERAT' ? 'bg-red-50 text-red-700 border-red-200' : ($v['severity']==='SEDANG' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 'bg-green-50 text-green-700 border-green-200');
+                    ?>
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                        <td class="px-5 py-4 font-mono text-xs font-bold text-slate-700"><?= htmlspecialchars($v['code']) ?></td>
+                        <td class="px-5 py-4 font-semibold text-slate-800"><?= htmlspecialchars($v['name']) ?></td>
+                        <td class="px-5 py-4 text-center">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold border <?= $bg ?>"><?= $v['severity'] ?></span>
                         </td>
-                        <td class="p-4 text-center font-bold text-red-600">-<?= $v['points'] ?></td>
-                        <td class="p-4 text-center">
-                            <button class="text-blue-500 hover:text-blue-700 p-1"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <td class="px-5 py-4 text-center font-bold text-red-600">-<?= $v['points'] ?></td>
+                        <td class="px-5 py-4 text-center flex items-center justify-center gap-2">
+                            <button onclick='openEdit(<?= json_encode($v) ?>)'
+                                class="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white flex items-center justify-center transition" title="Edit">
+                                <i class="fa-solid fa-pen-to-square text-xs"></i>
+                            </button>
+                            <a href="/discipline/master-violations/delete?id=<?= $v['id'] ?>"
+                                onclick="return confirm('Hapus aturan ini?')"
+                                class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition" title="Hapus">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </a>
                         </td>
                     </tr>
-                    <?php endforeach; else: ?>
-                    <tr><td colspan="5" class="p-6 text-center text-gray-500">Data Master Pelanggaran belum tersedia.</td></tr>
-                    <?php endif; ?>
+                    <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
     </div>
-
-    <!-- Modal Form -->
-    <div x-cloak x-show="addModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-        <div @click.away="addModal = false" class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <h3 class="text-lg font-bold text-gray-800">Tambah Aturan Baru</h3>
-                <button @click="addModal = false" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <form action="/discipline/master-violations/store" method="POST" class="p-6">
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Kode Aturan</label>
-                        <input type="text" name="code" required placeholder="Contoh: PL-001" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nama Pelanggaran</label>
-                        <input type="text" name="name" required placeholder="Deskripsi pelanggaran..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Tingkat</label>
-                            <select name="severity" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
-                                <option value="RINGAN">RINGAN</option>
-                                <option value="SEDANG">SEDANG</option>
-                                <option value="BERAT">BERAT</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Pengurangan Poin</label>
-                            <input type="number" name="points" required placeholder="10" min="1" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-6 flex justify-end gap-3 pt-4 border-t border-gray-100">
-                    <button type="button" @click="addModal = false" class="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition">Batal</button>
-                    <button type="submit" class="px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition">Simpan Aturan</button>
-                </div>
-            </form>
-        </div>
-    </div>
 </main>
+
+<!-- Modal Tambah -->
+<div id="addModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+            <h3 class="font-bold text-slate-700"><i class="fa-solid fa-plus text-slate-400 mr-2"></i>Tambah Aturan</h3>
+            <button onclick="document.getElementById('addModal').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-slate-200 text-slate-500 hover:bg-slate-300 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form action="/discipline/master-violations/store" method="POST" class="p-6 space-y-4">
+            <?= \App\Core\Csrf::input() ?>
+            <div><label class="block text-sm font-semibold text-slate-600 mb-1.5">Kode</label>
+                <input type="text" name="code" required placeholder="PL-001" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none"></div>
+            <div><label class="block text-sm font-semibold text-slate-600 mb-1.5">Nama Pelanggaran</label>
+                <input type="text" name="name" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none"></div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="block text-sm font-semibold text-slate-600 mb-1.5">Tingkat</label>
+                    <select name="severity" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
+                        <option value="RINGAN">RINGAN</option><option value="SEDANG">SEDANG</option><option value="BERAT">BERAT</option>
+                    </select></div>
+                <div><label class="block text-sm font-semibold text-slate-600 mb-1.5">Poin</label>
+                    <input type="number" name="points" required min="1" max="100" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none"></div>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="flex-1 bg-slate-100 text-slate-600 py-2.5 rounded-xl font-bold text-sm">Batal</button>
+                <button type="submit" class="flex-1 bg-red-600 text-white py-2.5 rounded-xl font-bold hover:bg-red-700 transition text-sm">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Edit -->
+<div id="editModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+            <h3 class="font-bold text-slate-700"><i class="fa-solid fa-pen-to-square text-slate-400 mr-2"></i>Edit Aturan</h3>
+            <button onclick="document.getElementById('editModal').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-slate-200 text-slate-500 hover:bg-slate-300 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form action="/discipline/master-violations/update" method="POST" class="p-6 space-y-4">
+            <?= \App\Core\Csrf::input() ?>
+            <input type="hidden" name="id" id="edit_id">
+            <div><label class="block text-sm font-semibold text-slate-600 mb-1.5">Kode</label>
+                <input type="text" name="code" id="edit_code" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none"></div>
+            <div><label class="block text-sm font-semibold text-slate-600 mb-1.5">Nama Pelanggaran</label>
+                <input type="text" name="name" id="edit_name" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none"></div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="block text-sm font-semibold text-slate-600 mb-1.5">Tingkat</label>
+                    <select name="severity" id="edit_severity" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
+                        <option value="RINGAN">RINGAN</option><option value="SEDANG">SEDANG</option><option value="BERAT">BERAT</option>
+                    </select></div>
+                <div><label class="block text-sm font-semibold text-slate-600 mb-1.5">Poin</label>
+                    <input type="number" name="points" id="edit_points" required min="1" max="100" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none"></div>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('editModal').classList.add('hidden')" class="flex-1 bg-slate-100 text-slate-600 py-2.5 rounded-xl font-bold text-sm">Batal</button>
+                <button type="submit" class="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-bold hover:bg-blue-700 transition text-sm">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openEdit(v) {
+    document.getElementById('edit_id').value       = v.id;
+    document.getElementById('edit_code').value     = v.code;
+    document.getElementById('edit_name').value     = v.name;
+    document.getElementById('edit_points').value   = v.points;
+    document.getElementById('edit_severity').value = v.severity;
+    document.getElementById('editModal').classList.remove('hidden');
+}
+window.onclick = function(e) {
+    ['addModal','editModal'].forEach(function(id){
+        if (e.target == document.getElementById(id)) document.getElementById(id).classList.add('hidden');
+    });
+}
+</script>
 
 <?php require __DIR__ . '/../layouts/footer.php'; ?>
