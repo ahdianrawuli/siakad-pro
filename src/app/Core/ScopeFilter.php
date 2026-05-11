@@ -16,7 +16,7 @@ class ScopeFilter {
      * @return array [string $whereClause, array $params]
      */
     public static function apply(string $classAlias = 'c'): array {
-        $scope = Session::get('active_scope', 'GLOBAL');
+        $scope = Session::get('active_scope', 'GLOBAL') ?? 'GLOBAL';
         if ($scope && $scope !== 'GLOBAL') {
             return [" AND {$classAlias}.major = ?", [$scope]];
         }
@@ -24,7 +24,7 @@ class ScopeFilter {
     }
 
     public static function get(): string {
-        return Session::get('active_scope', 'GLOBAL');
+        return Session::get('active_scope', 'GLOBAL') ?? 'GLOBAL';
     }
 
     public static function isActive(): bool {

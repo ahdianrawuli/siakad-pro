@@ -450,11 +450,13 @@ $router->post('/asrama/assign',             [BoardingController::class, 'assignD
 $router->post('/asrama/move',               [BoardingController::class, 'moveDorm']);
 
 $router->get('/asrama/activities',          [BoardingActivityController::class, 'index']);
+$router->get('/asrama/activities/print',    [BoardingActivityController::class, 'print']);
 $router->post('/asrama/activities/store',   [BoardingActivityController::class, 'store']);
 $router->get('/asrama/activities/delete',   [BoardingActivityController::class, 'delete']);
 
 $router->get('/asrama/supervisors',         [BoardingSupervisorController::class, 'index']);
 $router->post('/asrama/supervisors/store',  [BoardingSupervisorController::class, 'store']);
+$router->post('/asrama/supervisors/update', [BoardingSupervisorController::class, 'update']);
 $router->get('/asrama/supervisors/delete',  [BoardingSupervisorController::class, 'delete']);
 
 // Routing Baru untuk Menu Asrama
@@ -565,7 +567,8 @@ $router->post('/master/classrooms/update',      [ClassroomManageController::clas
 $router->get('/master/classrooms/delete',       [ClassroomManageController::class, 'delete']);
 
 $router->get('/student-affairs/teachers',       [TeacherController::class, 'index']);
-$router->get('/student-affairs/attendance',     [StudentAffairsController::class, 'attendance']);
+$router->get('/student-affairs/attendance',       [StudentAffairsController::class, 'attendance']);
+$router->get('/student-affairs/attendance/print', [StudentAffairsController::class, 'printAttendance']);
 $router->get('/student-affairs/discipline',     [DisciplineController::class, 'index']);
 $router->get('/student-affairs/achievements',   [DisciplineController::class, 'achievements']);
 $router->post('/student-affairs/achievements/store',  [DisciplineController::class, 'storeAchievement']);

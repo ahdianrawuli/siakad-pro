@@ -18,10 +18,16 @@
                 </button>
             </div>
         </div>
-        <a href="/attendance/students/create"
-            class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-2 w-fit">
-            <i class="fa-solid fa-calendar-check"></i> Input Absensi
-        </a>
+        <div class="flex gap-2">
+            <a href="/student-affairs/attendance/print?class_id=<?= urlencode($classFilter) ?>&date_from=<?= $dateFilter ?: date('Y-m-01') ?>&date_to=<?= $dateFilter ?: date('Y-m-d') ?>" target="_blank"
+                class="px-4 py-2.5 bg-slate-600 text-white rounded-xl text-sm font-semibold hover:bg-slate-700 transition flex items-center gap-2 w-fit">
+                <i class="fa-solid fa-print"></i> Cetak
+            </a>
+            <a href="/attendance/students/create"
+                class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-2 w-fit">
+                <i class="fa-solid fa-calendar-check"></i> Input Absensi
+            </a>
+        </div>
     </div>
 
     <?php \App\Core\Session::flash(); ?>

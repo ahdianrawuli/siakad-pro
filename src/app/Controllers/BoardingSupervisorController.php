@@ -61,11 +61,11 @@ class BoardingSupervisorController {
         $db = Database::getInstance();
         $adminId = Session::get('user_id');
 
-        $check = $db->query("SELECT id FROM dorm_supervisors WHERE dorm_id = ? AND user_id = ? AND status = 'ACTIVE'",
-                            [$_POST['dorm_id'], $_POST['user_id']])->fetch();
+        $check = $db->query("SELECT id FROM dorm_supervisors WHERE dorm_id = ? AND status = 'ACTIVE'",
+                            [$_POST['dorm_id']])->fetch();
 
         if ($check) {
-            Session::setFlash('error', 'User tersebut sudah menjadi wali di asrama ini.');
+            Session::setFlash('error', 'Asrama ini sudah memiliki wali aktif. Hapus wali lama terlebih dahulu.');
         } else {
             $db->query("INSERT INTO dorm_supervisors (dorm_id, user_id, assigned_date, status, created_by) VALUES (?, ?, ?, 'ACTIVE', ?)", [
                 $_POST['dorm_id'], $_POST['user_id'], date('Y-m-d'), $adminId
@@ -73,6 +73,13 @@ class BoardingSupervisorController {
             Session::setFlash('success', 'Wali Asrama berhasil ditugaskan.');
         }
 
+        header('Location: /asrama/supervisors');
+    }
+
+    public function update() {
+        $db = Database::getInstance();
+        $db->query("UPDATE dorm_supervisors SET user_id=? WHERE id=?", [$_POST['user_id'], $_POST['id']]);
+        Session::setFlash('success', 'Wali Asrama diperbarui.');
         header('Location: /asrama/supervisors');
     }
 

@@ -302,19 +302,53 @@ class StudentAffairsController {
                 LIMIT $limit OFFSET $offset";
         
         $logs = $db->query($sql, $params)->fetchAll();
-        $classrooms = $db->query("SELECT * FROM classrooms ORDER BY name ASC")->fetchAll();
+        [$swc, $spc] = ScopeFilter::apply('c');
+        $classrooms = $db->query("SELECT * FROM classrooms c WHERE 1=1 $swc ORDER BY name ASC", $spc)->fetchAll();
 
         View::render('student_affairs/attendance', [
-            'title' => 'Riwayat Absensi Siswa',
-            'logs' => $logs,
-            'classrooms' => $classrooms,
-            'totalData' => $totalData,
-            'totalPages' => $totalPages,
+            'title'       => 'Riwayat Absensi Siswa',
+            'logs'        => $logs,
+            'classrooms'  => $classrooms,
+            'totalData'   => $totalData,
+            'totalPages'  => $totalPages,
             'currentPage' => $page,
-            'limit' => $limit,
-            'search' => $search,
-            'dateFilter' => $dateFilter,
-            'classFilter' => $classFilter
+            'limit'       => $limit,
+            'search'      => $search,
+            'dateFilter'  => $dateFilter,
+            'classFilter' => $classFilter,
+            'scope'       => ScopeFilter::get(),
+        ]);
+    }
+
+    public function printAttendance() {
+        $db = Database::getInstance();
+        $scope       = ScopeFilter::get();
+        $dateFrom    = $_GET['date_from'] ?? date('Y-m-01');
+        $dateTo      = $_GET['date_to']   ?? date('Y-m-d');
+        $classFilter = $_GET['class_id']  ?? '';
+
+        $where  = "WHERE a.date BETWEEN ? AND ?";
+        $params = [$dateFrom, $dateTo];
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $where .= $sw; $params = array_merge($params, $sp);
+        if ($classFilter) { $where .= " AND a.classroom_id = ?"; $params[] = $classFilter; }
+
+        $logs = $db->query(
+            "SELECT a.date, a.status, s.full_name, s.nis, c.name as class_name
+             FROM attendances a
+             JOIN students s ON a.student_id = s.id
+             LEFT JOIN classrooms c ON a.classroom_id = c.id
+             $where ORDER BY c.name, a.date, s.full_name",
+            $params
+        )->fetchAll();
+
+        $classroom = $classFilter ? $db->query("SELECT name FROM classrooms WHERE id=?", [$classFilter])->fetch() : null;
+
+        View::render('student_affairs/print_attendance', [
+            'logs'      => $logs,
+            'classroom' => $classroom,
+            'dateFrom'  => $dateFrom,
+            'dateTo'    => $dateTo,
         ]);
     }
 

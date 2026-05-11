@@ -49,7 +49,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <?php foreach ($schedules as $s): ?>
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-all overflow-hidden group">
-            <div class="p-5 bg-gradient-to-r from-blue-600 to-blue-500 text-white">
+            <div class="p-5 text-white" style="background:linear-gradient(to right, var(--sc-g1,#1d4ed8), var(--sc-g2,#2563eb))">
                 <div class="flex justify-between items-start">
                     <div>
                         <h4 class="font-extrabold text-lg leading-tight mb-1"><?= $s['subject_name'] ?></h4>

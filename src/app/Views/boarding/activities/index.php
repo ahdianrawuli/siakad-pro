@@ -20,10 +20,16 @@
                 </button>
             </div>
         </div>
-        <button onclick="document.getElementById('addModal').classList.remove('hidden')"
-            class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-2 w-fit">
-            <i class="fa-solid fa-plus"></i> Tambah Kegiatan
-        </button>
+        <div class="flex gap-2">
+            <a href="/asrama/activities/print?day=<?= urlencode($selectedDay) ?>" target="_blank"
+                class="px-4 py-2.5 bg-slate-600 text-white rounded-xl text-sm font-semibold hover:bg-slate-700 transition flex items-center gap-2 w-fit">
+                <i class="fa-solid fa-print"></i> Cetak
+            </a>
+            <button onclick="document.getElementById('addModal').classList.remove('hidden')"
+                class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-2 w-fit">
+                <i class="fa-solid fa-plus"></i> Tambah Kegiatan
+            </button>
+        </div>
     </div>
 
     <?php \App\Core\Session::flash(); ?>

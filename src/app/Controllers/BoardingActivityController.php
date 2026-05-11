@@ -38,6 +38,16 @@ class BoardingActivityController {
         ]);
     }
 
+    public function print() {
+        $db  = Database::getInstance();
+        $day = $_GET['day'] ?? '';
+        $where  = "WHERE 1=1";
+        $params = [];
+        if ($day) { $where .= " AND day = ?"; $params[] = $day; }
+        $activities = $db->query("SELECT * FROM boarding_activities $where ORDER BY FIELD(day,'SENIN','SELASA','RABU','KAMIS','JUMAT','SABTU','AHAD'), start_time", $params)->fetchAll();
+        View::render('boarding/activities/print', ['activities' => $activities, 'day' => $day]);
+    }
+
     public function store() {
         $db = Database::getInstance();
         

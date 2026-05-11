@@ -98,11 +98,17 @@
                                 </span>
                             </td>
                             <td class="px-5 py-4 text-center">
-                                <a href="/asrama/supervisors/delete?id=<?= $s['id'] ?>"
-                                    onclick="return confirm('Hapus penugasan wali ini?')"
-                                    class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white inline-flex items-center justify-center transition-colors shadow-sm" title="Hapus">
-                                    <i class="fa-solid fa-trash-can text-sm"></i>
-                                </a>
+                                <div class="flex items-center justify-center gap-1.5">
+                                    <button onclick='openEditSupervisor(<?= json_encode(["id"=>$s["id"],"dorm_name"=>$s["dorm_name"],"user_id"=>$s["user_id"]]) ?>)'
+                                        class="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white inline-flex items-center justify-center transition-colors shadow-sm" title="Edit">
+                                        <i class="fa-solid fa-pen-to-square text-sm"></i>
+                                    </button>
+                                    <a href="/asrama/supervisors/delete?id=<?= $s['id'] ?>"
+                                        onclick="return confirm('Hapus penugasan wali ini?')"
+                                        class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white inline-flex items-center justify-center transition-colors shadow-sm" title="Hapus">
+                                        <i class="fa-solid fa-trash-can text-sm"></i>
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -226,10 +232,56 @@
         return uri.match(re) ? uri.replace(re, '$1' + key + "=" + value + '$2') : uri + sep + key + "=" + value;
     }
     window.onclick = function(e) {
-        ['addModal','infoModal'].forEach(function(id) {
+        ['addModal','infoModal','editModal'].forEach(function(id) {
             if (e.target == document.getElementById(id)) document.getElementById(id).classList.add('hidden');
         });
     }
+    function openEditSupervisor(s) {
+        document.getElementById('edit_id').value      = s.id;
+        document.getElementById('edit_dorm').textContent = s.dorm_name;
+        document.getElementById('edit_user_id').value = s.user_id;
+        document.getElementById('editModal').classList.remove('hidden');
+        setTimeout(function(){ $('#edit_user_select').trigger('change'); }, 100);
+    }
+</script>
+
+<!-- Modal Edit -->
+<div id="editModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+            <h3 class="font-bold text-slate-700"><i class="fa-solid fa-pen-to-square text-slate-400 mr-2"></i>Edit Wali Asrama</h3>
+            <button onclick="document.getElementById('editModal').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-slate-200 text-slate-500 hover:bg-slate-300 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form action="/asrama/supervisors/update" method="POST" class="p-6 space-y-4">
+            <?= \App\Core\Csrf::input() ?>
+            <input type="hidden" name="id" id="edit_id">
+            <div>
+                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Asrama</label>
+                <div id="edit_dorm" class="px-3 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-sm text-slate-700 font-semibold"></div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Ganti Guru / Staff</label>
+                <select name="user_id" id="edit_user_select" class="select2-edit w-full" required>
+                    <option value="">-- Cari Nama --</option>
+                    <?php foreach ($users as $u): ?>
+                        <option value="<?= $u['id'] ?>"><?= htmlspecialchars($u['name']) ?> (<?= strtoupper($u['slug']) ?>)</option>
+                    <?php endforeach; ?>
+                </select>
+                <input type="hidden" name="user_id" id="edit_user_id">
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('editModal').classList.add('hidden')" class="flex-1 bg-slate-100 text-slate-600 py-2.5 rounded-xl font-bold text-sm">Batal</button>
+                <button type="submit" class="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-bold hover:bg-blue-700 transition text-sm">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+$(document).ready(function(){
+    $('.select2-edit').select2({ placeholder:'-- Cari Nama --', allowClear:true, dropdownParent:$('#editModal') });
+    $('#edit_user_select').on('change', function(){ document.getElementById('edit_user_id').value = this.value; });
+});
 </script>
 
 <?php require __DIR__ . '/../../layouts/footer.php'; ?>
