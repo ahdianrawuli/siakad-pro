@@ -26,10 +26,10 @@
             </div>
         </div>
         <?php if ($selectedEkskul && !empty($members)): ?>
-        <button onclick="window.print()"
+        <a href="/extracurricular/report/print?id=<?= $selectedEkskul ?>&month=<?= $month ?>" target="_blank"
             class="px-4 py-2.5 bg-slate-700 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 transition-all flex items-center gap-2 w-fit">
             <i class="fa-solid fa-print"></i> Cetak Rapor
-        </button>
+        </a>
         <?php endif; ?>
     </div>
 

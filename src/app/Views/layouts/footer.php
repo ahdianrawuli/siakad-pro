@@ -77,10 +77,10 @@ $doAnim     = $prevScope && $prevScope !== $scope;
         [class*="from-green-"][class*="via-emerald-"]{background-image:linear-gradient(to right,${c.g1},${c.g2},${c.g3})!important}
     `;
     function applyHeaderCards() {
-        // Cari card header: div di dalam main yang punya class bg-white, rounded-2xl, dan p-6
         var cards = document.querySelectorAll('main > div.bg-white.rounded-2xl');
-        cards.forEach(function(el) {
-            // Bedakan header card (p-6) vs filter card (p-5)
+        // Hanya card PERTAMA yang merupakan header halaman
+        if (cards.length > 0) {
+            var el = cards[0];
             if (el.classList.contains('p-6') || el.classList.contains('md:p-8')) {
                 el.style.setProperty('background', 'linear-gradient(135deg,'+c.g1+','+c.g2+','+c.g3+')', 'important');
                 el.style.setProperty('border-color', 'transparent', 'important');
@@ -88,7 +88,7 @@ $doAnim     = $prevScope && $prevScope !== $scope;
                 el.querySelectorAll('p').forEach(function(t){ t.style.setProperty('color','rgba(255,255,255,0.8)','important'); });
                 el.querySelectorAll('strong').forEach(function(t){ t.style.setProperty('color','#fff','important'); });
             }
-        });
+        }
     }
     function inject() {
         var old = document.getElementById('sc-override');

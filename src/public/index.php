@@ -477,6 +477,7 @@ $router->get('/report/boarding/print',      [BoardingReportController::class, 'p
 // ============================================================================
 $router->get('/extracurricular',                [ExtracurricularController::class, 'index']);
 $router->get('/extracurricular/report',         [ExtracurricularController::class, 'report']);
+$router->get('/extracurricular/report/print',   [ExtracurricularController::class, 'printReport']);
 $router->get('/extracurricular/master',         [ExtracurricularController::class, 'index']);
 $router->post('/extracurricular/store',         [ExtracurricularController::class, 'store']);
 $router->post('/extracurricular/schedule/store', [ExtracurricularController::class, 'storeSchedule']);

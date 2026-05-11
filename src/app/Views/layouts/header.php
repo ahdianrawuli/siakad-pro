@@ -114,6 +114,9 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+        /* Cegah layout shift saat Select2 dropdown terbuka */
+        body { overflow-x: hidden; }
+        .select2-container--open { z-index: 9999 !important; }
         
         /* Fix untuk Main Content di Mobile agar tidak tertutup Header */
         @media (max-width: 768px) {

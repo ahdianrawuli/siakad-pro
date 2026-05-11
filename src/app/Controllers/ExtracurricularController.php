@@ -207,6 +207,50 @@ class ExtracurricularController {
         ]);
     }
 
+    public function printReport() {
+        $db = Database::getInstance();
+        $scope = ScopeFilter::get();
+        $selectedEkskul = $_GET['id'] ?? '';
+        $month = $_GET['month'] ?? date('Y-m');
+
+        if (!$selectedEkskul) { header('Location: /extracurricular/report'); exit; }
+
+        $ekskul = $db->query("SELECT * FROM extracurriculars WHERE id = ?", [$selectedEkskul])->fetch();
+        $activeYear = $db->query("SELECT * FROM academic_years WHERE is_active = 1")->fetch();
+        $yearId = $activeYear['id'] ?? null;
+
+        $scopeJoin = $scope !== 'GLOBAL' ? " AND c.major = '$scope'" : "";
+        $members = $db->query("
+            SELECT s.id as student_id, s.full_name, s.nis, c.name as class_name
+            FROM student_extracurriculars se
+            JOIN students s ON se.student_id = s.id
+            LEFT JOIN classrooms c ON s.classroom_id = c.id
+            WHERE se.extracurricular_id = ? AND se.academic_year_id = ? $scopeJoin
+            ORDER BY s.full_name
+        ", [$selectedEkskul, $yearId])->fetchAll();
+
+        $summary = [];
+        foreach ($members as $m) {
+            $counts = $db->query("
+                SELECT status, COUNT(*) as total FROM extracurricular_attendances
+                WHERE extracurricular_id = ? AND student_id = ? AND DATE_FORMAT(date,'%Y-%m') = ?
+                GROUP BY status
+            ", [$selectedEkskul, $m['student_id'], $month])->fetchAll();
+            $row = ['HADIR' => 0, 'IZIN' => 0, 'SAKIT' => 0, 'ALPA' => 0];
+            foreach ($counts as $c) { $row[$c['status']] = $c['total']; }
+            $row['total'] = array_sum($row);
+            $summary[$m['student_id']] = $row;
+        }
+
+        View::render('extracurricular/print_report', [
+            'ekskul'  => $ekskul,
+            'members' => $members,
+            'summary' => $summary,
+            'month'   => $month,
+            'year'    => $activeYear,
+        ]);
+    }
+
     public function addMember() {
         $db = Database::getInstance();
         
@@ -283,7 +327,7 @@ class ExtracurricularController {
         $ekskulId = $_POST['extracurricular_id'];
         $date = $_POST['date'];
         $statuses = $_POST['status'] ?? []; 
-        $userId = $_SESSION['user']['id'];
+        $userId = Session::get('user_id');
 
         try {
             $db->getConnection()->beginTransaction();

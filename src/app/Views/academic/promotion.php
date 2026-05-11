@@ -1,15 +1,6 @@
 <?php require __DIR__ . '/../layouts/header.php'; ?>
 <?php require __DIR__ . '/../layouts/sidebar.php'; ?>
 
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<style>
-    .select2-container--default .select2-selection--single { border-color: #e2e8f0; height: 42px; padding-top: 6px; border-radius: 0.75rem; background-color: #f8fafc; }
-    .select2-container--default .select2-selection--single .select2-selection__arrow { height: 40px; }
-    .select2-container { width: 100% !important; }
-    .select2-dropdown { border-color: #e2e8f0; border-radius: 0.75rem; overflow: hidden; }
-    .select2-search--dropdown .select2-search__field { border-radius: 0.5rem; border-color: #e2e8f0; padding: 6px 10px; }
-</style>
-
 <main class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
 
     <!-- Header -->
@@ -38,7 +29,8 @@
         </h4>
         <form method="GET" action="/academic/promotion" class="flex flex-col sm:flex-row gap-3">
             <div class="flex-1">
-                <select name="source_id" class="select2-class w-full" required>
+                <select name="source_id" onchange="this.form.submit()"
+                    class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none" required>
                     <option value="">-- Pilih Kelas --</option>
                     <?php foreach ($classrooms as $c): ?>
                         <option value="<?= $c['id'] ?>" <?= (isset($sourceId) && $sourceId == $c['id']) ? 'selected' : '' ?>>
@@ -47,9 +39,6 @@
                     <?php endforeach; ?>
                 </select>
             </div>
-            <button type="submit" class="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all text-sm whitespace-nowrap">
-                <i class="fa-solid fa-users-viewfinder mr-2"></i> Tampilkan Siswa
-            </button>
         </form>
     </div>
 
@@ -73,7 +62,7 @@
                 </div>
                 <div id="targetClassBox">
                     <label class="block text-sm font-semibold text-slate-600 mb-1.5">Kelas Tujuan</label>
-                    <select name="target_class" class="select2-target w-full">
+                    <select name="target_class" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
                         <option value="">-- Pilih Kelas Tujuan --</option>
                         <?php foreach ($allClassrooms as $c): ?>
                             <?php if ($c['id'] != $sourceId): ?>
@@ -201,12 +190,7 @@
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-    $(document).ready(function() {
-        $('.select2-class').select2({ placeholder: '-- Pilih Kelas --', allowClear: true });
-        $('.select2-target').select2({ placeholder: '-- Pilih Kelas Tujuan --', allowClear: true });
-    });
 
     // Select All
     const selectAll = document.getElementById('selectAll');
