@@ -77,6 +77,19 @@
         </div>
         <?php endforeach; ?>
     </div>
+
+    <?php if (($totalPages ?? 1) > 1): ?>
+    <div class="mt-6 flex justify-center items-center gap-1.5">
+        <?php if ($currentPage > 1): ?>
+            <a href="?page=<?= $currentPage - 1 ?>" class="w-9 h-9 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:text-blue-600 transition shadow-sm"><i class="fa-solid fa-chevron-left"></i></a>
+        <?php endif; ?>
+        <span class="text-xs font-bold text-slate-600 px-3">Hal <?= $currentPage ?> / <?= $totalPages ?></span>
+        <?php if ($currentPage < $totalPages): ?>
+            <a href="?page=<?= $currentPage + 1 ?>" class="w-9 h-9 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:text-blue-600 transition shadow-sm"><i class="fa-solid fa-chevron-right"></i></a>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
     <?php endif; ?>
 </main>
 

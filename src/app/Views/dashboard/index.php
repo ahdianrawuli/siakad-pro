@@ -26,7 +26,7 @@
             <div class="flex items-center gap-3">
                 <div class="bg-white/15 backdrop-blur-sm border border-white/30 rounded-2xl px-5 py-3 text-center hover:bg-white/25 transition cursor-default">
                     <div class="text-[10px] text-green-100 font-semibold uppercase tracking-wider">Tahun Ajaran</div>
-                    <div class="text-base font-black">2025/2026 Ganjil</div>
+                    <div class="text-base font-black"><?= htmlspecialchars(($activeYear['name'] ?? '-') . ' ' . ($activeYear['semester'] ?? '')) ?></div>
                 </div>
                 <div class="bg-white/15 backdrop-blur-sm border border-white/30 rounded-2xl px-5 py-3 text-center hover:bg-white/25 transition cursor-default">
                     <div class="text-[10px] text-green-100 font-semibold uppercase tracking-wider">Hari Ini</div>
@@ -137,7 +137,7 @@
         <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition">
             <div class="flex items-center justify-between mb-5">
                 <h3 class="font-bold text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-user-plus text-green-500"></i> Status PPDB 2025/2026
+                    <i class="fa-solid fa-user-plus text-green-500"></i> Status PPDB <?= htmlspecialchars($activeYear['name'] ?? '') ?>
                 </h3>
                 <a href="/ppdb/registrations" class="text-xs text-green-600 hover:text-green-700 font-semibold">Kelola →</a>
             </div>

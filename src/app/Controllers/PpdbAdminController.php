@@ -62,6 +62,7 @@ class PpdbAdminController {
             'search'        => $search,
             'selectedStatus'=> $status,
             'selectedTrack' => $trackId,
+            'statusCount'   => $db->query("SELECT registration_status, COUNT(*) as c FROM student_candidates GROUP BY registration_status")->fetchAll(\PDO::FETCH_KEY_PAIR),
             'activeBatch'   => $db->query("SELECT * FROM ppdb_batches WHERE is_active = 1 LIMIT 1")->fetch(),
             'activeYear'    => $db->query("SELECT * FROM academic_years WHERE is_active = 1 LIMIT 1")->fetch(),
         ]);

@@ -87,7 +87,7 @@ function isActive($url) {
         if (strpos($uri, rtrim($aliasUrl, '/') . '/') === 0) return true;
     }
     // URL yang harus exact match (tidak boleh prefix-match ke sub-URL)
-    static $exactOnly = ['/finance', '/students', '/parents', '/counseling', '/achievements', '/homeroom'];
+    static $exactOnly = ['/finance', '/students', '/parents', '/counseling', '/achievements', '/homeroom', '/finance/inventory'];
     if (in_array($url, $exactOnly)) return false;
     if (strpos($uri, rtrim($url, '/') . '/') === 0) return true;
 

@@ -86,9 +86,9 @@
                 </summary>
                 <div class="px-5 pb-4 pt-1 text-xs text-gray-500 space-y-1.5 border-t border-gray-100">
                     <p>👤 Admin &nbsp;&nbsp;: <code class="bg-gray-100 px-1 rounded">admin</code> / <code class="bg-gray-100 px-1 rounded">password</code></p>
-                    <p>🎓 Siswa &nbsp;&nbsp;: <code class="bg-gray-100 px-1 rounded">25260001</code> / <code class="bg-gray-100 px-1 rounded">27092013</code></p>
-                    <p>📖 Guru &nbsp;&nbsp;&nbsp;: <code class="bg-gray-100 px-1 rounded">ahmad.fauzi</code> / <code class="bg-gray-100 px-1 rounded">123456</code></p>
-                    <p>👨‍👩‍👦 Ortu &nbsp;&nbsp;: <code class="bg-gray-100 px-1 rounded">083891834125</code> / <code class="bg-gray-100 px-1 rounded">25260001</code></p>
+                    <p>🎓 Siswa &nbsp;&nbsp;: <code class="bg-gray-100 px-1 rounded">20250001</code> / <code class="bg-gray-100 px-1 rounded">password</code></p>
+                    <p>📖 Guru &nbsp;&nbsp;&nbsp;: <code class="bg-gray-100 px-1 rounded">guru1</code> / <code class="bg-gray-100 px-1 rounded">password</code></p>
+                    <p>👨‍👩‍👦 Ortu &nbsp;&nbsp;: <code class="bg-gray-100 px-1 rounded">081231900342</code> / <code class="bg-gray-100 px-1 rounded">20250001</code></p>
                     <p class="text-gray-400 pt-1">Login orang tua: Username = No HP Ayah, Password = NIS siswa</p>
                 </div>
             </details>

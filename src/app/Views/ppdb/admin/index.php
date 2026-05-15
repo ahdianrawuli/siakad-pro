@@ -33,8 +33,7 @@
 
     <!-- Summary Cards -->
     <?php
-    $statusCount = ['PENDING'=>0,'PAID'=>0,'VERIFIED'=>0,'ACCEPTED'=>0,'REJECTED'=>0];
-    foreach ($candidates as $c) { $s = $c['registration_status'] ?? 'PENDING'; if (isset($statusCount[$s])) $statusCount[$s]++; }
+    $statusCount = array_merge(['PENDING'=>0,'PAID'=>0,'VERIFIED'=>0,'ACCEPTED'=>0,'REJECTED'=>0], $statusCount ?? []);
     $cards = [
         ['PENDING',  'Menunggu',  'bg-slate-100 text-slate-600',  'fa-clock'],
         ['PAID',     'Lunas',     'bg-green-50 text-green-700',   'fa-circle-check'],

@@ -53,6 +53,8 @@ services:
       dockerfile: docker/db/Dockerfile
     command: mysqld --log-warnings=1
     restart: unless-stopped
+    volumes:
+      - ./siakad_db:/var/lib/mysql
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-siakad_db}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret_password_secure_123}

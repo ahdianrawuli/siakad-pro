@@ -44,7 +44,7 @@ client.on('disconnected', () => {
     client.initialize();
 });
 
-client.initialize();
+client.initialize().catch(e => console.error('Init failed:', e.message));
 
 // Middleware: API Key check
 function auth(req, res, next) {

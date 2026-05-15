@@ -157,6 +157,14 @@ class StaffController {
         $id = $_GET['id'];
         $staff = $db->query("SELECT user_id FROM staff_members WHERE id=?", [$id])->fetch();
         if ($staff && $staff['user_id']) {
+            // Cek apakah user masih dipakai di jadwal/data lain
+            $used = $db->query("SELECT COUNT(*) FROM schedules WHERE teacher_id=?", [$staff['user_id']])->fetchColumn();
+            if ($used > 0) {
+                Session::setFlash('error', 'Gagal hapus: Staff masih terdaftar di jadwal pelajaran. Hapus jadwalnya terlebih dahulu.');
+                header('Location: /staff/members');
+                return;
+            }
+            $db->query("DELETE FROM teachers WHERE user_id=?", [$staff['user_id']]);
             $db->query("DELETE FROM users WHERE id=?", [$staff['user_id']]);
         }
         $db->query("DELETE FROM staff_members WHERE id=?", [$id]);

@@ -13,11 +13,11 @@ echo "Jadwal lama dihapus.\n";
 
 $days = ['SENIN','SELASA','RABU','KAMIS','JUMAT','SABTU'];
 
-// Mapel per jenjang
+// Mapel per jenjang (IDs 1-20)
 $subjectMap = [
-    'MTS' => [7,8,9,10,11,13,14,15,16,17,18,19,20], // Diniyah + Umum (tanpa Kimia/Fisika/Bio/Eko/Geo)
-    'MA'  => [7,8,9,10,11,13,14,15,22,23,24,25,26],  // Diniyah + IPA/IPS
-    'PDF' => [7,8,9,10,11,12],                         // Diniyah + Tahfidz
+    'MTS' => [1,2,3,4,5,7,8,9,10,11,12,13,14], // Diniyah + Umum (tanpa Kimia/Fisika/Bio/Eko/Geo)
+    'MA'  => [1,2,3,4,5,7,8,9,16,17,18,19,20],  // Diniyah + IPA/IPS
+    'PDF' => [1,2,3,4,5,6],                       // Diniyah + Tahfidz
 ];
 
 // Slot waktu per hari

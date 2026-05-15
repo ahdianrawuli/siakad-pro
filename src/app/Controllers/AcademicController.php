@@ -304,7 +304,7 @@ class AcademicController {
         
         // Filter & Pagination
         $page = $_GET['page'] ?? 1;
-        $limit = $_GET['limit'] ?? 10;
+        $limit = 12;
         $offset = ($page - 1) * $limit;
         $search = $_GET['search'] ?? '';
 
@@ -552,29 +552,41 @@ class AcademicController {
         $userId = Session::get('user_id');
         $role   = Session::get('user_role');
         $yearId = $db->query("SELECT id FROM academic_years WHERE is_active = 1")->fetch()['id'] ?? 0;
+        $page   = max(1, (int)($_GET['page'] ?? 1));
+        $limit  = 12;
+        $offset = ($page - 1) * $limit;
 
         [$sw, $sp] = ScopeFilter::apply('c');
         $scopeWhere = $sw ? "AND 1=1 $sw" : "";
 
-        $sql = "
-            SELECT sch.*, s.name as subject_name, c.name as class_name,
-                   (SELECT COUNT(*) FROM teaching_journals tj WHERE tj.schedule_id = sch.id) as total_entries
-            FROM schedules sch
-            JOIN subjects s ON sch.subject_id = s.id
-            JOIN classrooms c ON sch.classroom_id = c.id
-            WHERE sch.academic_year_id = ? $scopeWhere
-        ";
-
+        $where = "WHERE sch.academic_year_id = ? $scopeWhere";
         $baseParams = [$yearId, ...$sp];
 
         if ($role == 'guru') {
-            $sql .= " AND sch.teacher_id = ?";
-            $schedules = $db->query($sql, [...$baseParams, $userId])->fetchAll();
-        } else {
-            $schedules = $db->query($sql, $baseParams)->fetchAll();
+            $where .= " AND sch.teacher_id = ?";
+            $baseParams[] = $userId;
         }
 
-        View::render('academic/journal_index', ['title' => 'Jurnal Mengajar', 'schedules' => $schedules]);
+        $totalData  = $db->query("SELECT COUNT(*) FROM schedules sch JOIN classrooms c ON sch.classroom_id = c.id $where", $baseParams)->fetchColumn();
+        $totalPages = max(1, ceil($totalData / $limit));
+
+        $sql = "SELECT sch.*, s.name as subject_name, c.name as class_name,
+                   (SELECT COUNT(*) FROM teaching_journals tj WHERE tj.schedule_id = sch.id) as total_entries
+                FROM schedules sch
+                JOIN subjects s ON sch.subject_id = s.id
+                JOIN classrooms c ON sch.classroom_id = c.id
+                $where ORDER BY c.name, s.name LIMIT $limit OFFSET $offset";
+
+        $schedules = $db->query($sql, $baseParams)->fetchAll();
+
+        View::render('academic/journal_index', [
+            'title'       => 'Jurnal Mengajar',
+            'schedules'   => $schedules,
+            'totalData'   => $totalData,
+            'totalPages'  => $totalPages,
+            'currentPage' => $page,
+            'limit'       => $limit,
+        ]);
     }
 
     public function journalHistory() {

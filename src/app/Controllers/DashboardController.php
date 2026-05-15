@@ -96,6 +96,7 @@ class DashboardController {
         View::render('dashboard/index', [
             'title'          => 'Dashboard',
             'user'           => Session::get('user_name'),
+            'activeYear'     => $db->query("SELECT * FROM academic_years WHERE is_active=1 LIMIT 1")->fetch(),
             'totalStudents'  => $totalStudents,
             'totalStaff'     => $totalStaff,
             'totalTeachers'  => $totalTeachers,
