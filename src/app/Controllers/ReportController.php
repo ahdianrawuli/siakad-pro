@@ -107,7 +107,6 @@ class ReportController {
         $where .= $sw; $params = array_merge($params, $sp);
         if (!empty($search))      { $where .= " AND (s.full_name LIKE ? OR s.nis LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
         if (!empty($classroomId)) { $where .= " AND s.classroom_id = ?"; $params[] = $classroomId; }
-        if (!empty($yearId))      { $where .= " AND EXISTS (SELECT 1 FROM student_grades sg JOIN schedules sch ON sg.schedule_id = sch.id WHERE sg.student_id = s.id AND sch.academic_year_id = ?)"; $params[] = $yearId; }
 
         $totalData  = $db->query("SELECT COUNT(*) FROM students s LEFT JOIN classrooms c ON s.classroom_id = c.id $where", $params)->fetchColumn();
         $totalPages = ceil($totalData / $limit);

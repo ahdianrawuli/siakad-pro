@@ -58,7 +58,9 @@ class DisciplineController {
         $limit = $_GET['limit'] ?? 10;
         $offset = ($page - 1) * $limit;
         $search = $_GET['search'] ?? '';
-        $dateFilter = $_GET['date'] ?? '';
+        $dateFrom = $_GET['date_from'] ?? date('Y-m-01');
+        $dateTo   = $_GET['date_to'] ?? date('Y-m-d');
+        $classFilter = $_GET['class_id'] ?? '';
 
         $where = "WHERE 1=1";
         $params = [];
@@ -68,10 +70,9 @@ class DisciplineController {
             $params[] = "%$search%";
             $params[] = "%$search%";
         }
-        if (!empty($dateFilter)) {
-            $where .= " AND sv.date = ?";
-            $params[] = $dateFilter;
-        }
+        if (!empty($dateFrom)) { $where .= " AND sv.date >= ?"; $params[] = $dateFrom; }
+        if (!empty($dateTo))   { $where .= " AND sv.date <= ?"; $params[] = $dateTo; }
+        if (!empty($classFilter)) { $where .= " AND s.classroom_id = ?"; $params[] = $classFilter; }
         [$sw, $sp] = ScopeFilter::apply('c');
         $where .= $sw; $params = array_merge($params, $sp);
 
@@ -105,13 +106,39 @@ class DisciplineController {
             'violations' => $violations,
             'types' => $types,
             'students' => $students,
+            'classrooms' => $db->query("SELECT c.* FROM classrooms c WHERE 1=1 $sw2 ORDER BY c.name", $sp2)->fetchAll(),
             'totalData' => $totalData,
             'totalPages' => $totalPages,
             'currentPage' => $page,
             'limit' => $limit,
             'search' => $search,
-            'dateFilter' => $dateFilter
+            'dateFrom' => $dateFrom, 'dateTo' => $dateTo, 'classFilter' => $classFilter,
         ]);
+    }
+
+    public function printViolations() {
+        $db = Database::getInstance();
+        $classFilter = $_GET['class_id'] ?? '';
+        $dateFrom = $_GET['date_from'] ?? date('Y-m-01');
+        $dateTo   = $_GET['date_to'] ?? date('Y-m-d');
+
+        $where = "WHERE 1=1";
+        $params = [];
+        if (!empty($dateFrom)) { $where .= " AND sv.date >= ?"; $params[] = $dateFrom; }
+        if (!empty($dateTo))   { $where .= " AND sv.date <= ?"; $params[] = $dateTo; }
+        if (!empty($classFilter)) { $where .= " AND s.classroom_id = ?"; $params[] = $classFilter; }
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $where .= $sw; $params = array_merge($params, $sp);
+
+        $violations = $db->query("SELECT sv.*, s.full_name, s.nis, c.name as class_name, vt.name as violation_name, vt.points, vt.category
+            FROM student_violations sv JOIN students s ON sv.student_id=s.id
+            LEFT JOIN classrooms c ON s.classroom_id=c.id
+            JOIN violation_types vt ON sv.violation_type_id=vt.id
+            $where ORDER BY sv.date DESC, s.full_name", $params)->fetchAll();
+
+        $classroom = $classFilter ? $db->query("SELECT name FROM classrooms WHERE id=?", [$classFilter])->fetch() : null;
+
+        View::render('discipline/print', ['violations'=>$violations,'classroom'=>$classroom,'dateFrom'=>$dateFrom,'dateTo'=>$dateTo]);
     }
 
     public function storeViolation() {
@@ -157,15 +184,16 @@ class DisciplineController {
         $limit = $_GET['limit'] ?? 10;
         $offset = ($page - 1) * $limit;
         $search = $_GET['search'] ?? '';
+        $classFilter = $_GET['class_id'] ?? '';
+        $dateFrom = !empty($_GET['date_from']) ? $_GET['date_from'] : date('Y-01-01');
+        $dateTo   = !empty($_GET['date_to']) ? $_GET['date_to'] : date('Y-m-d');
 
         $where = "WHERE 1=1";
         $params = [];
 
-        if (!empty($search)) {
-            $where .= " AND (s.full_name LIKE ? OR sa.title LIKE ?)";
-            $params[] = "%$search%";
-            $params[] = "%$search%";
-        }
+        if (!empty($search)) { $where .= " AND (s.full_name LIKE ? OR sa.title LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
+        if (!empty($classFilter)) { $where .= " AND s.classroom_id = ?"; $params[] = $classFilter; }
+        $where .= " AND sa.date BETWEEN ? AND ?"; $params[] = $dateFrom; $params[] = $dateTo;
         [$sw, $sp] = ScopeFilter::apply('c');
         $where .= $sw; $params = array_merge($params, $sp);
 
@@ -180,27 +208,50 @@ class DisciplineController {
                 FROM student_achievements sa
                 JOIN students s ON sa.student_id = s.id
                 LEFT JOIN classrooms c ON s.classroom_id = c.id
-                $where
-                ORDER BY sa.date DESC 
-                LIMIT $limit OFFSET $offset";
+                $where ORDER BY sa.date DESC LIMIT $limit OFFSET $offset";
 
         $achievements = $db->query($sql, $params)->fetchAll();
         [$sw2, $sp2] = ScopeFilter::apply('c');
         $students = $db->query(
-            "SELECT s.id, s.full_name, s.nis FROM students s LEFT JOIN classrooms c ON s.classroom_id = c.id WHERE s.status='ACTIVE' $sw2 ORDER BY s.full_name ASC",
-            $sp2
+            "SELECT s.id, s.full_name, s.nis FROM students s LEFT JOIN classrooms c ON s.classroom_id = c.id WHERE s.status='ACTIVE' $sw2 ORDER BY s.full_name ASC", $sp2
         )->fetchAll();
+        $classrooms = $db->query("SELECT c.* FROM classrooms c WHERE 1=1 $sw2 ORDER BY c.name", $sp2)->fetchAll();
 
         View::render('discipline/achievements', [
             'title' => 'Prestasi Siswa',
             'achievements' => $achievements,
             'students' => $students,
+            'classrooms' => $classrooms,
             'totalData' => $totalData,
             'totalPages' => $totalPages,
             'currentPage' => $page,
             'limit' => $limit,
-            'search' => $search
+            'search' => $search,
+            'classFilter' => $classFilter,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
         ]);
+    }
+
+    public function printAchievements() {
+        $db = Database::getInstance();
+        $classFilter = $_GET['class_id'] ?? '';
+        $dateFrom = !empty($_GET['date_from']) ? $_GET['date_from'] : date('Y-01-01');
+        $dateTo   = !empty($_GET['date_to']) ? $_GET['date_to'] : date('Y-m-d');
+
+        $where = "WHERE sa.date BETWEEN ? AND ?";
+        $params = [$dateFrom, $dateTo];
+        if (!empty($classFilter)) { $where .= " AND s.classroom_id = ?"; $params[] = $classFilter; }
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $where .= $sw; $params = array_merge($params, $sp);
+
+        $achievements = $db->query("SELECT sa.*, s.full_name, s.nis, c.name as class_name
+            FROM student_achievements sa JOIN students s ON sa.student_id=s.id
+            LEFT JOIN classrooms c ON s.classroom_id=c.id
+            $where ORDER BY sa.date DESC", $params)->fetchAll();
+
+        $classroom = $classFilter ? $db->query("SELECT name FROM classrooms WHERE id=?", [$classFilter])->fetch() : null;
+        View::render('discipline/print_achievements', ['achievements'=>$achievements,'classroom'=>$classroom,'dateFrom'=>$dateFrom,'dateTo'=>$dateTo]);
     }
 
     public function storeAchievement() {
@@ -246,60 +297,74 @@ class DisciplineController {
     // ==========================================================
     public function counseling() {
         $db = Database::getInstance();
-        
-        // Parameter Filter
         $page = $_GET['page'] ?? 1;
         $limit = $_GET['limit'] ?? 10;
         $offset = ($page - 1) * $limit;
         $search = $_GET['search'] ?? '';
-        $dateFilter = $_GET['date'] ?? '';
+        $classFilter = $_GET['class_id'] ?? '';
+        $dateFrom = !empty($_GET['date_from']) ? $_GET['date_from'] : date('Y-m-01');
+        $dateTo   = !empty($_GET['date_to']) ? $_GET['date_to'] : date('Y-m-d');
 
         $where = "WHERE 1=1";
         $params = [];
 
-        if (!empty($search)) {
-            $where .= " AND (s.full_name LIKE ? OR cl.issue LIKE ?)";
-            $params[] = "%$search%";
-            $params[] = "%$search%";
-        }
-        if (!empty($dateFilter)) {
-            $where .= " AND cl.date = ?";
-            $params[] = $dateFilter;
-        }
+        if (!empty($search)) { $where .= " AND (s.full_name LIKE ? OR cl.issue LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; }
+        if (!empty($classFilter)) { $where .= " AND s.classroom_id = ?"; $params[] = $classFilter; }
+        $where .= " AND cl.date BETWEEN ? AND ?"; $params[] = $dateFrom; $params[] = $dateTo;
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $where .= $sw; $params = array_merge($params, $sp);
 
-        // Hitung Total
-        $countSql = "SELECT COUNT(*) as total FROM counseling_logs cl JOIN students s ON cl.student_id = s.id $where";
+        $countSql = "SELECT COUNT(*) as total FROM counseling_logs cl JOIN students s ON cl.student_id = s.id LEFT JOIN classrooms c ON s.classroom_id = c.id $where";
         $totalData = $db->query($countSql, $params)->fetch()['total'];
         $totalPages = ceil($totalData / $limit);
 
-        // Fetch Data
         $sql = "SELECT cl.*, s.full_name, s.nis, c.name as class_name, u.name as counselor_name
-                FROM counseling_logs cl
-                JOIN students s ON cl.student_id = s.id
+                FROM counseling_logs cl JOIN students s ON cl.student_id = s.id
                 LEFT JOIN classrooms c ON s.classroom_id = c.id
                 JOIN users u ON cl.counselor_id = u.id
-                $where
-                ORDER BY cl.date DESC 
-                LIMIT $limit OFFSET $offset";
+                $where ORDER BY cl.date DESC LIMIT $limit OFFSET $offset";
 
         $logs = $db->query($sql, $params)->fetchAll();
         [$sw2, $sp2] = ScopeFilter::apply('c');
-        $students = $db->query(
-            "SELECT s.id, s.full_name, s.nis FROM students s LEFT JOIN classrooms c ON s.classroom_id = c.id WHERE s.status='ACTIVE' $sw2 ORDER BY s.full_name ASC",
-            $sp2
-        )->fetchAll();
+        $students = $db->query("SELECT s.id, s.full_name, s.nis FROM students s LEFT JOIN classrooms c ON s.classroom_id = c.id WHERE s.status='ACTIVE' $sw2 ORDER BY s.full_name ASC", $sp2)->fetchAll();
+        $classrooms = $db->query("SELECT c.* FROM classrooms c WHERE 1=1 $sw2 ORDER BY c.name", $sp2)->fetchAll();
 
         View::render('discipline/counseling', [
-            'title' => 'Bimbingan Konseling', 
-            'logs' => $logs, 
+            'title' => 'Bimbingan Konseling',
+            'logs' => $logs,
             'students' => $students,
+            'classrooms' => $classrooms,
             'totalData' => $totalData,
             'totalPages' => $totalPages,
             'currentPage' => $page,
             'limit' => $limit,
             'search' => $search,
-            'dateFilter' => $dateFilter
+            'classFilter' => $classFilter,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
         ]);
+    }
+
+    public function printCounseling() {
+        $db = Database::getInstance();
+        $classFilter = $_GET['class_id'] ?? '';
+        $dateFrom = !empty($_GET['date_from']) ? $_GET['date_from'] : date('Y-m-01');
+        $dateTo   = !empty($_GET['date_to']) ? $_GET['date_to'] : date('Y-m-d');
+
+        $where = "WHERE cl.date BETWEEN ? AND ?";
+        $params = [$dateFrom, $dateTo];
+        if (!empty($classFilter)) { $where .= " AND s.classroom_id = ?"; $params[] = $classFilter; }
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $where .= $sw; $params = array_merge($params, $sp);
+
+        $logs = $db->query("SELECT cl.*, s.full_name, s.nis, c.name as class_name, u.name as counselor_name
+            FROM counseling_logs cl JOIN students s ON cl.student_id=s.id
+            LEFT JOIN classrooms c ON s.classroom_id=c.id
+            JOIN users u ON cl.counselor_id=u.id
+            $where ORDER BY cl.date DESC", $params)->fetchAll();
+
+        $classroom = $classFilter ? $db->query("SELECT name FROM classrooms WHERE id=?", [$classFilter])->fetch() : null;
+        View::render('discipline/print_counseling', ['logs'=>$logs,'classroom'=>$classroom,'dateFrom'=>$dateFrom,'dateTo'=>$dateTo]);
     }
 
     public function storeCounseling() {

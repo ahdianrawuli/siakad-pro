@@ -258,7 +258,8 @@ class StudentAffairsController {
         $limit = $_GET['limit'] ?? 10;
         $offset = ($page - 1) * $limit;
         $search = $_GET['search'] ?? '';
-        $dateFilter = $_GET['date'] ?? '';
+        $dateFrom = !empty($_GET['date_from']) ? $_GET['date_from'] : date('Y-m-01');
+        $dateTo   = !empty($_GET['date_to']) ? $_GET['date_to'] : date('Y-m-d');
         $classFilter = $_GET['class_id'] ?? '';
 
         // Base Query
@@ -274,9 +275,13 @@ class StudentAffairsController {
             $params[] = "%$search%";
             $params[] = "%$search%";
         }
-        if (!empty($dateFilter)) {
-            $where .= " AND a.date = ?";
-            $params[] = $dateFilter;
+        if (!empty($dateFrom)) {
+            $where .= " AND a.date >= ?";
+            $params[] = $dateFrom;
+        }
+        if (!empty($dateTo)) {
+            $where .= " AND a.date <= ?";
+            $params[] = $dateTo;
         }
         if (!empty($classFilter)) {
             $where .= " AND a.classroom_id = ?";
@@ -314,7 +319,8 @@ class StudentAffairsController {
             'currentPage' => $page,
             'limit'       => $limit,
             'search'      => $search,
-            'dateFilter'  => $dateFilter,
+            'dateFrom'    => $dateFrom,
+            'dateTo'      => $dateTo,
             'classFilter' => $classFilter,
             'scope'       => ScopeFilter::get(),
         ]);
@@ -387,8 +393,9 @@ class StudentAffairsController {
     public function storeAttendance() {
         $classId = $_POST['classroom_id'];
         $date = $_POST['date'];
-        $attendanceData = $_POST['attendance'] ?? []; // Array [student_id => status]
-        $notesData = $_POST['notes'] ?? []; // Array [student_id => notes]
+        $scheduleId = $_POST['schedule_id'] ?? null;
+        $attendanceData = $_POST['attendance'] ?? [];
+        $notesData = $_POST['notes'] ?? [];
 
         if (empty($classId) || empty($date)) {
             Session::setFlash('error', 'Kelas dan Tanggal wajib diisi.');
@@ -400,15 +407,18 @@ class StudentAffairsController {
         try {
             $db->getConnection()->beginTransaction();
 
-            // Hapus data lama di kelas & tanggal tsb (Reset agar tidak duplikat)
-            $db->query("DELETE FROM attendances WHERE classroom_id = ? AND date = ?", [$classId, $date]);
+            if ($scheduleId) {
+                $db->query("DELETE FROM attendances WHERE schedule_id = ? AND date = ?", [$scheduleId, $date]);
+            } else {
+                $db->query("DELETE FROM attendances WHERE classroom_id = ? AND date = ? AND schedule_id IS NULL", [$classId, $date]);
+            }
 
-            $sql = "INSERT INTO attendances (student_id, classroom_id, date, status, notes, recorded_by) VALUES (?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO attendances (student_id, classroom_id, schedule_id, date, status, notes, recorded_by) VALUES (?, ?, ?, ?, ?, ?, ?)";
             $adminId = Session::get('user_id');
 
             foreach ($attendanceData as $studentId => $status) {
                 $note = $notesData[$studentId] ?? null;
-                $db->query($sql, [$studentId, $classId, $date, $status, $note, $adminId]);
+                $db->query($sql, [$studentId, $classId, $scheduleId, $date, $status, $note, $adminId]);
             }
 
             $db->getConnection()->commit();
@@ -422,8 +432,158 @@ class StudentAffairsController {
             Session::setFlash('error', 'Gagal menyimpan data: ' . $e->getMessage());
         }
 
-        // Redirect kembali ke form input (agar bisa lihat hasilnya)
-        header("Location: /attendance/students/create?class_id=$classId&date=$date");
+        // Redirect kembali ke form input
+        if ($scheduleId) {
+            header("Location: /attendance/students/subject?schedule_id=$scheduleId&date=$date");
+        } else {
+            header("Location: /attendance/students/create?class_id=$classId&date=$date");
+        }
+    }
+
+    // 5. REPORT ABSENSI PER MATA PELAJARAN
+    public function subjectAttendanceReport() {
+        $db = Database::getInstance();
+        $scheduleId = $_GET['schedule_id'] ?? '';
+        $dateFrom   = $_GET['date_from'] ?? date('Y-m-01');
+        $dateTo     = $_GET['date_to'] ?? date('Y-m-d');
+
+        $userId = Session::get('user_id');
+        $role   = Session::get('user_role');
+        [$sw, $sp] = ScopeFilter::apply('c');
+
+        $scheduleWhere = "WHERE 1=1 $sw";
+        $scheduleParams = $sp;
+        if ($role == 'guru') { $scheduleWhere .= " AND sch.teacher_id = ?"; $scheduleParams[] = $userId; }
+
+        $schedules = $db->query("
+            SELECT sch.id, s.name as subject_name, c.name as class_name, sch.day
+            FROM schedules sch JOIN subjects s ON sch.subject_id = s.id JOIN classrooms c ON sch.classroom_id = c.id
+            $scheduleWhere ORDER BY c.name, s.name
+        ", $scheduleParams)->fetchAll();
+
+        $report = [];
+        $schedule = null;
+        if ($scheduleId) {
+            $schedule = $db->query("
+                SELECT sch.*, s.name as subject_name, c.name as class_name
+                FROM schedules sch JOIN subjects s ON sch.subject_id = s.id JOIN classrooms c ON sch.classroom_id = c.id
+                WHERE sch.id = ?
+            ", [$scheduleId])->fetch();
+
+            if ($schedule) {
+                $report = $db->query("
+                    SELECT s.id, s.full_name, s.nis,
+                        SUM(CASE WHEN a.status='H' THEN 1 ELSE 0 END) as hadir,
+                        SUM(CASE WHEN a.status='S' THEN 1 ELSE 0 END) as sakit,
+                        SUM(CASE WHEN a.status='I' THEN 1 ELSE 0 END) as izin,
+                        SUM(CASE WHEN a.status='A' THEN 1 ELSE 0 END) as alpa,
+                        COUNT(a.id) as total
+                    FROM students s
+                    LEFT JOIN attendances a ON a.student_id = s.id AND a.schedule_id = ? AND a.date BETWEEN ? AND ?
+                    WHERE s.classroom_id = ? AND s.status = 'ACTIVE'
+                    GROUP BY s.id, s.full_name, s.nis ORDER BY s.full_name
+                ", [$scheduleId, $dateFrom, $dateTo, $schedule['classroom_id']])->fetchAll();
+            }
+        }
+
+        View::render('student_affairs/attendance_subject_report', [
+            'title'      => 'Report Absensi Per Mapel',
+            'schedules'  => $schedules,
+            'schedule'   => $schedule,
+            'report'     => $report,
+            'selectedSchedule' => $scheduleId,
+            'dateFrom'   => $dateFrom,
+            'dateTo'     => $dateTo,
+        ]);
+    }
+
+    public function printSubjectAttendance() {
+        $db = Database::getInstance();
+        $scheduleId = $_GET['schedule_id'] ?? '';
+        $dateFrom   = $_GET['date_from'] ?? date('Y-m-01');
+        $dateTo     = $_GET['date_to'] ?? date('Y-m-d');
+
+        if (!$scheduleId) { header('Location: /attendance/students/subject/report'); exit; }
+
+        $schedule = $db->query("
+            SELECT sch.*, s.name as subject_name, c.name as class_name, u.name as teacher_name
+            FROM schedules sch JOIN subjects s ON sch.subject_id = s.id
+            JOIN classrooms c ON sch.classroom_id = c.id JOIN users u ON sch.teacher_id = u.id
+            WHERE sch.id = ?
+        ", [$scheduleId])->fetch();
+
+        $report = $db->query("
+            SELECT s.full_name, s.nis,
+                SUM(CASE WHEN a.status='H' THEN 1 ELSE 0 END) as hadir,
+                SUM(CASE WHEN a.status='S' THEN 1 ELSE 0 END) as sakit,
+                SUM(CASE WHEN a.status='I' THEN 1 ELSE 0 END) as izin,
+                SUM(CASE WHEN a.status='A' THEN 1 ELSE 0 END) as alpa,
+                COUNT(a.id) as total
+            FROM students s
+            LEFT JOIN attendances a ON a.student_id = s.id AND a.schedule_id = ? AND a.date BETWEEN ? AND ?
+            WHERE s.classroom_id = ? AND s.status = 'ACTIVE'
+            GROUP BY s.id, s.full_name, s.nis ORDER BY s.full_name
+        ", [$scheduleId, $dateFrom, $dateTo, $schedule['classroom_id']])->fetchAll();
+
+        View::render('student_affairs/print_subject_attendance', [
+            'schedule' => $schedule,
+            'report'   => $report,
+            'dateFrom' => $dateFrom,
+            'dateTo'   => $dateTo,
+        ]);
+    }
+
+    // 4. ABSENSI PER MATA PELAJARAN
+    public function createSubjectAttendance() {
+        $db = Database::getInstance();
+        $scheduleId = $_GET['schedule_id'] ?? null;
+        $date = $_GET['date'] ?? date('Y-m-d');
+
+        $schedule = null;
+        $students = [];
+        $existing = [];
+
+        if ($scheduleId) {
+            $schedule = $db->query("
+                SELECT sch.*, s.name as subject_name, c.name as class_name, c.id as classroom_id
+                FROM schedules sch
+                JOIN subjects s ON sch.subject_id = s.id
+                JOIN classrooms c ON sch.classroom_id = c.id
+                WHERE sch.id = ?
+            ", [$scheduleId])->fetch();
+
+            if ($schedule) {
+                $students = $db->query("SELECT * FROM students WHERE classroom_id = ? AND status='ACTIVE' ORDER BY full_name", [$schedule['classroom_id']])->fetchAll();
+                $logs = $db->query("SELECT student_id, status, notes FROM attendances WHERE schedule_id = ? AND date = ?", [$scheduleId, $date])->fetchAll();
+                foreach ($logs as $l) { $existing[$l['student_id']] = ['status' => $l['status'], 'notes' => $l['notes']]; }
+            }
+        }
+
+        // Ambil jadwal hari ini untuk dropdown
+        $userId = Session::get('user_id');
+        $role = Session::get('user_role');
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $scheduleWhere = "WHERE 1=1 $sw";
+        $scheduleParams = $sp;
+        if ($role == 'guru') { $scheduleWhere .= " AND sch.teacher_id = ?"; $scheduleParams[] = $userId; }
+
+        $schedules = $db->query("
+            SELECT sch.id, s.name as subject_name, c.name as class_name, sch.day, sch.start_time, sch.end_time
+            FROM schedules sch
+            JOIN subjects s ON sch.subject_id = s.id
+            JOIN classrooms c ON sch.classroom_id = c.id
+            $scheduleWhere ORDER BY c.name, s.name
+        ", $scheduleParams)->fetchAll();
+
+        View::render('student_affairs/attendance_subject', [
+            'title'      => 'Absensi Per Mata Pelajaran',
+            'schedules'  => $schedules,
+            'schedule'   => $schedule,
+            'students'   => $students,
+            'existing'   => $existing,
+            'selectedSchedule' => $scheduleId,
+            'selectedDate' => $date,
+        ]);
     }
 
     private function notifyAbsences($db, array $attendanceData, array $notesData, string $date): void {

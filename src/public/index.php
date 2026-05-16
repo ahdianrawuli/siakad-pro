@@ -26,7 +26,7 @@ use App\Controllers\{
     HomeroomController, HomeroomReportController,
     DisciplineController, StudentTrackingController, ExtracurricularController,
     BoardingController, BoardingActivityController, BoardingSupervisorController,
-    BoardingMutationController, BoardingReportController, BoardingMapController,
+    BoardingMutationController, BoardingReportController, BoardingMapController, PrayerAttendanceController,
     StaffController, StaffPositionController, StaffAttendanceController, SchoolStructureController,
     FinanceController, InventoryController, ReportController, PoskestrenController, AnnouncementController, TeacherController,
     PasswordResetController, GuidelineController
@@ -192,6 +192,7 @@ $router->get('/guardians',      [GuardianController::class, 'index']);
 // Data Alumni (Dipindahkan ke Menu Sekolah)
 $router->get('/school/alumni',              [AlumniController::class, 'index']);
 $router->get('/library',                    [LibraryController::class, 'index']);
+$router->get('/library/print',              [LibraryController::class, 'printLoans']);
 $router->post('/library/store',             [LibraryController::class, 'store']);
 $router->post('/library/return',            [LibraryController::class, 'returnBook']);
 $router->post('/library/books/store',       [LibraryController::class, 'storeBook']);
@@ -206,6 +207,9 @@ $router->get('/school/alumni/print-letter', [AlumniController::class, 'printLett
 // Absensi (Dipindahkan ke Menu Absensi)
 $router->get('/attendance/students',         [StudentAffairsController::class, 'attendance']);
 $router->get('/attendance/students/create',  [StudentAffairsController::class, 'createAttendance']);
+$router->get('/attendance/students/subject', [StudentAffairsController::class, 'createSubjectAttendance']);
+$router->get('/attendance/students/subject/report', [StudentAffairsController::class, 'subjectAttendanceReport']);
+$router->get('/attendance/students/subject/print', [StudentAffairsController::class, 'printSubjectAttendance']);
 $router->post('/attendance/students/store',  [StudentAffairsController::class, 'storeAttendance']);
 $router->get('/attendance/students/delete',  [StudentAffairsController::class, 'deleteAttendance']);
 
@@ -227,6 +231,7 @@ $router->post('/discipline/master-violations/store', [DisciplineController::clas
 $router->post('/discipline/master-violations/update',[DisciplineController::class, 'updateMaster']);
 $router->get('/discipline/master-violations/delete', [DisciplineController::class, 'deleteMaster']);
 $router->get('/discipline/student-violations',      [DisciplineController::class, 'index']);
+$router->get('/discipline/student-violations/print',[DisciplineController::class, 'printViolations']);
 $router->post('/discipline/student-violations/store',[DisciplineController::class, 'storeViolation']);
 $router->get('/discipline/student-violations/delete',[DisciplineController::class, 'deleteViolation']);
 
@@ -262,6 +267,7 @@ $router->get('/reports/boarding', [BoardingReportController::class, 'index']);
 // Y. POSKESTREN (HEALTH)
 // ============================================================================
 $router->get('/poskestren/patients',        [PoskestrenController::class, 'patients']);
+$router->get('/poskestren/patients/print', [PoskestrenController::class, 'printPatients']);
 $router->post('/poskestren/patients/store', [PoskestrenController::class, 'storePatient']);
 $router->post('/poskestren/patients/delete',[PoskestrenController::class, 'deletePatient']);
 $router->get('/poskestren/staff',           [PoskestrenController::class, 'staff']);
@@ -467,6 +473,14 @@ $router->get('/asrama/map/print',           [BoardingMapController::class, 'prin
 $router->get('/asrama/violations',          [BoardingMapController::class, 'violations']);
 $router->get('/asrama/violations/print',    [BoardingMapController::class, 'printViolations']);
 
+// Absensi Sholat
+$router->get('/boarding/prayer',              [PrayerAttendanceController::class, 'index']);
+$router->post('/boarding/prayer/store',       [PrayerAttendanceController::class, 'store']);
+$router->get('/boarding/prayer/types',        [PrayerAttendanceController::class, 'types']);
+$router->post('/boarding/prayer/types/store', [PrayerAttendanceController::class, 'storeType']);
+$router->get('/boarding/prayer/types/delete', [PrayerAttendanceController::class, 'deleteType']);
+$router->get('/boarding/prayer/print',        [PrayerAttendanceController::class, 'printReport']);
+
 // Program & Kesehatan (Kepesantrenan)
 
 $router->get('/boarding/health',        [BoardingController::class, 'health']);
@@ -503,6 +517,7 @@ $router->post('/extracurricular/members/add',   [ExtracurricularController::clas
 $router->post('/extracurricular/members/delete',[ExtracurricularController::class, 'deleteMember']);
 
 $router->get('/extracurricular/attendance',     [ExtracurricularController::class, 'attendance']);
+$router->get('/extracurricular/attendance/print',[ExtracurricularController::class, 'printAttendance']);
 $router->post('/extracurricular/attendance/save',[ExtracurricularController::class, 'saveAttendance']);
 $router->post('/extracurricular/grades/store',  [ExtracurricularController::class, 'storeGrade']);
 
@@ -571,10 +586,12 @@ $router->get('/student-affairs/attendance',       [StudentAffairsController::cla
 $router->get('/student-affairs/attendance/print', [StudentAffairsController::class, 'printAttendance']);
 $router->get('/student-affairs/discipline',     [DisciplineController::class, 'index']);
 $router->get('/student-affairs/achievements',   [DisciplineController::class, 'achievements']);
+$router->get('/student-affairs/achievements/print', [DisciplineController::class, 'printAchievements']);
 $router->post('/student-affairs/achievements/store',  [DisciplineController::class, 'storeAchievement']);
 $router->post('/student-affairs/achievements/update', [DisciplineController::class, 'updateAchievement']);
 $router->get('/student-affairs/achievements/delete',  [DisciplineController::class, 'deleteAchievement']);
-$router->get('/student-affairs/counseling',     [DisciplineController::class, 'counseling']);
+$router->get('/student-affairs/counseling',       [DisciplineController::class, 'counseling']);
+$router->get('/student-affairs/counseling/print', [DisciplineController::class, 'printCounseling']);
 $router->post('/student-affairs/counseling/store',    [DisciplineController::class, 'storeCounseling']);
 $router->post('/student-affairs/counseling/update',   [DisciplineController::class, 'updateCounseling']);
 $router->get('/student-affairs/counseling/delete',    [DisciplineController::class, 'deleteCounseling']);

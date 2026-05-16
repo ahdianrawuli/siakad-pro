@@ -18,20 +18,32 @@
                 </button>
             </div>
         </div>
-        <button onclick="document.getElementById('modalTambah').classList.remove('hidden')"
-            class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 hover:bg-blue-700 transition flex items-center gap-2 w-fit">
-            <i class="fa-solid fa-plus"></i> Tambah Rekam Medis
-        </button>
+        <div class="flex gap-2">
+            <a href="/poskestren/patients/print?class_id=<?= urlencode($classFilter??'') ?>&date_from=<?= $dateFrom ?>&date_to=<?= $dateTo ?>&status=<?= urlencode($status??'') ?>" target="_blank"
+                class="px-4 py-2.5 bg-slate-600 text-white rounded-xl text-sm font-semibold hover:bg-slate-700 transition flex items-center gap-2">
+                <i class="fa-solid fa-print"></i> Cetak
+            </a>
+            <button onclick="document.getElementById('modalTambah').classList.remove('hidden')"
+                class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 hover:bg-blue-700 transition flex items-center gap-2">
+                <i class="fa-solid fa-plus"></i> Tambah Rekam Medis
+            </button>
+        </div>
     </div>
 
     <?php \App\Core\Session::flash(); ?>
 
     <!-- Filter -->
-    <form method="GET" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-3">
-        <div class="flex-1 min-w-[200px] relative">
+    <form method="GET" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 mb-6 flex flex-wrap items-center gap-3">
+        <select name="class_id" class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+            <option value="">Semua Kelas</option>
+            <?php foreach ($classrooms as $c): ?>
+                <option value="<?= $c['id'] ?>" <?= ($classFilter??'')==$c['id']?'selected':'' ?>><?= htmlspecialchars($c['name']) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <div class="flex-1 min-w-[180px] relative">
             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
-            <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Cari nama santri / keluhan..."
-                class="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/50">
+            <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Cari nama / keluhan..."
+                class="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
         </div>
         <select name="status" class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
             <option value="">Semua Status</option>
@@ -39,8 +51,11 @@
             <option value="RAWAT_INAP"  <?= ($status??'')==='RAWAT_INAP' ?'selected':'' ?>>Rawat Inap</option>
             <option value="RUJUK_RS"    <?= ($status??'')==='RUJUK_RS'   ?'selected':'' ?>>Rujuk RS</option>
         </select>
-        <button type="submit" class="bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-900 transition">Cari</button>
-        <?php if ($search || $status): ?>
+        <input type="date" name="date_from" value="<?= $dateFrom ?>" class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+        <span class="text-slate-400 text-xs">s/d</span>
+        <input type="date" name="date_to" value="<?= $dateTo ?>" class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+        <button type="submit" class="bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-900 transition">Terapkan</button>
+        <?php if ($search || $status || $classFilter || !empty($_GET['date_from']??'')): ?>
             <a href="/poskestren/patients" class="flex items-center justify-center w-10 h-10 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition" title="Reset">
                 <i class="fa-solid fa-rotate-left"></i>
             </a>
@@ -55,6 +70,7 @@
                     <tr>
                         <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase">Tanggal</th>
                         <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase">Nama Santri</th>
+                        <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase">Kelas</th>
                         <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase">Keluhan</th>
                         <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase">Diagnosis</th>
                         <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase">Status</th>
@@ -70,6 +86,7 @@
                     <tr class="hover:bg-slate-50 transition">
                         <td class="px-4 py-3 font-mono text-xs"><?= date('d M Y', strtotime($r['date'])) ?></td>
                         <td class="px-4 py-3 font-semibold text-slate-800"><?= htmlspecialchars($r['full_name'] ?? '-') ?><div class="text-xs text-slate-400"><?= $r['nis'] ?? '' ?></div></td>
+                        <td class="px-4 py-3 text-xs text-slate-600"><?= htmlspecialchars($r['class_name'] ?? '-') ?></td>
                         <td class="px-4 py-3 text-slate-600 max-w-[200px] truncate"><?= htmlspecialchars($r['complaint']) ?></td>
                         <td class="px-4 py-3 text-slate-600"><?= htmlspecialchars($r['diagnosis'] ?? '-') ?></td>
                         <td class="px-4 py-3">

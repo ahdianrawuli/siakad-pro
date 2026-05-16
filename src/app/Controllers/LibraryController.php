@@ -14,6 +14,9 @@ class LibraryController {
         $db = Database::getInstance();
         $search  = trim($_GET['search'] ?? '');
         $status  = $_GET['status'] ?? '';
+        $classFilter = $_GET['class_id'] ?? '';
+        $dateFrom = !empty($_GET['date_from']) ? $_GET['date_from'] : date('Y-m-01');
+        $dateTo   = !empty($_GET['date_to']) ? $_GET['date_to'] : date('Y-m-d');
         $limit   = (int)($_GET['limit'] ?? 10);
         $page    = max(1, (int)($_GET['page'] ?? 1));
         $offset  = ($page - 1) * $limit;
@@ -24,11 +27,10 @@ class LibraryController {
         [$sw, $sp] = ScopeFilter::apply('c');
         $where .= $sw; $params = array_merge($params, $sp);
 
-        if ($search !== '') {
-            $where   .= " AND (s.full_name LIKE ? OR b.title LIKE ? OR s.nis LIKE ?)";
-            $params[] = "%$search%"; $params[] = "%$search%"; $params[] = "%$search%";
-        }
+        if ($search !== '') { $where .= " AND (s.full_name LIKE ? OR b.title LIKE ? OR s.nis LIKE ?)"; $params[] = "%$search%"; $params[] = "%$search%"; $params[] = "%$search%"; }
         if ($status !== '') { $where .= " AND ll.status=?"; $params[] = $status; }
+        if ($classFilter !== '') { $where .= " AND s.classroom_id=?"; $params[] = $classFilter; }
+        $where .= " AND ll.loan_date BETWEEN ? AND ?"; $params[] = $dateFrom; $params[] = $dateTo;
 
         $total = $db->query("SELECT COUNT(*) FROM library_loans ll
             JOIN students s ON ll.student_id=s.id
@@ -36,7 +38,7 @@ class LibraryController {
             LEFT JOIN classrooms c ON s.classroom_id=c.id
             WHERE $where", $params)->fetchColumn();
 
-        $loans = $db->query("SELECT ll.*, s.full_name, s.nis, b.title as book_title, b.code as book_code
+        $loans = $db->query("SELECT ll.*, s.full_name, s.nis, c.name as class_name, b.title as book_title, b.code as book_code
             FROM library_loans ll
             JOIN students s ON ll.student_id=s.id
             JOIN library_books b ON ll.book_id=b.id
@@ -66,11 +68,36 @@ class LibraryController {
             'stats'       => $stats,
             'search'      => $search,
             'status'      => $status,
+            'classFilter' => $classFilter,
+            'classrooms'  => $db->query("SELECT c.* FROM classrooms c WHERE 1=1 $sw ORDER BY c.name", $sp)->fetchAll(),
+            'dateFrom'    => $dateFrom,
+            'dateTo'      => $dateTo,
             'limit'       => $limit,
             'currentPage' => $page,
             'totalPages'  => $limit > 0 ? (int)ceil($total / $limit) : 1,
             'totalData'   => $total,
         ]);
+    }
+
+    public function printLoans() {
+        $db = Database::getInstance();
+        $status  = $_GET['status'] ?? '';
+        $dateFrom = !empty($_GET['date_from']) ? $_GET['date_from'] : date('Y-m-01');
+        $dateTo   = !empty($_GET['date_to']) ? $_GET['date_to'] : date('Y-m-d');
+
+        $where = "WHERE ll.loan_date BETWEEN ? AND ?";
+        $params = [$dateFrom, $dateTo];
+        if ($status) { $where .= " AND ll.status=?"; $params[] = $status; }
+        [$sw, $sp] = ScopeFilter::apply('c');
+        $where .= $sw; $params = array_merge($params, $sp);
+
+        $loans = $db->query("SELECT ll.*, s.full_name, s.nis, c.name as class_name, b.title as book_title, b.code as book_code
+            FROM library_loans ll JOIN students s ON ll.student_id=s.id
+            JOIN library_books b ON ll.book_id=b.id
+            LEFT JOIN classrooms c ON s.classroom_id=c.id
+            $where ORDER BY ll.loan_date DESC", $params)->fetchAll();
+
+        View::render('library/print', ['loans'=>$loans,'dateFrom'=>$dateFrom,'dateTo'=>$dateTo,'status'=>$status]);
     }
 
     public function store() {

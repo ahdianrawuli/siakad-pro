@@ -27,10 +27,16 @@
                 </button>
             </div>
         </div>
-        <button onclick="document.getElementById('addModal').classList.remove('hidden')"
-            class="px-4 py-2.5 bg-yellow-500 text-white rounded-xl text-sm font-semibold shadow-md shadow-yellow-500/20 hover:bg-yellow-600 transition-all flex items-center gap-2 w-fit">
-            <i class="fa-solid fa-trophy"></i> Tambah Prestasi
-        </button>
+        <div class="flex gap-2">
+            <a href="/student-affairs/achievements/print?class_id=<?= urlencode($classFilter??'') ?>&date_from=<?= $dateFrom ?>&date_to=<?= $dateTo ?>" target="_blank"
+                class="px-4 py-2.5 bg-slate-600 text-white rounded-xl text-sm font-semibold hover:bg-slate-700 transition flex items-center gap-2">
+                <i class="fa-solid fa-print"></i> Cetak
+            </a>
+            <button onclick="document.getElementById('addModal').classList.remove('hidden')"
+                class="px-4 py-2.5 bg-yellow-500 text-white rounded-xl text-sm font-semibold shadow-md shadow-yellow-500/20 hover:bg-yellow-600 transition-all flex items-center gap-2">
+                <i class="fa-solid fa-trophy"></i> Tambah Prestasi
+            </button>
+        </div>
     </div>
 
     <?php \App\Core\Session::flash(); ?>
@@ -41,13 +47,24 @@
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
             <form method="GET" class="flex flex-wrap items-center gap-3">
                 <input type="hidden" name="limit" value="<?= $limit ?>">
-                <div class="flex-1 min-w-[260px] relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span>
-                    <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Cari Nama Siswa atau Nama Prestasi..."
-                        class="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all">
+                <select name="class_id" class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+                    <option value="">Semua Kelas</option>
+                    <?php foreach ($classrooms as $c): ?>
+                        <option value="<?= $c['id'] ?>" <?= ($classFilter??'')==$c['id']?'selected':'' ?>><?= htmlspecialchars($c['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <div class="relative flex-1 min-w-[180px]">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
+                    <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Cari nama / prestasi..."
+                        class="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
                 </div>
-                <button type="submit" class="bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-900 transition-colors">Terapkan</button>
-                <?php if (!empty($search)): ?>
+                <input type="date" name="date_from" value="<?= $dateFrom ?>"
+                    class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+                <span class="text-slate-400 text-xs">s/d</span>
+                <input type="date" name="date_to" value="<?= $dateTo ?>"
+                    class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+                <button type="submit" class="bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-900 transition">Terapkan</button>
+                <?php if (!empty($search) || !empty($classFilter) || !empty($_GET['date_from'] ?? '')): ?>
                     <a href="/student-affairs/achievements" class="flex items-center justify-center w-10 h-10 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition" title="Reset">
                         <i class="fa-solid fa-rotate-left"></i>
                     </a>

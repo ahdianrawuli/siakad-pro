@@ -322,6 +322,37 @@ class ExtracurricularController {
         ]);
     }
 
+    public function printAttendance() {
+        $db = Database::getInstance();
+        $ekskulId = $_GET['id'] ?? '';
+        $date = $_GET['date'] ?? date('Y-m-d');
+        if (!$ekskulId) { header('Location: /extracurricular/attendance'); exit; }
+
+        $ekskul = $db->query("SELECT name FROM extracurriculars WHERE id=?", [$ekskulId])->fetch();
+        $activeYear = $db->query("SELECT id FROM academic_years WHERE is_active=1")->fetch();
+        $yearId = $activeYear['id'] ?? null;
+
+        $members = $db->query("
+            SELECT se.student_id, s.full_name, s.nis, c.name as class_name
+            FROM student_extracurriculars se
+            JOIN students s ON se.student_id = s.id
+            LEFT JOIN classrooms c ON s.classroom_id = c.id
+            WHERE se.extracurricular_id = ? AND se.academic_year_id = ?
+            ORDER BY s.full_name
+        ", [$ekskulId, $yearId])->fetchAll();
+
+        $attendance = [];
+        $logs = $db->query("SELECT student_id, status FROM extracurricular_attendances WHERE extracurricular_id=? AND date=?", [$ekskulId, $date])->fetchAll();
+        foreach ($logs as $l) { $attendance[$l['student_id']] = $l['status']; }
+
+        View::render('extracurricular/print_attendance', [
+            'ekskul'     => $ekskul,
+            'members'    => $members,
+            'attendance' => $attendance,
+            'date'       => $date,
+        ]);
+    }
+
     public function saveAttendance() {
         $db = Database::getInstance();
         $ekskulId = $_POST['extracurricular_id'];

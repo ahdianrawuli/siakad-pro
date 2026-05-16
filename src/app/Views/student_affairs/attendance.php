@@ -19,13 +19,21 @@
             </div>
         </div>
         <div class="flex gap-2">
-            <a href="/student-affairs/attendance/print?class_id=<?= urlencode($classFilter) ?>&date_from=<?= $dateFilter ?: date('Y-m-01') ?>&date_to=<?= $dateFilter ?: date('Y-m-d') ?>" target="_blank"
+            <a href="/student-affairs/attendance/print?class_id=<?= urlencode($classFilter) ?>&date_from=<?= $dateFrom ?? date('Y-m-01') ?>&date_to=<?= $dateTo ?? date('Y-m-d') ?>" target="_blank"
                 class="px-4 py-2.5 bg-slate-600 text-white rounded-xl text-sm font-semibold hover:bg-slate-700 transition flex items-center gap-2 w-fit">
                 <i class="fa-solid fa-print"></i> Cetak
             </a>
             <a href="/attendance/students/create"
                 class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-2 w-fit">
-                <i class="fa-solid fa-calendar-check"></i> Input Absensi
+                <i class="fa-solid fa-calendar-check"></i> Absensi Harian
+            </a>
+            <a href="/attendance/students/subject"
+                class="px-4 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-purple-500/20 hover:bg-purple-700 transition-all flex items-center gap-2 w-fit">
+                <i class="fa-solid fa-book-open"></i> Absensi Per Mapel
+            </a>
+            <a href="/attendance/students/subject/report"
+                class="px-4 py-2.5 bg-amber-500 text-white rounded-xl text-sm font-semibold shadow-md shadow-amber-500/20 hover:bg-amber-600 transition-all flex items-center gap-2 w-fit">
+                <i class="fa-solid fa-chart-bar"></i> Report Per Mapel
             </a>
         </div>
     </div>
@@ -36,29 +44,30 @@
 
         <!-- Filter -->
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-            <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            <form method="GET" class="flex flex-wrap items-center gap-3">
                 <input type="hidden" name="limit" value="<?= $limit ?>">
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span>
-                    <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Cari Nama / NIS..."
-                        class="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all">
-                </div>
-                <select name="class_id" class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
+                <select name="class_id" class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
                     <option value="">Semua Kelas</option>
                     <?php foreach ($classrooms as $c): ?>
-                        <option value="<?= $c['id'] ?>" <?= $classFilter == $c['id'] ? 'selected' : '' ?>><?= $c['name'] ?></option>
+                        <option value="<?= $c['id'] ?>" <?= $classFilter == $c['id'] ? 'selected' : '' ?>><?= htmlspecialchars($c['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
-                <input type="date" name="date" value="<?= $dateFilter ?>"
-                    class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
-                <div class="flex gap-2">
-                    <button type="submit" class="flex-1 bg-slate-800 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-slate-900 transition-colors">Terapkan</button>
-                    <?php if (!empty($search) || !empty($dateFilter) || !empty($classFilter)): ?>
-                        <a href="/attendance/students" class="flex items-center justify-center w-10 h-10 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition" title="Reset">
-                            <i class="fa-solid fa-rotate-left"></i>
-                        </a>
-                    <?php endif; ?>
+                <div class="relative flex-1 min-w-[180px]">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
+                    <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Cari nama / NIS..."
+                        class="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
                 </div>
+                <input type="date" name="date_from" value="<?= $dateFrom ?: date('Y-m-01') ?>"
+                    class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+                <span class="text-slate-400 text-xs">s/d</span>
+                <input type="date" name="date_to" value="<?= $dateTo ?: date('Y-m-d') ?>"
+                    class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+                <button type="submit" class="bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-900 transition">Terapkan</button>
+                <?php if (!empty($search) || !empty($dateFrom) || !empty($dateTo) || !empty($classFilter)): ?>
+                    <a href="/attendance/students" class="flex items-center justify-center w-10 h-10 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition" title="Reset">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </a>
+                <?php endif; ?>
             </form>
         </div>
 
@@ -134,7 +143,7 @@
                 </div>
                 <?php if ($totalPages > 1): ?>
                 <div class="flex items-center gap-1.5">
-                    <?php $qs = "&limit=$limit&search=" . urlencode($search) . "&date=$dateFilter&class_id=$classFilter"; ?>
+                    <?php $qs = "&limit=$limit&search=" . urlencode($search) . "&date_from=" . ($dateFrom??'') . "&date_to=" . ($dateTo??'') . "&class_id=$classFilter"; ?>
                     <?php if ($currentPage > 1): ?>
                         <a href="?page=<?= $currentPage - 1 . $qs ?>" class="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm"><i class="fa-solid fa-chevron-left"></i></a>
                     <?php endif; ?>

@@ -19,12 +19,16 @@
             </div>
         </div>
         <div class="flex flex-wrap gap-2">
+            <a href="/library/print?status=<?= urlencode($status??'') ?>&date_from=<?= $dateFrom ?? date('Y-m-01') ?>&date_to=<?= $dateTo ?? date('Y-m-d') ?>" target="_blank"
+                class="px-4 py-2.5 bg-slate-600 text-white rounded-xl text-sm font-semibold hover:bg-slate-700 transition flex items-center gap-2">
+                <i class="fa-solid fa-print"></i> Cetak
+            </a>
             <button onclick="document.getElementById('addBookModal').classList.remove('hidden')"
-                class="px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold shadow-md hover:bg-emerald-700 transition flex items-center gap-2 w-fit">
+                class="px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold shadow-md hover:bg-emerald-700 transition flex items-center gap-2">
                 <i class="fa-solid fa-book-medical"></i> Tambah Buku
             </button>
             <button onclick="document.getElementById('addModal').classList.remove('hidden')"
-                class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-2 w-fit">
+                class="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-2">
                 <i class="fa-solid fa-plus"></i> Catat Peminjaman
             </button>
         </div>
@@ -57,19 +61,30 @@
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
             <form method="GET" class="flex flex-wrap items-center gap-3">
                 <input type="hidden" name="limit" value="<?= $limit ?>">
-                <div class="flex-1 min-w-[200px] relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span>
-                    <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Cari nama santri, NIS, atau judul buku..."
-                        class="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all">
+                <select name="class_id" class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+                    <option value="">Semua Kelas</option>
+                    <?php foreach ($classrooms as $c): ?>
+                        <option value="<?= $c['id'] ?>" <?= ($classFilter??'')==$c['id']?'selected':'' ?>><?= htmlspecialchars($c['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <div class="flex-1 min-w-[180px] relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
+                    <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Cari nama / judul buku..."
+                        class="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
                 </div>
-                <select name="status" class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white outline-none">
+                <select name="status" class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
                     <option value="">Semua Status</option>
                     <option value="DIPINJAM"     <?= $status==='DIPINJAM'     ?'selected':'' ?>>Dipinjam</option>
                     <option value="DIKEMBALIKAN" <?= $status==='DIKEMBALIKAN' ?'selected':'' ?>>Dikembalikan</option>
                     <option value="TERLAMBAT"    <?= $status==='TERLAMBAT'    ?'selected':'' ?>>Terlambat</option>
                 </select>
-                <button type="submit" class="bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-900 transition-colors">Terapkan</button>
-                <?php if (!empty($search) || !empty($status)): ?>
+                <input type="date" name="date_from" value="<?= $dateFrom ?? date('Y-m-01') ?>"
+                    class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+                <span class="text-slate-400 text-xs">s/d</span>
+                <input type="date" name="date_to" value="<?= $dateTo ?? date('Y-m-d') ?>"
+                    class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+                <button type="submit" class="bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-900 transition">Terapkan</button>
+                <?php if (!empty($search) || !empty($status) || !empty($_GET['date_from']??'')): ?>
                     <a href="/library" class="flex items-center justify-center w-10 h-10 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition" title="Reset">
                         <i class="fa-solid fa-rotate-left"></i>
                     </a>
@@ -84,6 +99,7 @@
                     <thead>
                         <tr class="bg-slate-50 border-b border-slate-200">
                             <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Santri</th>
+                            <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Kelas</th>
                             <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Buku</th>
                             <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Tgl Pinjam</th>
                             <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Batas Kembali</th>
@@ -94,7 +110,7 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                         <?php if (empty($loans)): ?>
-                            <tr><td colspan="7" class="px-5 py-16 text-center text-slate-400 text-sm font-medium">Belum ada data peminjaman.</td></tr>
+                            <tr><td colspan="8" class="px-5 py-16 text-center text-slate-400 text-sm font-medium">Belum ada data peminjaman.</td></tr>
                         <?php endif; ?>
                         <?php foreach ($loans as $l):
                             $badge = match($l['status']) {
@@ -109,6 +125,7 @@
                                 <div class="font-extrabold text-slate-800"><?= htmlspecialchars($l['full_name']) ?></div>
                                 <div class="text-[10px] text-slate-400 font-mono"><?= $l['nis'] ?></div>
                             </td>
+                            <td class="px-5 py-4 text-xs text-slate-600"><?= htmlspecialchars($l['class_name'] ?? '-') ?></td>
                             <td class="px-5 py-4">
                                 <div class="font-semibold text-slate-700"><?= htmlspecialchars($l['book_title']) ?></div>
                                 <div class="text-[10px] text-slate-400 font-mono"><?= $l['book_code'] ?></div>

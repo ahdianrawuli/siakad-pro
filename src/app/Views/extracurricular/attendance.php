@@ -25,8 +25,16 @@
                 </button>
             </div>
         </div>
-        <div class="text-sm text-slate-500 font-medium">
-            Tanggal: <strong class="text-slate-700"><?= date('d F Y', strtotime($date)) ?></strong>
+        <div class="flex items-center gap-3">
+            <?php if ($selectedEkskul && !empty($members)): ?>
+            <a href="/extracurricular/attendance/print?id=<?= $selectedEkskul ?>&date=<?= $date ?>" target="_blank"
+                class="px-4 py-2.5 bg-slate-600 text-white rounded-xl text-sm font-semibold hover:bg-slate-700 transition flex items-center gap-2">
+                <i class="fa-solid fa-print"></i> Cetak
+            </a>
+            <?php endif; ?>
+            <div class="text-sm text-slate-500 font-medium">
+                Tanggal: <strong class="text-slate-700"><?= date('d F Y', strtotime($date)) ?></strong>
+            </div>
         </div>
     </div>
 
