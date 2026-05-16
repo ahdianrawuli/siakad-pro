@@ -17,8 +17,14 @@ class StaffAttendanceController {
         $page   = max(1, (int)($_GET['page'] ?? 1));
         $offset = ($page - 1) * $limit;
 
-        $where  = "r.slug = ? AND u.status = 'active'";
-        $params = [$roleFilter];
+        $where  = "u.status = 'active'";
+        $params = [];
+        if ($roleFilter) {
+            $where .= " AND r.slug = ?";
+            $params[] = $roleFilter;
+        } else {
+            $where .= " AND r.slug IN ('guru','staff')";
+        }
         if ($search !== '') {
             $where   .= " AND u.name LIKE ?";
             $params[] = "%$search%";
@@ -64,7 +70,7 @@ class StaffAttendanceController {
     }
 
     public function staff() {
-        $this->processAttendance('staff', 'Absensi Staff Sekolah', '/attendance/staff');
+        $this->processAttendance('', 'Absensi Pegawai', '/staff/attendance');
     }
 
     public function store() {

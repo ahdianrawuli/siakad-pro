@@ -19,8 +19,12 @@
     <!-- Rekap Nilai yang Sudah Ada -->
     <?php if (!empty($harianColumns) || !empty($gradeMap)): ?>
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
-        <div class="p-4 bg-slate-50 border-b border-slate-100">
+        <div class="p-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
             <h4 class="font-bold text-slate-700 text-sm"><i class="fa-solid fa-table mr-2 text-slate-400"></i>Rekap Nilai Saat Ini</h4>
+            <a href="/academic/grades/print?schedule_id=<?= $schedule['id'] ?>" target="_blank"
+                class="px-3 py-1.5 bg-slate-600 text-white rounded-lg text-xs font-bold hover:bg-slate-700 transition flex items-center gap-1.5">
+                <i class="fa-solid fa-print"></i> Cetak
+            </a>
         </div>
         <div class="overflow-x-auto">
             <table class="min-w-full text-xs text-left">

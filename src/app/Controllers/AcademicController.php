@@ -447,6 +447,40 @@ class AcademicController {
     }
 
     // ==========================================================
+    public function printGrades() {
+        $scheduleId = $_GET['schedule_id'] ?? '';
+        if (!$scheduleId) { header('Location: /academic/grades'); exit; }
+        $db = Database::getInstance();
+
+        $schedule = $db->query("SELECT sch.*, s.name as subject_name, c.name as class_name, u.name as teacher_name
+            FROM schedules sch JOIN subjects s ON sch.subject_id=s.id
+            JOIN classrooms c ON sch.classroom_id=c.id JOIN users u ON sch.teacher_id=u.id
+            WHERE sch.id=?", [$scheduleId])->fetch();
+
+        $students = $db->query("SELECT * FROM students WHERE classroom_id=? AND status='ACTIVE' ORDER BY full_name", [$schedule['classroom_id']])->fetchAll();
+        $gradesRaw = $db->query("SELECT * FROM student_grades WHERE schedule_id=? ORDER BY type, category, seq_num", [$scheduleId])->fetchAll();
+
+        $gradeMap = []; $harianColumns = [];
+        foreach ($gradesRaw as $g) {
+            if ($g['type'] === 'HARIAN') {
+                $key = $g['category'] . '_' . $g['seq_num'];
+                $gradeMap[$g['student_id']][$key] = $g['score'];
+                $harianColumns[$key] = ['category' => $g['category'], 'seq_num' => $g['seq_num'], 'date' => $g['date'], 'description' => $g['description']];
+            } else {
+                $gradeMap[$g['student_id']][$g['type']] = $g['score'];
+            }
+        }
+        ksort($harianColumns);
+
+        $weights = $db->query("SELECT * FROM grading_weights WHERE academic_year_id=?", [$schedule['academic_year_id']])->fetch()
+            ?: ['weight_daily'=>40,'weight_uts'=>30,'weight_uas'=>30];
+
+        View::render('academic/print_grades', [
+            'schedule' => $schedule, 'students' => $students,
+            'gradeMap' => $gradeMap, 'harianColumns' => $harianColumns, 'weights' => $weights,
+        ]);
+    }
+
     // 4. MANAJEMEN TAHUN AJARAN (ACADEMIC YEARS)
     // ==========================================================
     public function years() {

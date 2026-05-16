@@ -327,6 +327,7 @@ $router->get('/academic/journals/delete',   [AcademicController::class, 'journal
 // Penilaian (Grades & Weights)
 $router->get('/academic/grades',            [AcademicController::class, 'grades']);
 $router->get('/academic/grades/manage',     [AcademicController::class, 'manageGrades']);
+$router->get('/academic/grades/print',      [AcademicController::class, 'printGrades']);
 $router->post('/academic/grades/store',     [AcademicController::class, 'storeGrades']);
 $router->get('/academic/weights',           [AcademicController::class, 'weights']);
 $router->post('/academic/weights/store',    [AcademicController::class, 'storeWeights']);
