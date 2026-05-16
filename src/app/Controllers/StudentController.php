@@ -450,7 +450,7 @@ class StudentController {
 
         $grades = $db->query(
             "SELECT s.name as subject_name, s.kkm,
-                ROUND(AVG(CASE WHEN sg.type IN ('TUGAS','UH1','UH2','UH3') THEN sg.score END), 1) as task_score,
+                ROUND(AVG(CASE WHEN sg.type = 'HARIAN' THEN sg.score END), 1) as task_score,
                 MAX(CASE WHEN sg.type = 'UTS' THEN sg.score END) as mid_score,
                 MAX(CASE WHEN sg.type = 'UAS' THEN sg.score END) as final_exam_score
              FROM student_grades sg

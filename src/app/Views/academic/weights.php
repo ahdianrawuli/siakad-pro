@@ -48,7 +48,7 @@
                             </div>
                             <div class="flex-1">
                                 <p class="font-semibold text-slate-800">Nilai Harian</p>
-                                <p class="text-xs text-slate-400 mt-0.5">Rata-rata UH1, UH2, dan Tugas</p>
+                                <p class="text-xs text-slate-400 mt-0.5">Rata-rata semua UH, Tugas, dan Quiz</p>
                             </div>
                             <div class="flex items-center gap-2">
                                 <input type="number" name="weight_daily" x-model.number="daily"

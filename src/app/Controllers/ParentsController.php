@@ -207,7 +207,7 @@ class ParentsController {
 
         $grades = ($student && $activeYear) ? $db->query(
             "SELECT sub.name as subject_name, sub.kkm,
-                    ROUND(AVG(CASE WHEN g.type IN ('TUGAS','UH1','UH2','UH3') THEN g.score END), 1) as task_score,
+                    ROUND(AVG(CASE WHEN g.type = 'HARIAN' THEN g.score END), 1) as task_score,
                     MAX(CASE WHEN g.type='UTS' THEN g.score END) as mid_score,
                     MAX(CASE WHEN g.type='UAS' THEN g.score END) as final_exam_score
              FROM student_grades g

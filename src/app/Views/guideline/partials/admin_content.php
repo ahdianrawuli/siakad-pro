@@ -69,7 +69,7 @@ function card($icon, $color, $title, $desc) {
 <?php sec('akademik','bg-yellow-500','fa-book-open','Akademik & Nilai'); ?>
 <div class="space-y-4">
     <?php sub('Jadwal Pelajaran','Akademik → Jadwal Pelajaran. Buat jadwal per kelas: pilih hari, jam mulai-selesai, mata pelajaran, dan guru. Jadwal ini yang tampil di portal siswa dan orang tua.'); ?>
-    <?php sub('Input Nilai','Akademik → Input Nilai. Pilih kelas dan mata pelajaran, lalu input nilai per siswa untuk tipe: UH1, UH2, Tugas, UTS, UAS. Nilai akhir dihitung otomatis berdasarkan bobot yang sudah diset.'); ?>
+    <?php sub('Input Nilai','Akademik → Input Nilai. Pilih kelas dan mata pelajaran, lalu input nilai per siswa (UH, Tugas, Quiz, UTS, UAS). Jumlah UH/Tugas tidak terbatas. Nilai akhir dihitung otomatis berdasarkan bobot yang sudah diset.'); ?>
     <?php sub('Jurnal Mengajar','Guru wajib mengisi jurnal setiap selesai mengajar: materi yang diajarkan, kehadiran siswa, dan catatan. Jurnal ini menjadi bukti pelaksanaan KBM.'); ?>
     <?php sub('Kenaikan Kelas','Akademik → Kenaikan Kelas. Proses kenaikan kelas massal di akhir tahun ajaran. Sistem akan otomatis memindahkan siswa ke kelas berikutnya berdasarkan nilai dan kehadiran.'); ?>
     <?php sub('Wali Kelas','Akademik → Set Wali Kelas. Assign guru sebagai wali kelas. Wali kelas dapat mengakses laporan khusus kelasnya di menu Laporan Wali Kelas.'); ?>

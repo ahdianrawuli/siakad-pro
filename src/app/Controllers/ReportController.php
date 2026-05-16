@@ -50,19 +50,26 @@ class ReportController {
                     'subject_name' => $g['subject_name'],
                     'subject_type' => $g['subject_type'],
                     'kkm'          => $g['kkm'],
-                    'scores'       => []
+                    'harian'       => [],
+                    'uts'          => null,
+                    'uas'          => null,
                 ];
             }
-            $subjectMap[$key]['scores'][$g['type']] = $g['score'];
+            if ($g['type'] === 'HARIAN') {
+                $subjectMap[$key]['harian'][] = (float)$g['score'];
+            } elseif ($g['type'] === 'UTS') {
+                $subjectMap[$key]['uts'] = (float)$g['score'];
+            } elseif ($g['type'] === 'UAS') {
+                $subjectMap[$key]['uas'] = (float)$g['score'];
+            }
         }
 
         // Hitung nilai akhir per mapel
         $grades = ['NASIONAL' => [], 'PESANTREN' => [], 'MULOK' => []];
         foreach ($subjectMap as $subj) {
-            $s = $subj['scores'];
-            $daily = (($s['UH1'] ?? 0) + ($s['UH2'] ?? 0) + ($s['TUGAS'] ?? 0)) / 3;
-            $uts   = $s['UTS'] ?? 0;
-            $uas   = $s['UAS'] ?? 0;
+            $daily = !empty($subj['harian']) ? array_sum($subj['harian']) / count($subj['harian']) : 0;
+            $uts   = $subj['uts'] ?? 0;
+            $uas   = $subj['uas'] ?? 0;
             $final = round(($daily * $weights['weight_daily'] + $uts * $weights['weight_uts'] + $uas * $weights['weight_uas']) / 100, 1);
             $predicate = $final >= 90 ? 'A' : ($final >= 80 ? 'B' : ($final >= 70 ? 'C' : 'D'));
             $type = in_array($subj['subject_type'], ['NASIONAL','PESANTREN','MULOK']) ? $subj['subject_type'] : 'NASIONAL';

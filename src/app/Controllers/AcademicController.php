@@ -365,84 +365,74 @@ class AcademicController {
 
         $schedule = $db->query("
             SELECT sch.*, s.name as subject_name, c.name as class_name, sch.academic_year_id
-            FROM schedules sch
-            JOIN subjects s ON sch.subject_id = s.id 
-            JOIN classrooms c ON sch.classroom_id = c.id
-            WHERE sch.id = ?
+            FROM schedules sch JOIN subjects s ON sch.subject_id = s.id 
+            JOIN classrooms c ON sch.classroom_id = c.id WHERE sch.id = ?
         ", [$scheduleId])->fetch();
-
         if (!$schedule) die("Jadwal tidak ditemukan.");
 
-        $students = $db->query("
-            SELECT * FROM students 
-            WHERE classroom_id = ? 
-            ORDER BY full_name ASC
-        ", [$schedule['classroom_id']])->fetchAll();
+        $students = $db->query("SELECT * FROM students WHERE classroom_id = ? AND status='ACTIVE' ORDER BY full_name", [$schedule['classroom_id']])->fetchAll();
 
-        // Ambil Data Nilai Mentah
-        $gradesRaw = $db->query("SELECT * FROM student_grades WHERE schedule_id = ?", [$scheduleId])->fetchAll();
-        
-        // MAPPING DATABASE (ENUM) KE VIEW
-        // Kita petakan langsung sesuai kolom yang ada di database
+        // Ambil semua nilai per tipe
+        $gradesRaw = $db->query("SELECT * FROM student_grades WHERE schedule_id = ? ORDER BY type, category, seq_num", [$scheduleId])->fetchAll();
+
+        // Mapping: gradeMap[student_id][type_category_seq] = score
         $gradeMap = [];
+        $harianColumns = []; // Daftar kolom harian yang ada
         foreach ($gradesRaw as $g) {
-            // Key array sesuai dengan ENUM di database: 'UH1', 'UH2', 'TUGAS', 'UTS', 'UAS'
-            $gradeMap[$g['student_id']][$g['type']] = $g['score'];
+            if ($g['type'] === 'HARIAN') {
+                $key = $g['category'] . '_' . $g['seq_num'];
+                $gradeMap[$g['student_id']][$key] = $g['score'];
+                $harianColumns[$key] = ['category' => $g['category'], 'seq_num' => $g['seq_num'], 'description' => $g['description'], 'date' => $g['date']];
+            } else {
+                $gradeMap[$g['student_id']][$g['type']] = $g['score'];
+            }
         }
+        ksort($harianColumns);
 
-        $weights = $db->query("
-            SELECT * FROM grading_weights WHERE academic_year_id = ?
-        ", [$schedule['academic_year_id']])->fetch();
-
-        if (!$weights) {
-            $weights = ['weight_daily' => 40, 'weight_uts' => 30, 'weight_uas' => 30]; 
-        }
+        $weights = $db->query("SELECT * FROM grading_weights WHERE academic_year_id = ?", [$schedule['academic_year_id']])->fetch()
+            ?: ['weight_daily' => 40, 'weight_uts' => 30, 'weight_uas' => 30];
 
         View::render('academic/grades_form', [
-            'title' => 'Input Nilai: ' . $schedule['subject_name'],
-            'schedule' => $schedule,
-            'students' => $students,
-            'gradeMap' => $gradeMap,
-            'weights' => $weights 
+            'title'         => 'Input Nilai: ' . $schedule['subject_name'],
+            'schedule'      => $schedule,
+            'students'      => $students,
+            'gradeMap'      => $gradeMap,
+            'harianColumns' => $harianColumns,
+            'weights'       => $weights,
         ]);
     }
 
     public function storeGrades() {
         $scheduleId = $_POST['schedule_id'];
-        $grades = $_POST['grades'] ?? []; 
-        $userId = Session::get('user_id');
-        $db = Database::getInstance();
+        $type       = $_POST['grade_type']; // HARIAN, UTS, UAS
+        $category   = $_POST['category'] ?? 'UH'; // UH, TUGAS, QUIZ
+        $seqNum     = (int)($_POST['seq_num'] ?? 1);
+        $date       = $_POST['grade_date'] ?? date('Y-m-d');
+        $description = $_POST['description'] ?? '';
+        $scores     = $_POST['scores'] ?? []; // [student_id => score]
+        $userId     = Session::get('user_id');
+        $db         = Database::getInstance();
 
         try {
             $db->getConnection()->beginTransaction();
 
-            foreach ($grades as $studentId => $types) {
-                // $type sekarang akan berisi: 'UH1', 'UH2', 'TUGAS', 'UTS', 'UAS'
-                foreach ($types as $type => $score) {
-                    
-                    // Skip jika kosong (tapi izinkan nilai 0)
-                    if ($score === '' || $score === null) continue;
+            foreach ($scores as $studentId => $score) {
+                if ($score === '' || $score === null) continue;
 
-                    // Validasi Tipe agar sesuai ENUM Database
-                    $validTypes = ['UH1', 'UH2', 'TUGAS', 'UTS', 'UAS'];
-                    if (!in_array($type, $validTypes)) continue;
+                if ($type === 'HARIAN') {
+                    $exist = $db->query("SELECT id FROM student_grades WHERE student_id=? AND schedule_id=? AND type='HARIAN' AND category=? AND seq_num=?",
+                        [$studentId, $scheduleId, $category, $seqNum])->fetch();
+                } else {
+                    $exist = $db->query("SELECT id FROM student_grades WHERE student_id=? AND schedule_id=? AND type=?",
+                        [$studentId, $scheduleId, $type])->fetch();
+                }
 
-                    $exist = $db->query("
-                        SELECT id FROM student_grades 
-                        WHERE student_id = ? AND schedule_id = ? AND type = ?
-                    ", [$studentId, $scheduleId, $type])->fetch();
-
-                    if ($exist) {
-                        $db->query("
-                            UPDATE student_grades SET score = ?, created_by = ? 
-                            WHERE id = ?
-                        ", [$score, $userId, $exist['id']]);
-                    } else {
-                        $db->query("
-                            INSERT INTO student_grades (student_id, schedule_id, type, score, created_by)
-                            VALUES (?, ?, ?, ?, ?)
-                        ", [$studentId, $scheduleId, $type, $score, $userId]);
-                    }
+                if ($exist) {
+                    $db->query("UPDATE student_grades SET score=?, date=?, description=?, created_by=? WHERE id=?",
+                        [$score, $date, $description, $userId, $exist['id']]);
+                } else {
+                    $db->query("INSERT INTO student_grades (student_id, schedule_id, type, category, seq_num, date, description, score, created_by) VALUES (?,?,?,?,?,?,?,?,?)",
+                        [$studentId, $scheduleId, $type, $category, $seqNum, $date, $description, $score, $userId]);
                 }
             }
 
@@ -450,7 +440,7 @@ class AcademicController {
             Session::setFlash('success', 'Nilai berhasil disimpan.');
         } catch (\Exception $e) {
             $db->getConnection()->rollBack();
-            Session::setFlash('error', 'Gagal menyimpan nilai. Pastikan input valid.');
+            Session::setFlash('error', 'Gagal menyimpan: ' . $e->getMessage());
         }
 
         header("Location: /academic/grades/manage?schedule_id=$scheduleId");
