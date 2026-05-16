@@ -64,6 +64,14 @@ class ExtracurricularController {
         header("Location: /extracurricular/master");
     }
 
+    public function update() {
+        $db = Database::getInstance();
+        $db->query("UPDATE extracurriculars SET name=?, description=? WHERE id=?",
+            [$_POST['name'], $_POST['description'], $_POST['id']]);
+        Session::setFlash('success', 'Ekstrakurikuler berhasil diperbarui');
+        header("Location: /extracurricular/master");
+    }
+
     public function storeCoach() {
         $db = Database::getInstance();
         $db->query("INSERT INTO extracurricular_coaches (extracurricular_id, user_id) VALUES (?, ?)", 

@@ -131,15 +131,16 @@ $doAnim     = $prevScope && $prevScope !== $scope;
         var a = e.target.closest('a[href]');
         if (!a) return;
         var href = a.getAttribute('href');
-        if (!href || href.startsWith('#') || href.startsWith('javascript') || a.target === '_blank' || a.hasAttribute('download') || a.getAttribute('onclick')) return;
+        if (!href || href.startsWith('#') || href.startsWith('javascript') || a.target === '_blank' || a.hasAttribute('download') || a.getAttribute('onclick') || href.includes('export') || href.includes('download')) return;
         show();
     }, true);
 
     // Intercept form submit
     document.addEventListener('submit', function(e){
-        if (e.target.method && e.target.method.toLowerCase() === 'get') return; // filter GET (search/filter jangan blur)
-        show();
-    }, true);
+        if (e.target.method && e.target.method.toLowerCase() === 'get') return;
+        // Delay sedikit agar onsubmit confirm() sempat cancel
+        setTimeout(function(){ if (!e.defaultPrevented) show(); }, 100);
+    });
 
     // Sembunyikan saat back/forward
     window.addEventListener('pageshow', function(){ loader.style.display = 'none'; });

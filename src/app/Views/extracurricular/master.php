@@ -41,9 +41,15 @@
                     <h4 class="font-extrabold text-white text-base leading-tight truncate"><?= htmlspecialchars($e['name']) ?></h4>
                     <p class="text-blue-100 text-xs mt-0.5 line-clamp-1"><?= htmlspecialchars($e['description'] ?? '-') ?></p>
                 </div>
-                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold border shrink-0 <?= $e['status'] === 'ACTIVE' ? 'bg-green-400/20 text-green-100 border-green-400/40' : 'bg-red-400/20 text-red-100 border-red-400/40' ?>">
-                    <?= $e['status'] ?>
-                </span>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <button onclick='openEditEkskul(<?= json_encode(["id"=>$e["id"],"name"=>$e["name"],"description"=>$e["description"]]) ?>)'
+                        class="w-7 h-7 rounded-lg bg-white/20 text-white hover:bg-white/40 flex items-center justify-center transition" title="Edit">
+                        <i class="fa-solid fa-pen text-[10px]"></i>
+                    </button>
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold border <?= $e['status'] === 'ACTIVE' ? 'bg-green-400/20 text-green-100 border-green-400/40' : 'bg-red-400/20 text-red-100 border-red-400/40' ?>">
+                        <?= $e['status'] ?>
+                    </span>
+                </div>
             </div>
 
             <div class="p-5 flex flex-col gap-4 flex-1">
@@ -333,6 +339,39 @@
             if (e.target == document.getElementById(id)) document.getElementById(id).classList.add('hidden');
         });
     }
+
+    function openEditEkskul(e) {
+        document.getElementById('editEkskulId').value = e.id;
+        document.getElementById('editEkskulName').value = e.name;
+        document.getElementById('editEkskulDesc').value = e.description || '';
+        document.getElementById('modalEditEkskul').classList.remove('hidden');
+    }
 </script>
+
+<!-- Modal Edit Ekskul -->
+<div id="modalEditEkskul" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+            <h3 class="font-bold text-slate-700"><i class="fa-solid fa-pen text-slate-400 mr-2"></i>Edit Ekstrakurikuler</h3>
+            <button onclick="document.getElementById('modalEditEkskul').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-slate-200 text-slate-500 hover:bg-slate-300 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form action="/extracurricular/update" method="POST" class="p-6 space-y-4">
+            <?= \App\Core\Csrf::input() ?>
+            <input type="hidden" name="id" id="editEkskulId">
+            <div>
+                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Nama Ekskul</label>
+                <input type="text" name="name" id="editEkskulName" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Deskripsi</label>
+                <textarea name="description" id="editEkskulDesc" rows="3" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none"></textarea>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('modalEditEkskul').classList.add('hidden')" class="flex-1 bg-slate-100 text-slate-600 py-2.5 rounded-xl font-bold text-sm">Batal</button>
+                <button type="submit" class="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-bold hover:bg-blue-700 transition text-sm">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <?php require __DIR__ . '/../layouts/footer.php'; ?>

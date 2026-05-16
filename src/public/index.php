@@ -506,6 +506,7 @@ $router->get('/extracurricular/report',         [ExtracurricularController::clas
 $router->get('/extracurricular/report/print',   [ExtracurricularController::class, 'printReport']);
 $router->get('/extracurricular/master',         [ExtracurricularController::class, 'index']);
 $router->post('/extracurricular/store',         [ExtracurricularController::class, 'store']);
+$router->post('/extracurricular/update',        [ExtracurricularController::class, 'update']);
 $router->post('/extracurricular/schedule/store', [ExtracurricularController::class, 'storeSchedule']);
 $router->post('/extracurricular/schedule/update',[ExtracurricularController::class, 'updateSchedule']);
 $router->get('/extracurricular/schedule/delete', [ExtracurricularController::class, 'deleteSchedule']);

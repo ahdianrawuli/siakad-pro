@@ -80,13 +80,15 @@
                                 <td class="px-5 py-4 text-slate-600 text-sm"><?= $u['position_name'] ?? '-' ?></td>
                                 <td class="px-5 py-4">
                                     <div class="flex justify-center gap-2 flex-wrap">
-                                        <?php foreach (['HADIR' => 'green', 'IZIN' => 'blue', 'SAKIT' => 'yellow', 'ALPA' => 'red'] as $val => $color): ?>
+                                        <?php foreach (['HADIR' => 'green', 'IZIN' => 'blue', 'SAKIT' => 'yellow', 'ALPA' => 'red'] as $val => $color):
+                                            $isChecked = ($status === $val || ($status === '' && $val === 'HADIR'));
+                                        ?>
                                         <label class="cursor-pointer flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-semibold
-                                            <?= $status === $val
+                                            <?= $isChecked
                                                 ? "bg-$color-100 border-$color-400 text-$color-700"
                                                 : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-$color-50" ?>">
                                             <input type="radio" name="attendance[<?= $u['id'] ?>]" value="<?= $val ?>"
-                                                <?= ($status === $val || ($status === '' && $val === 'HADIR')) ? 'checked' : '' ?> class="hidden">
+                                                <?= $isChecked ? 'checked' : '' ?> class="hidden">
                                             <?= ucfirst(strtolower($val)) ?>
                                         </label>
                                         <?php endforeach; ?>
