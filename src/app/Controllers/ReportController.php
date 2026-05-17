@@ -32,53 +32,70 @@ class ReportController {
             "SELECT * FROM grading_weights WHERE academic_year_id = ?", [$year['id'] ?? 0]
         )->fetch() ?: ['weight_daily' => 40, 'weight_uts' => 30, 'weight_uas' => 30];
 
+        // Ambil semua mapel yang diajar di kelas siswa pada tahun ajaran ini
+        $allSubjects = $db->query("
+            SELECT s.name as subject_name, s.type as subject_type, s.kkm
+            FROM schedules sch
+            JOIN subjects s ON sch.subject_id = s.id
+            WHERE sch.classroom_id = ? AND sch.academic_year_id = ?
+            GROUP BY s.id, s.name, s.type, s.kkm
+            ORDER BY s.type, s.name
+        ", [$student['classroom_id'], $year['id'] ?? 0])->fetchAll();
+
         // Ambil semua nilai siswa untuk tahun ajaran ini
         $gradesRaw = $db->query("
-            SELECT sg.type, sg.score, s.name as subject_name, s.type as subject_type, s.kkm, sch.id as schedule_id
+            SELECT sg.type, sg.score, s.name as subject_name
             FROM student_grades sg
             JOIN schedules sch ON sg.schedule_id = sch.id
             JOIN subjects s ON sch.subject_id = s.id
             WHERE sg.student_id = ? AND sch.academic_year_id = ?
         ", [$studentId, $year['id'] ?? 0])->fetchAll();
 
-        // Kelompokkan per mata pelajaran
-        $subjectMap = [];
+        // Kelompokkan nilai per mata pelajaran
+        $scoreMap = [];
         foreach ($gradesRaw as $g) {
             $key = $g['subject_name'];
-            if (!isset($subjectMap[$key])) {
-                $subjectMap[$key] = [
-                    'subject_name' => $g['subject_name'],
-                    'subject_type' => $g['subject_type'],
-                    'kkm'          => $g['kkm'],
-                    'harian'       => [],
-                    'uts'          => null,
-                    'uas'          => null,
-                ];
-            }
             if ($g['type'] === 'HARIAN') {
-                $subjectMap[$key]['harian'][] = (float)$g['score'];
+                $scoreMap[$key]['harian'][] = (float)$g['score'];
             } elseif ($g['type'] === 'UTS') {
-                $subjectMap[$key]['uts'] = (float)$g['score'];
+                $scoreMap[$key]['uts'] = (float)$g['score'];
             } elseif ($g['type'] === 'UAS') {
-                $subjectMap[$key]['uas'] = (float)$g['score'];
+                $scoreMap[$key]['uas'] = (float)$g['score'];
             }
         }
 
-        // Hitung nilai akhir per mapel
+        // Hitung nilai akhir per mapel (semua mapel muncul)
         $grades = ['NASIONAL' => [], 'PESANTREN' => [], 'MULOK' => []];
-        foreach ($subjectMap as $subj) {
-            $daily = !empty($subj['harian']) ? array_sum($subj['harian']) / count($subj['harian']) : 0;
-            $uts   = $subj['uts'] ?? 0;
-            $uas   = $subj['uas'] ?? 0;
-            $final = round(($daily * $weights['weight_daily'] + $uts * $weights['weight_uts'] + $uas * $weights['weight_uas']) / 100, 1);
-            $predicate = $final >= 90 ? 'A' : ($final >= 80 ? 'B' : ($final >= 70 ? 'C' : 'D'));
+        foreach ($allSubjects as $subj) {
+            $key = $subj['subject_name'];
+            $harian = $scoreMap[$key]['harian'] ?? [];
+            $daily = !empty($harian) ? array_sum($harian) / count($harian) : 0;
+            $uts   = $scoreMap[$key]['uts'] ?? 0;
+            $uas   = $scoreMap[$key]['uas'] ?? 0;
+            $hasScore = !empty($harian) || $uts > 0 || $uas > 0;
+            $final = $hasScore ? round(($daily * $weights['weight_daily'] + $uts * $weights['weight_uts'] + $uas * $weights['weight_uas']) / 100, 1) : null;
+            $predicate = $final !== null ? ($final >= 90 ? 'A' : ($final >= 80 ? 'B' : ($final >= 70 ? 'C' : 'D'))) : '-';
+
+            // Deskripsi capaian otomatis
+            if ($final === null) {
+                $desc = 'Belum ada nilai';
+            } elseif ($final >= 90) {
+                $desc = 'Sangat baik dalam menguasai materi ' . $subj['subject_name'];
+            } elseif ($final >= 80) {
+                $desc = 'Baik dalam menguasai materi ' . $subj['subject_name'];
+            } elseif ($final >= 70) {
+                $desc = 'Cukup dalam menguasai materi ' . $subj['subject_name'];
+            } else {
+                $desc = 'Perlu peningkatan dalam materi ' . $subj['subject_name'];
+            }
+
             $type = in_array($subj['subject_type'], ['NASIONAL','PESANTREN','MULOK']) ? $subj['subject_type'] : 'NASIONAL';
             $grades[$type][] = [
                 'subject_name' => $subj['subject_name'],
                 'kkm'          => $subj['kkm'],
-                'final_score'  => $final,
+                'final_score'  => $final ?? '-',
                 'predicate'    => $predicate,
-                'description'  => '',
+                'description'  => $desc,
             ];
         }
 
