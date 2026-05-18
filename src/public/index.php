@@ -18,6 +18,7 @@ use App\Core\Router;
 use App\Controllers\{
     AuthController, DashboardController, MenuController, UserController, RoleController, SettingsController,
     ScopeController, WhatsappController, LetterController, SupportController, FingerprintController,
+    CustomAttendanceController,
     PpdbPublicController, PpdbAdminController, PpdbSettingsController,
     StudentController, StudentAffairsController, ParentsController, GuardianController, AlumniController,
     LibraryController,
@@ -119,6 +120,15 @@ $router->get('/settings/fingerprint/delete',   [FingerprintController::class, 'd
 $router->post('/settings/fingerprint/mapping', [FingerprintController::class, 'storeMapping']);
 $router->get('/settings/fingerprint/mapping/delete', [FingerprintController::class, 'deleteMapping']);
 $router->post('/api/fingerprint/clock',        [FingerprintController::class, 'apiClock']);
+
+// Custom Attendance
+$router->get('/attendance/custom',              [CustomAttendanceController::class, 'index']);
+$router->post('/attendance/custom/store',       [CustomAttendanceController::class, 'store']);
+$router->get('/attendance/custom/types',        [CustomAttendanceController::class, 'types']);
+$router->post('/attendance/custom/types/store', [CustomAttendanceController::class, 'storeType']);
+$router->post('/attendance/custom/types/update',[CustomAttendanceController::class, 'updateType']);
+$router->get('/attendance/custom/types/delete', [CustomAttendanceController::class, 'deleteType']);
+$router->get('/attendance/custom/print',        [CustomAttendanceController::class, 'printReport']);
 
 $router->get('/settings/letters',           [LetterController::class, 'index']);
 $router->post('/settings/letters/store',    [LetterController::class, 'store']);
