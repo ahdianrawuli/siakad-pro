@@ -166,25 +166,24 @@ class CustomAttendanceController {
         $type = $db->query("SELECT * FROM custom_attendance_types WHERE id=?", [$typeId])->fetch();
         if (!$type) { header('Location: /attendance/custom'); exit; }
 
-        $scope = ScopeFilter::get();
         $where = "ca.type_id=? AND ca.date BETWEEN ? AND ?";
         $params = [$typeId, $dateFrom, $dateTo];
 
         if ($type['target'] === 'SISWA' || $type['target'] === 'SEMUA') {
             $report = $db->query("
-                SELECT s.full_name as name, s.nis, c.name as class_name, ca.date, ca.status
+                SELECT s.full_name as name, s.nis, c.name as class_name, ca.date, ca.session_num, ca.time_in, ca.status
                 FROM custom_attendances ca
                 JOIN students s ON ca.person_id = s.id
                 LEFT JOIN classrooms c ON s.classroom_id = c.id
                 WHERE $where" . ($classId ? " AND s.classroom_id=?" : "") . "
-                ORDER BY s.full_name, ca.date",
+                ORDER BY s.full_name, ca.date, ca.session_num",
                 $classId ? array_merge($params, [$classId]) : $params
             )->fetchAll();
         } else {
             $report = $db->query("
-                SELECT u.name, '' as nis, '' as class_name, ca.date, ca.status
+                SELECT u.name, '' as nis, '' as class_name, ca.date, ca.session_num, ca.time_in, ca.status
                 FROM custom_attendances ca JOIN users u ON ca.person_id = u.id
-                WHERE $where ORDER BY u.name, ca.date", $params)->fetchAll();
+                WHERE $where ORDER BY u.name, ca.date, ca.session_num", $params)->fetchAll();
         }
 
         $classroom = $classId ? $db->query("SELECT name FROM classrooms WHERE id=?", [$classId])->fetch() : null;
