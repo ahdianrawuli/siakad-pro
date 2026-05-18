@@ -83,6 +83,13 @@ class StaffController {
                 $_POST['gender'], $_POST['phone'] ?? null, $_POST['email'] ?? null, $_POST['address'] ?? null
             ]);
 
+            // Sync: jika role guru, tambah juga ke tabel teachers
+            if ($roleId == 3) {
+                $db->query("INSERT INTO teachers (user_id, nip, full_name, gender, phone, email, status) VALUES (?,?,?,?,?,?,'ACTIVE')", [
+                    $userId, $_POST['nip'], $_POST['full_name'], $_POST['gender'], $_POST['phone'] ?? null, $_POST['email'] ?? null
+                ]);
+            }
+
             $db->getConnection()->commit();
             Session::setFlash('success', 'Staff berhasil ditambahkan. Password default: 123456');
         } catch (\Exception $e) {

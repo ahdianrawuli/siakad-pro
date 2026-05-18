@@ -50,13 +50,22 @@ class LetterController {
 
     // --- GENERATE SURAT (CETAK) ---
     public function print() {
-        $templateId = $_GET['template_id'];
-        $studentId = $_GET['student_id']; // Target Siswa
+        $templateId = $_GET['template_id'] ?? null;
+        $studentId = $_GET['student_id'] ?? null;
+
+        if (!$templateId || !$studentId) {
+            Session::setFlash('error', 'Parameter template dan siswa wajib diisi.');
+            header('Location: /settings/letters'); exit;
+        }
 
         $db = Database::getInstance();
         
         // 1. Ambil Template
         $tpl = $db->query("SELECT * FROM letter_templates WHERE id = ?", [$templateId])->fetch();
+        if (!$tpl) {
+            Session::setFlash('error', 'Template surat tidak ditemukan.');
+            header('Location: /settings/letters'); exit;
+        }
         
         // 2. Ambil Data Siswa Lengkap
         $s = $db->query("
@@ -66,14 +75,25 @@ class LetterController {
             WHERE s.id = ?
         ", [$studentId])->fetch();
 
-        // 3. Replace Placeholder
+        if (!$s) {
+            Session::setFlash('error', 'Data siswa tidak ditemukan.');
+            header('Location: /settings/letters'); exit;
+        }
+
+        // 3. Ambil tahun ajaran aktif
+        $activeYear = $db->query("SELECT name, semester FROM academic_years WHERE is_active=1 LIMIT 1")->fetch();
+
+        // 4. Replace Placeholder
         $content = $tpl['content'];
-        $content = str_replace('{nama}', $s['full_name'], $content);
-        $content = str_replace('{nis}', $s['nis'], $content);
-        $content = str_replace('{kelas}', $s['class_name'] ?? 'Belum ada kelas', $content);
-        $content = str_replace('{tempat_lahir}', $s['birth_place'], $content);
-        $content = str_replace('{tgl_lahir}', $s['birth_date'], $content);
-        $content = str_replace('{alamat}', $s['address'], $content);
+        $content = str_replace('{nama_siswa}', $s['full_name'] ?? '-', $content);
+        $content = str_replace('{nama}', $s['full_name'] ?? '-', $content);
+        $content = str_replace('{nis}', $s['nis'] ?? '-', $content);
+        $content = str_replace('{kelas}', $s['class_name'] ?? '-', $content);
+        $content = str_replace('{ttl}', ($s['birth_place'] ?? '-') . ', ' . ($s['birth_date'] ?? '-'), $content);
+        $content = str_replace('{tempat_lahir}', $s['birth_place'] ?? '-', $content);
+        $content = str_replace('{tgl_lahir}', $s['birth_date'] ?? '-', $content);
+        $content = str_replace('{alamat}', $s['address'] ?? '-', $content);
+        $content = str_replace('{tahun_ajaran}', ($activeYear['name'] ?? '-') . ' ' . ($activeYear['semester'] ?? ''), $content);
 
         // Render View Cetak (Reuse logic A4 dari Rapor)
         View::render('letters/print_a4', ['content' => $content, 'title' => $tpl['name']]);

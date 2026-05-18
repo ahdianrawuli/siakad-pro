@@ -31,12 +31,19 @@ class MenuController {
         $totalData = $db->query("SELECT COUNT(*) FROM (" . $sql . ") as t", $params)->fetchColumn();
         $sql .= " ORDER BY m.parent_id ASC, m.order_num ASC LIMIT $limit OFFSET $offset";
         $menus = $db->query($sql, $params)->fetchAll();
+        // Ambil role assignment per menu
+        $menuRoles = [];
+        $rmAll = $db->query("SELECT menu_id, role_id FROM role_menus")->fetchAll();
+        foreach ($rmAll as $rm) { $menuRoles[$rm['menu_id']][] = $rm['role_id']; }
+
         $parents = $db->query("SELECT id, title FROM menus WHERE parent_id IS NULL ORDER BY order_num ASC")->fetchAll();
 
         View::render('settings/menus/index', [
             'title' => 'Manajemen Menu',
             'menus' => $menus,
+            'menuRoles' => $menuRoles,
             'parents' => $parents,
+            'roles' => $db->query("SELECT id, name FROM roles ORDER BY id")->fetchAll(),
             'totalData' => $totalData,
             'totalPages' => ceil($totalData / $limit),
             'currentPage' => $page,
@@ -58,6 +65,12 @@ class MenuController {
 
         try {
             $db->query("INSERT INTO menus (parent_id, title, url, icon, order_num, is_active) VALUES (?, ?, ?, ?, ?, ?)", $data);
+            $newId = $db->getConnection()->lastInsertId();
+            // Assign ke role yang dipilih
+            $roles = $_POST['roles'] ?? [1];
+            foreach ($roles as $roleId) {
+                $db->query("INSERT IGNORE INTO role_menus (role_id, menu_id) VALUES (?, ?)", [$roleId, $newId]);
+            }
             Session::setFlash('success', 'Menu berhasil ditambahkan.');
         } catch (\Exception $e) {
             Session::setFlash('error', 'Gagal menambah menu.');
@@ -67,17 +80,24 @@ class MenuController {
 
     public function update() {
         $db = Database::getInstance();
+        $id = $_POST['id'];
         $data = [
             $_POST['parent_id'] ?: null,
             $_POST['title'],
             $_POST['url'] ?: '#',
             $_POST['icon'] ?: 'circle',
             $_POST['order_num'] ?: 0,
-            $_POST['id']
+            $id
         ];
 
         try {
             $db->query("UPDATE menus SET parent_id = ?, title = ?, url = ?, icon = ?, order_num = ? WHERE id = ?", $data);
+            // Update role assignment
+            $roles = $_POST['roles'] ?? [];
+            $db->query("DELETE FROM role_menus WHERE menu_id = ?", [$id]);
+            foreach ($roles as $roleId) {
+                $db->query("INSERT IGNORE INTO role_menus (role_id, menu_id) VALUES (?, ?)", [$roleId, $id]);
+            }
             Session::setFlash('success', 'Menu berhasil diperbarui.');
         } catch (\Exception $e) {
             Session::setFlash('error', 'Gagal memperbarui menu.');

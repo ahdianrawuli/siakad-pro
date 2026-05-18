@@ -88,7 +88,7 @@
                                     </div>
                                 </td>
                                 <td class="px-5 py-4 text-center">
-                                    <?php if (!in_array($r['slug'], ['super-admin', 'admin'])): ?>
+                                    <?php if (empty($r['is_protected'])): ?>
                                     <div class="flex items-center justify-center gap-1.5">
                                         <button @click="editModalOpen = true; currentId = '<?= $r['id'] ?>'; currentName = '<?= addslashes(htmlspecialchars($r['name'])) ?>'; currentDesc = '<?= addslashes(htmlspecialchars($r['description'] ?? '')) ?>'"
                                             class="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white inline-flex items-center justify-center transition-colors shadow-sm" title="Edit">

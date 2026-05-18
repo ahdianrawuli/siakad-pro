@@ -26,7 +26,7 @@
 
         <div class="content">
             <h3 style="text-align: center; text-decoration: underline; margin-bottom: 30px;"><?= strtoupper($title) ?></h3>
-            <?= $content ?>
+            <?= nl2br(str_replace('\n', "\n", $content)) ?>
         </div>
 
         <div style="margin-top: 50px; float: right; text-align: center; width: 200px;">

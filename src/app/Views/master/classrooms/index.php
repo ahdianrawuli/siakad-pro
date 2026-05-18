@@ -128,11 +128,17 @@
                                     <?= $row['teacher_name'] ?? '<span class="text-red-300 text-xs italic">Belum ditentukan</span>' ?>
                                 </td>
                                 <td class="px-5 py-4 text-center">
-                                    <a href="/academic/classrooms/delete?id=<?= $row['id'] ?>"
-                                        class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white inline-flex items-center justify-center transition-colors shadow-sm"
-                                        onclick="return confirm('Hapus kelas ini?')" title="Hapus">
-                                        <i class="fa-solid fa-trash-can text-sm"></i>
-                                    </a>
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <button onclick='openEditClass(<?= json_encode($row) ?>)'
+                                            class="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white inline-flex items-center justify-center transition-colors shadow-sm" title="Edit">
+                                            <i class="fa-solid fa-pen-to-square text-sm"></i>
+                                        </button>
+                                        <a href="/master/classrooms/delete?id=<?= $row['id'] ?>"
+                                            class="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white inline-flex items-center justify-center transition-colors shadow-sm"
+                                            onclick="return confirm('Hapus kelas ini?')" title="Hapus">
+                                            <i class="fa-solid fa-trash-can text-sm"></i>
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -225,5 +231,60 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Edit Kelas -->
+<div id="editClassModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+            <h3 class="font-bold text-slate-700"><i class="fa-solid fa-pen-to-square text-slate-400 mr-2"></i>Edit Kelas</h3>
+            <button onclick="document.getElementById('editClassModal').classList.add('hidden')" class="w-8 h-8 rounded-lg bg-slate-200 text-slate-500 hover:bg-slate-300 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form action="/master/classrooms/update" method="POST" class="p-6 space-y-4">
+            <?= \App\Core\Csrf::input() ?>
+            <input type="hidden" name="id" id="ecId">
+            <div>
+                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Jenjang</label>
+                <select name="major" id="ecMajor" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" required>
+                    <option value="MTS">MTS</option><option value="MA">MA</option><option value="PDF">PDF</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Tingkat</label>
+                <input type="number" name="level" id="ecLevel" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" required>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Nama Kelas</label>
+                <input type="text" name="name" id="ecName" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" required>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Wali Kelas</label>
+                <select name="homeroom_teacher_id" id="ecTeacher" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+                    <option value="">-- Pilih Guru --</option>
+                    <?php foreach ($teachers as $t): ?>
+                        <option value="<?= $t['id'] ?>"><?= htmlspecialchars($t['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('editClassModal').classList.add('hidden')" class="flex-1 bg-slate-100 text-slate-600 py-2.5 rounded-xl font-bold text-sm">Batal</button>
+                <button type="submit" class="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-bold hover:bg-blue-700 transition text-sm">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openEditClass(r) {
+    document.getElementById('ecId').value = r.id;
+    document.getElementById('ecMajor').value = r.major;
+    document.getElementById('ecLevel').value = r.level;
+    document.getElementById('ecName').value = r.name;
+    document.getElementById('ecTeacher').value = r.homeroom_teacher_id || '';
+    document.getElementById('editClassModal').classList.remove('hidden');
+}
+window.addEventListener('click', function(e) {
+    if (e.target == document.getElementById('editClassModal')) document.getElementById('editClassModal').classList.add('hidden');
+});
+</script>
 
 <?php require __DIR__ . '/../../layouts/footer.php'; ?>

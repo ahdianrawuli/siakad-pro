@@ -73,6 +73,8 @@ class RoleController {
     public function update() {
         $db = Database::getInstance();
         $id = $_POST['id'];
+        $protected = $db->query("SELECT is_protected FROM roles WHERE id=?", [$id])->fetchColumn();
+        if ($protected) { Session::setFlash('error', 'Role ini tidak dapat diubah.'); header('Location: /settings/roles'); return; }
         $name = trim($_POST['name']);
         $slug = strtolower(str_replace(' ', '-', $name));
         $desc = trim($_POST['description'] ?? '');
@@ -90,6 +92,8 @@ class RoleController {
     public function delete() {
         $db = Database::getInstance();
         $id = $_POST['id'];
+        $protected = $db->query("SELECT is_protected FROM roles WHERE id=?", [$id])->fetchColumn();
+        if ($protected) { Session::setFlash('error', 'Role ini tidak dapat dihapus.'); header('Location: /settings/roles'); return; }
 
         try {
             $db->query("DELETE FROM roles WHERE id = ?", [$id]);
@@ -136,6 +140,31 @@ class RoleController {
 
         try {
             $db->getConnection()->beginTransaction();
+
+            // Expand: jika parent di-check, tambah semua child-nya
+            // Jika child di-check, tambah parent-nya
+            $allMenus = $db->query("SELECT id, parent_id FROM menus WHERE is_active=1")->fetchAll();
+            $parentMap = []; $childMap = [];
+            foreach ($allMenus as $m) {
+                $parentMap[$m['id']] = $m['parent_id'];
+                if ($m['parent_id']) $childMap[$m['parent_id']][] = $m['id'];
+            }
+
+            $finalMenus = [];
+            foreach ($selectedMenus as $menuId) {
+                $finalMenus[$menuId] = true;
+                // Jika ini parent, tambah semua child
+                if (isset($childMap[$menuId])) {
+                    foreach ($childMap[$menuId] as $childId) {
+                        $finalMenus[$childId] = true;
+                    }
+                }
+                // Jika ini child, tambah parent
+                if (!empty($parentMap[$menuId])) {
+                    $finalMenus[$parentMap[$menuId]] = true;
+                }
+            }
+            $selectedMenus = array_keys($finalMenus);
 
             // Delete old permissions
             $db->query("DELETE FROM role_menus WHERE role_id = ?", [$roleId]);

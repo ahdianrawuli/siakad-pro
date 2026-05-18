@@ -81,7 +81,7 @@
                                     </form>
                                 </td>
                                 <td class="p-4 text-center">
-                                    <button @click="editModalOpen = true; currentId = '<?= $m['id'] ?>'; currentTitle = '<?= htmlspecialchars($m['title']) ?>'; currentUrl = '<?= htmlspecialchars($m['url']) ?>'; currentIcon = '<?= htmlspecialchars($m['icon']) ?>'; currentOrder = '<?= $m['order_num'] ?>'; currentParent = '<?= $m['parent_id'] ?>'" class="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg transition mr-1" title="Edit">
+                                    <button @click="editModalOpen = true; currentId = '<?= $m['id'] ?>'; currentTitle = '<?= htmlspecialchars($m['title']) ?>'; currentUrl = '<?= htmlspecialchars($m['url']) ?>'; currentIcon = '<?= htmlspecialchars($m['icon']) ?>'; currentOrder = '<?= $m['order_num'] ?>'; currentParent = '<?= $m['parent_id'] ?>'; setEditRoles(<?= json_encode($menuRoles[$m['id']] ?? []) ?>)" class="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg transition mr-1" title="Edit">
                                         <i class="fa-solid fa-pen-to-square"></i>
                                     </button>
                                     <button @click="deleteModalOpen = true; currentId = '<?= $m['id'] ?>'" class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition" title="Hapus">
@@ -156,6 +156,17 @@
                             </label>
                         </div>
                     </div>
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Assign ke Role</label>
+                        <div class="flex flex-wrap gap-3">
+                            <?php foreach ($roles as $r): ?>
+                            <label class="flex items-center gap-1.5 cursor-pointer text-sm">
+                                <input type="checkbox" name="roles[]" value="<?= $r['id'] ?>" <?= $r['id']==1?'checked':'' ?> class="w-4 h-4 text-blue-600 rounded border-gray-300">
+                                <?= htmlspecialchars($r['name']) ?>
+                            </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
                 </div>
                 <div class="mt-6 flex justify-end gap-3">
                     <button type="button" @click="modalOpen = false" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Batal</button>
@@ -202,6 +213,17 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Urutan</label>
                         <input type="number" name="order_num" x-model="currentOrder" class="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Assign ke Role</label>
+                        <div class="flex flex-wrap gap-3" id="editRolesContainer">
+                            <?php foreach ($roles as $r): ?>
+                            <label class="flex items-center gap-1.5 cursor-pointer text-sm">
+                                <input type="checkbox" name="roles[]" value="<?= $r['id'] ?>" class="edit-role-cb w-4 h-4 text-blue-600 rounded border-gray-300" data-role="<?= $r['id'] ?>">
+                                <?= htmlspecialchars($r['name']) ?>
+                            </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
                 </div>
                 <div class="mt-6 flex justify-end gap-3">
                     <button type="button" @click="editModalOpen = false" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Batal</button>
@@ -244,5 +266,13 @@
     </div>
 
 </main>
+
+<script>
+function setEditRoles(roleIds) {
+    document.querySelectorAll('.edit-role-cb').forEach(function(cb) {
+        cb.checked = roleIds.includes(parseInt(cb.dataset.role));
+    });
+}
+</script>
 
 <?php require_once __DIR__ . '/../../layouts/footer.php'; ?>

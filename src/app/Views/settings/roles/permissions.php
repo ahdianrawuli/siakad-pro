@@ -105,6 +105,29 @@
 </div>
 
 <script>
+    // Auto check/uncheck parent-child
+    document.querySelectorAll('input[name="menus[]"]').forEach(function(cb) {
+        cb.addEventListener('change', function() {
+            var container = this.closest('.border.border-slate-200.rounded-2xl');
+            var parentCb = container.querySelector('label:first-child input[type="checkbox"]');
+            var childCbs = container.querySelectorAll('.px-4.py-3 input[type="checkbox"]');
+
+            if (this === parentCb) {
+                // Parent di-check/uncheck → semua child ikut
+                childCbs.forEach(function(c) { c.checked = parentCb.checked; });
+            } else {
+                // Child di-check → parent harus checked
+                if (this.checked) {
+                    parentCb.checked = true;
+                } else {
+                    // Jika semua child uncheck → parent uncheck
+                    var anyChecked = Array.from(childCbs).some(function(c) { return c.checked; });
+                    if (!anyChecked) parentCb.checked = false;
+                }
+            }
+        });
+    });
+
     window.onclick = function(e) {
         if (e.target == document.getElementById('infoModal')) document.getElementById('infoModal').classList.add('hidden');
     }

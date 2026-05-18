@@ -47,6 +47,8 @@ class StaffPositionController {
 
     public function update() {
         $db = Database::getInstance();
+        $protected = $db->query("SELECT is_protected FROM staff_positions WHERE id=?", [$_POST['id']])->fetchColumn();
+        if ($protected) { Session::setFlash('error', 'Jabatan ini tidak dapat diubah.'); header('Location: /staff/positions'); return; }
         $db->query("UPDATE staff_positions SET name=?, code=?, type=?, role_id=? WHERE id=?", 
             [$_POST['name'], strtoupper($_POST['code']), $_POST['type'], $_POST['role_id'] ?: null, $_POST['id']]);
         Session::setFlash('success', 'Jabatan diperbarui.');
@@ -55,6 +57,8 @@ class StaffPositionController {
 
     public function delete() {
         $db = Database::getInstance();
+        $protected = $db->query("SELECT is_protected FROM staff_positions WHERE id=?", [$_GET['id']])->fetchColumn();
+        if ($protected) { Session::setFlash('error', 'Jabatan ini tidak dapat dihapus.'); header('Location: /staff/positions'); return; }
         try {
             $db->query("DELETE FROM staff_positions WHERE id = ?", [$_GET['id']]);
             Session::setFlash('success', 'Jabatan dihapus.');

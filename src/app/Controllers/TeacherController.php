@@ -100,6 +100,14 @@ class TeacherController {
                 'ACTIVE'
             ]);
 
+            // Sync: tambah juga ke staff_members dengan jabatan Guru Mata Pelajaran
+            $gmpPos = $db->query("SELECT id FROM staff_positions WHERE code='GMP' LIMIT 1")->fetchColumn();
+            if ($gmpPos) {
+                $db->query("INSERT INTO staff_members (user_id, position_id, nip, full_name, gender, phone, email, address) VALUES (?,?,?,?,?,?,?,?)", [
+                    $userId, $gmpPos, $_POST['nip'], $_POST['full_name'], $_POST['gender'], $_POST['phone'], $email, $_POST['address']
+                ]);
+            }
+
             $db->getConnection()->commit();
             Session::setFlash('success', 'Data Guru dan Akun Login berhasil dibuat.');
         } catch (\Exception $e) {

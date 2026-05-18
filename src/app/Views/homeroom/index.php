@@ -75,7 +75,7 @@
                             <a href="/report/print?student_id=<?= $s['id'] ?>" target="_blank" class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-700" title="Cetak Rapor">
                                 <i class="fa-solid fa-print"></i> Rapor
                             </a>
-                            <a href="/settings/letters/print?template_id=1&student_id=<?= $s['id'] ?>" target="_blank" class="bg-gray-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-gray-700" title="Surat Keterangan Aktif">
+                            <a href="/settings/letters/print?template_id=2&student_id=<?= $s['id'] ?>" target="_blank" class="bg-gray-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-gray-700" title="Surat Keterangan Aktif">
                                 <i class="fa-solid fa-file-lines"></i> SKA
                             </a>
                         </div>

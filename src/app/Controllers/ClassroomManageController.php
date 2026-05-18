@@ -95,13 +95,13 @@ public function index() {
         $name = $_POST['name'];
         $level = $_POST['level'];
         $major = $_POST['major'];
-        $teacherId = $_POST['homeroom_teacher_id'] ?: null;
+        $teacherId = $_POST['homeroom_teacher_id'] ?? null ?: null;
 
         $sql = "UPDATE classrooms SET name = ?, level = ?, major = ?, homeroom_teacher_id = ? WHERE id = ?";
         $db->query($sql, [$name, $level, $major, $teacherId, $id]);
 
         Session::setFlash('success', 'Data kelas berhasil diperbarui.');
-        header('Location: /academic/classrooms');
+        header('Location: /master/classrooms');
     }
 
     public function delete() {

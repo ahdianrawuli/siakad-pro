@@ -582,6 +582,9 @@ $router->get('/master/classrooms',              [ClassroomManageController::clas
 $router->post('/master/classrooms/store',       [ClassroomManageController::class, 'store']);
 $router->post('/master/classrooms/update',      [ClassroomManageController::class, 'update']);
 $router->get('/master/classrooms/delete',       [ClassroomManageController::class, 'delete']);
+$router->post('/master/classrooms/store',       [ClassroomManageController::class, 'store']);
+$router->post('/master/classrooms/update',      [ClassroomManageController::class, 'update']);
+$router->get('/master/classrooms/delete',       [ClassroomManageController::class, 'delete']);
 
 $router->get('/student-affairs/teachers',       [TeacherController::class, 'index']);
 $router->get('/student-affairs/attendance',       [StudentAffairsController::class, 'attendance']);
