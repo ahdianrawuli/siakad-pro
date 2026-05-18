@@ -76,29 +76,28 @@ class StaffAttendanceController {
     public function store() {
         $db = Database::getInstance();
         $date = $_POST['date'];
-        $attendances = $_POST['attendance']; // Array [user_id => status]
+        $attendances = $_POST['attendance'];
         $notes = $_POST['notes'] ?? [];
+        $timeIns = $_POST['time_in'] ?? [];
+        $timeOuts = $_POST['time_out'] ?? [];
         $adminId = Session::get('user_id');
 
         try {
             $db->getConnection()->beginTransaction();
 
             foreach ($attendances as $userId => $status) {
-                // Cek apakah data sudah ada
                 $check = $db->query("SELECT id FROM staff_attendances WHERE user_id = ? AND date = ?", [$userId, $date])->fetch();
                 
                 $note = $notes[$userId] ?? '';
-                // Default jam masuk jika hadir (opsional, bisa dikosongkan)
-                $timeIn = ($status == 'HADIR') ? '07:00:00' : null;
+                $timeIn = !empty($timeIns[$userId]) ? $timeIns[$userId] : null;
+                $timeOut = !empty($timeOuts[$userId]) ? $timeOuts[$userId] : null;
 
                 if ($check) {
-                    // Update
-                    $db->query("UPDATE staff_attendances SET status = ?, notes = ?, created_by = ? WHERE id = ?", 
-                        [$status, $note, $adminId, $check['id']]);
+                    $db->query("UPDATE staff_attendances SET status = ?, time_in = ?, time_out = ?, notes = ?, created_by = ? WHERE id = ?", 
+                        [$status, $timeIn, $timeOut, $note, $adminId, $check['id']]);
                 } else {
-                    // Insert
-                    $db->query("INSERT INTO staff_attendances (user_id, date, status, time_in, notes, created_by) VALUES (?, ?, ?, ?, ?, ?)", 
-                        [$userId, $date, $status, $timeIn, $note, $adminId]);
+                    $db->query("INSERT INTO staff_attendances (user_id, date, status, time_in, time_out, notes, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)", 
+                        [$userId, $date, $status, $timeIn, $timeOut, $note, $adminId]);
                 }
             }
 

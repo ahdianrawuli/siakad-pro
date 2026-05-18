@@ -17,7 +17,7 @@ spl_autoload_register(function ($class) {
 use App\Core\Router;
 use App\Controllers\{
     AuthController, DashboardController, MenuController, UserController, RoleController, SettingsController,
-    ScopeController, WhatsappController, LetterController, SupportController,
+    ScopeController, WhatsappController, LetterController, SupportController, FingerprintController,
     PpdbPublicController, PpdbAdminController, PpdbSettingsController,
     StudentController, StudentAffairsController, ParentsController, GuardianController, AlumniController,
     LibraryController,
@@ -111,6 +111,14 @@ $router->get('/settings/whatsapp/status',    [WhatsappController::class, 'status
 $router->post('/settings/whatsapp/send',     [WhatsappController::class, 'sendManual']);
 $router->post('/settings/whatsapp/blast',    [WhatsappController::class, 'blast']);
 $router->post('/settings/whatsapp/logout',   [WhatsappController::class, 'logout']);
+
+// Fingerprint Device
+$router->get('/settings/fingerprint',          [FingerprintController::class, 'index']);
+$router->post('/settings/fingerprint/store',   [FingerprintController::class, 'storeDevice']);
+$router->get('/settings/fingerprint/delete',   [FingerprintController::class, 'deleteDevice']);
+$router->post('/settings/fingerprint/mapping', [FingerprintController::class, 'storeMapping']);
+$router->get('/settings/fingerprint/mapping/delete', [FingerprintController::class, 'deleteMapping']);
+$router->post('/api/fingerprint/clock',        [FingerprintController::class, 'apiClock']);
 
 $router->get('/settings/letters',           [LetterController::class, 'index']);
 $router->post('/settings/letters/store',    [LetterController::class, 'store']);

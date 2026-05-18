@@ -59,14 +59,16 @@
                             <tr class="bg-slate-50 border-b border-slate-200">
                                 <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Pegawai</th>
                                 <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Jabatan</th>
-                                <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Status Kehadiran</th>
+                                <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Status</th>
+                                <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Jam Datang</th>
+                                <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Jam Pulang</th>
                                 <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Catatan</th>
                                 <th class="px-5 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Opsi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
                             <?php if (empty($users)): ?>
-                                <tr><td colspan="5" class="px-5 py-16 text-center text-slate-400 text-sm font-medium">Data tidak ditemukan.</td></tr>
+                                <tr><td colspan="7" class="px-5 py-16 text-center text-slate-400 text-sm font-medium">Data tidak ditemukan.</td></tr>
                             <?php endif; ?>
                             <?php foreach ($users as $u):
                                 $att    = $attMap[$u['id']] ?? null;
@@ -93,6 +95,14 @@
                                         </label>
                                         <?php endforeach; ?>
                                     </div>
+                                </td>
+                                <td class="px-3 py-4 text-center">
+                                    <input type="time" name="time_in[<?= $u['id'] ?>]" value="<?= $att['time_in'] ?? '' ?>"
+                                        class="px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none w-24">
+                                </td>
+                                <td class="px-3 py-4 text-center">
+                                    <input type="time" name="time_out[<?= $u['id'] ?>]" value="<?= $att['time_out'] ?? '' ?>"
+                                        class="px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none w-24">
                                 </td>
                                 <td class="px-5 py-4">
                                     <input type="text" name="notes[<?= $u['id'] ?>]" value="<?= htmlspecialchars($att['notes'] ?? '') ?>"
