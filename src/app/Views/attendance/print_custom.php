@@ -40,6 +40,7 @@
                 <th class="border border-gray-300 px-3 py-2 w-8 text-center">No</th>
                 <th class="border border-gray-300 px-3 py-2">Nama</th>
                 <?php if ($type['target'] !== 'GURU'): ?><th class="border border-gray-300 px-3 py-2">Kelas</th><?php endif; ?>
+                <?php if ($type['target'] === 'GURU'): ?><th class="border border-gray-300 px-3 py-2">Jabatan</th><?php endif; ?>
                 <th class="border border-gray-300 px-3 py-2">Tanggal</th>
                 <?php if ($sessions > 1): ?><th class="border border-gray-300 px-3 py-2 text-center">Sesi</th><?php endif; ?>
                 <?php if ($hasTime): ?><th class="border border-gray-300 px-3 py-2 text-center">Jam</th><?php endif; ?>
@@ -61,6 +62,7 @@
                 <td class="border border-gray-300 px-3 py-1.5 text-center" rowspan="<?= $rowspan ?>"><?= $no ?></td>
                 <td class="border border-gray-300 px-3 py-1.5 font-bold" rowspan="<?= $rowspan ?>"><?= htmlspecialchars($info['name']) ?></td>
                 <?php if ($type['target'] !== 'GURU'): ?><td class="border border-gray-300 px-3 py-1.5 text-xs" rowspan="<?= $rowspan ?>"><?= htmlspecialchars($info['class_name'] ?? '-') ?></td><?php endif; ?>
+                <?php if ($type['target'] === 'GURU'): ?><td class="border border-gray-300 px-3 py-1.5 text-xs" rowspan="<?= $rowspan ?>"><?= htmlspecialchars($info['position_name'] ?? '-') ?></td><?php endif; ?>
                 <td class="border border-gray-300 px-3 py-1.5 font-mono text-xs" rowspan="<?= $rowspan ?>"><?= date('d/m/Y', strtotime($info['date'])) ?></td>
                 <?php endif; ?>
                 <?php if ($sessions > 1): ?>

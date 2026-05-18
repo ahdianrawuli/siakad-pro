@@ -40,7 +40,7 @@ class CustomAttendanceController {
                     $guruWhere = "u.role_id IN (2,3,7) AND u.status='active'";
                     if ($posFilter) $guruWhere .= " AND EXISTS (SELECT 1 FROM staff_members sm WHERE sm.user_id=u.id $posFilter)";
                     if ($search) $guruWhere .= " AND u.name LIKE '%" . addslashes($search) . "%'";
-                    $persons = array_merge($persons, $db->query("SELECT u.id, u.name as full_name, 'guru' as role FROM users u WHERE $guruWhere ORDER BY u.name")->fetchAll());
+                    $persons = array_merge($persons, $db->query("SELECT u.id, u.name as full_name, 'guru' as role, COALESCE(sp.name,'') as position_name FROM users u LEFT JOIN staff_members sm ON sm.user_id=u.id LEFT JOIN staff_positions sp ON sm.position_id=sp.id WHERE $guruWhere ORDER BY u.name")->fetchAll());
                 }
                 if ($selectedType['target'] === 'SISWA' || $selectedType['target'] === 'SEMUA') {
                     $where = "s.status='ACTIVE'";
@@ -171,7 +171,7 @@ class CustomAttendanceController {
 
         if ($type['target'] === 'SISWA' || $type['target'] === 'SEMUA') {
             $report = $db->query("
-                SELECT s.full_name as name, s.nis, c.name as class_name, ca.date, ca.session_num, ca.time_in, ca.status
+                SELECT s.full_name as name, s.nis, c.name as class_name, '' as position_name, ca.date, ca.session_num, ca.time_in, ca.status
                 FROM custom_attendances ca
                 JOIN students s ON ca.person_id = s.id
                 LEFT JOIN classrooms c ON s.classroom_id = c.id
@@ -181,8 +181,11 @@ class CustomAttendanceController {
             )->fetchAll();
         } else {
             $report = $db->query("
-                SELECT u.name, '' as nis, '' as class_name, ca.date, ca.session_num, ca.time_in, ca.status
-                FROM custom_attendances ca JOIN users u ON ca.person_id = u.id
+                SELECT u.name, '' as nis, '' as class_name, COALESCE(sp.name,'') as position_name, ca.date, ca.session_num, ca.time_in, ca.status
+                FROM custom_attendances ca
+                JOIN users u ON ca.person_id = u.id
+                LEFT JOIN staff_members sm ON sm.user_id = u.id
+                LEFT JOIN staff_positions sp ON sm.position_id = sp.id
                 WHERE $where ORDER BY u.name, ca.date, ca.session_num", $params)->fetchAll();
         }
 

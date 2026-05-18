@@ -29,7 +29,7 @@
             <select name="type_id" onchange="this.form.submit()" class="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
                 <option value="">-- Pilih Jenis Absen --</option>
                 <?php foreach ($types as $t): ?>
-                    <option value="<?= $t['id'] ?>" <?= $typeId==$t['id']?'selected':'' ?>><?= htmlspecialchars($t['name']) ?> (<?= $t['target'] ?>)</option>
+                    <option value="<?= $t['id'] ?>" <?= $typeId==$t['id']?'selected':'' ?>><?= htmlspecialchars($t['name']) ?> (<?= $t['target']==='GURU'?'Guru/Staff':'Siswa' ?>)</option>
                 <?php endforeach; ?>
             </select>
             <?php if ($selectedType && ($selectedType['target'] === 'SISWA' || $selectedType['target'] === 'SEMUA')): ?>
@@ -81,6 +81,7 @@
                         <tr class="bg-slate-50 border-b border-slate-200">
                             <th class="px-3 py-3 text-xs font-bold text-slate-500 uppercase w-10 text-center">#</th>
                             <th class="px-3 py-3 text-xs font-bold text-slate-500 uppercase">Nama</th>
+                            <?php if ($selectedType['target'] === 'GURU'): ?><th class="px-3 py-3 text-xs font-bold text-slate-500 uppercase">Jabatan</th><?php endif; ?>
                             <?php for ($sn = 1; $sn <= $sessions; $sn++): ?>
                             <th class="px-2 py-3 text-xs font-bold text-slate-500 uppercase text-center">
                                 <?= $sessionLabels[$sn-1] ?? "Sesi $sn" ?>
@@ -98,6 +99,7 @@
                         <tr class="hover:bg-slate-50/80">
                             <td class="px-3 py-2 text-center text-slate-400 text-xs"><?= $rowNum ?></td>
                             <td class="px-3 py-2 font-semibold text-slate-800 text-xs whitespace-nowrap"><?= htmlspecialchars($p['full_name']) ?></td>
+                            <?php if ($selectedType['target'] === 'GURU'): ?><td class="px-3 py-2 text-xs text-slate-500"><?= htmlspecialchars($p['position_name'] ?? '') ?></td><?php endif; ?>
                             <?php for ($sn = 1; $sn <= $sessions; $sn++):
                                 $curStatus = $existing[$p['id']][$sn]['status'] ?? $statusList[0];
                                 $curTime = $existing[$p['id']][$sn]['time_in'] ?? '';

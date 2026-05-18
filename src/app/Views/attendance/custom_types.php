@@ -75,10 +75,8 @@
                 <select name="target" id="addTarget" onchange="togglePositions('add')" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
                     <option value="SISWA">Siswa</option>
                     <option value="GURU">Guru/Staff</option>
-                    <option value="SEMUA">Semua</option>
                 </select></div>
             <div id="addPositionWrap" class="hidden">
-                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Jabatan (opsional, kosong = semua)</label>
                 <div class="max-h-32 overflow-y-auto bg-slate-50 border border-slate-200 rounded-xl p-2 space-y-1">
                     <?php foreach ($positions as $pos): ?>
                     <label class="flex items-center gap-2 text-xs"><input type="checkbox" name="position_ids[]" value="<?= $pos['id'] ?>" class="rounded"> <?= htmlspecialchars($pos['name']) ?></label>
@@ -205,10 +203,9 @@ document.addEventListener('DOMContentLoaded', function(){ renderSessionFields('a
                 <input type="text" name="name" id="etName" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none"></div>
             <div><label class="block text-sm font-semibold text-slate-600 mb-1.5">Target</label>
                 <select name="target" id="etTarget" onchange="togglePositions('et')" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
-                    <option value="SISWA">Siswa</option><option value="GURU">Guru/Staff</option><option value="SEMUA">Semua</option>
+                    <option value="SISWA">Siswa</option><option value="GURU">Guru/Staff</option>
                 </select></div>
             <div id="etPositionWrap" class="hidden">
-                <label class="block text-sm font-semibold text-slate-600 mb-1.5">Jabatan</label>
                 <div class="max-h-32 overflow-y-auto bg-slate-50 border border-slate-200 rounded-xl p-2 space-y-1">
                     <?php foreach ($positions as $pos): ?>
                     <label class="flex items-center gap-2 text-xs"><input type="checkbox" name="position_ids[]" value="<?= $pos['id'] ?>" class="rounded"> <?= htmlspecialchars($pos['name']) ?></label>
