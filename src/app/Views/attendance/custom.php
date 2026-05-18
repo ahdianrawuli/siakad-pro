@@ -10,7 +10,7 @@
         </div>
         <div class="flex gap-2">
             <?php if ($typeId && !empty($persons)): ?>
-            <a href="/attendance/custom/print?type_id=<?= $typeId ?>&class_id=<?= $classId ?>&date_from=<?= date('Y-m-01') ?>&date_to=<?= $date ?>" target="_blank"
+            <a href="/attendance/custom/print?type_id=<?= $typeId ?>&class_id=<?= $classId ?>&date=<?= $date ?>" target="_blank"
                 class="px-4 py-2.5 bg-slate-600 text-white rounded-xl text-sm font-semibold hover:bg-slate-700 transition flex items-center gap-2">
                 <i class="fa-solid fa-print"></i> Cetak
             </a>

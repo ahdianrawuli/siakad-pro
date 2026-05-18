@@ -160,14 +160,13 @@ class CustomAttendanceController {
         $db = Database::getInstance();
         $typeId  = $_GET['type_id'] ?? '';
         $classId = $_GET['class_id'] ?? '';
-        $dateFrom = !empty($_GET['date_from']) ? $_GET['date_from'] : date('Y-m-01');
-        $dateTo   = !empty($_GET['date_to']) ? $_GET['date_to'] : date('Y-m-d');
+        $date    = !empty($_GET['date']) ? $_GET['date'] : date('Y-m-d');
 
         $type = $db->query("SELECT * FROM custom_attendance_types WHERE id=?", [$typeId])->fetch();
         if (!$type) { header('Location: /attendance/custom'); exit; }
 
-        $where = "ca.type_id=? AND ca.date BETWEEN ? AND ?";
-        $params = [$typeId, $dateFrom, $dateTo];
+        $where = "ca.type_id=? AND ca.date=?";
+        $params = [$typeId, $date];
 
         if ($type['target'] === 'SISWA' || $type['target'] === 'SEMUA') {
             $report = $db->query("
@@ -176,7 +175,7 @@ class CustomAttendanceController {
                 JOIN students s ON ca.person_id = s.id
                 LEFT JOIN classrooms c ON s.classroom_id = c.id
                 WHERE $where" . ($classId ? " AND s.classroom_id=?" : "") . "
-                ORDER BY s.full_name, ca.date, ca.session_num",
+                ORDER BY s.full_name, ca.session_num",
                 $classId ? array_merge($params, [$classId]) : $params
             )->fetchAll();
         } else {
@@ -186,10 +185,10 @@ class CustomAttendanceController {
                 JOIN users u ON ca.person_id = u.id
                 LEFT JOIN staff_members sm ON sm.user_id = u.id
                 LEFT JOIN staff_positions sp ON sm.position_id = sp.id
-                WHERE $where ORDER BY u.name, ca.date, ca.session_num", $params)->fetchAll();
+                WHERE $where ORDER BY u.name, ca.session_num", $params)->fetchAll();
         }
 
         $classroom = $classId ? $db->query("SELECT name FROM classrooms WHERE id=?", [$classId])->fetch() : null;
-        View::render('attendance/print_custom', ['type'=>$type,'report'=>$report,'classroom'=>$classroom,'dateFrom'=>$dateFrom,'dateTo'=>$dateTo]);
+        View::render('attendance/print_custom', ['type'=>$type,'report'=>$report,'classroom'=>$classroom,'date'=>$date]);
     }
 }
