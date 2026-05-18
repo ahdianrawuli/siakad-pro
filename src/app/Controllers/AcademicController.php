@@ -364,7 +364,7 @@ class AcademicController {
         $db = Database::getInstance();
 
         $schedule = $db->query("
-            SELECT sch.*, s.name as subject_name, c.name as class_name, sch.academic_year_id
+            SELECT sch.*, s.name as subject_name, s.id as subject_id, c.name as class_name, c.id as classroom_id, sch.academic_year_id
             FROM schedules sch JOIN subjects s ON sch.subject_id = s.id 
             JOIN classrooms c ON sch.classroom_id = c.id WHERE sch.id = ?
         ", [$scheduleId])->fetch();
@@ -372,22 +372,27 @@ class AcademicController {
 
         $students = $db->query("SELECT * FROM students WHERE classroom_id = ? AND status='ACTIVE' ORDER BY full_name", [$schedule['classroom_id']])->fetchAll();
 
-        // Ambil semua nilai per tipe
-        $gradesRaw = $db->query("SELECT * FROM student_grades WHERE schedule_id = ? ORDER BY type, category, seq_num", [$scheduleId])->fetchAll();
+        // Ambil SEMUA jadwal mapel ini di kelas ini (bisa banyak guru/hari)
+        $allScheduleIds = $db->query("SELECT id FROM schedules WHERE subject_id=? AND classroom_id=? AND academic_year_id=?",
+            [$schedule['subject_id'], $schedule['classroom_id'], $schedule['academic_year_id']])->fetchAll(\PDO::FETCH_COLUMN);
+        $inClause = implode(',', $allScheduleIds);
 
-        // Mapping: gradeMap[student_id][type_category_seq] = score
+        // Ambil semua nilai dari semua jadwal mapel+kelas ini
+        $gradesRaw = $db->query("SELECT sg.*, u.name as teacher_name FROM student_grades sg LEFT JOIN users u ON sg.created_by = u.id WHERE sg.schedule_id IN ($inClause) ORDER BY sg.type, sg.category, sg.seq_num")->fetchAll();
+
+        // Mapping
         $gradeMap = [];
-        $harianColumns = []; // Daftar kolom harian yang ada
+        $harianColumns = [];
         foreach ($gradesRaw as $g) {
             if ($g['type'] === 'HARIAN') {
                 $key = $g['category'] . '_' . $g['seq_num'];
-                $gradeMap[$g['student_id']][$key] = $g['score'];
-                $harianColumns[$key] = ['category' => $g['category'], 'seq_num' => $g['seq_num'], 'description' => $g['description'], 'date' => $g['date']];
+                $gradeMap[$g['student_id']][$key] = ['score' => $g['score'], 'by' => $g['teacher_name']];
+                $harianColumns[$key] = ['category' => $g['category'], 'seq_num' => $g['seq_num'], 'description' => $g['description'], 'date' => $g['date'], 'by' => $g['teacher_name']];
             } else {
-                $gradeMap[$g['student_id']][$g['type']] = $g['score'];
+                $gradeMap[$g['student_id']][$g['type']] = ['score' => $g['score'], 'by' => $g['teacher_name']];
             }
         }
-        ksort($harianColumns);
+        ksort($harianColumns, SORT_NATURAL);
 
         $weights = $db->query("SELECT * FROM grading_weights WHERE academic_year_id = ?", [$schedule['academic_year_id']])->fetch()
             ?: ['weight_daily' => 40, 'weight_uts' => 30, 'weight_uas' => 30];
@@ -452,13 +457,19 @@ class AcademicController {
         if (!$scheduleId) { header('Location: /academic/grades'); exit; }
         $db = Database::getInstance();
 
-        $schedule = $db->query("SELECT sch.*, s.name as subject_name, c.name as class_name, u.name as teacher_name
+        $schedule = $db->query("SELECT sch.*, s.name as subject_name, s.id as subject_id, c.name as class_name, c.id as classroom_id, u.name as teacher_name
             FROM schedules sch JOIN subjects s ON sch.subject_id=s.id
             JOIN classrooms c ON sch.classroom_id=c.id JOIN users u ON sch.teacher_id=u.id
             WHERE sch.id=?", [$scheduleId])->fetch();
 
         $students = $db->query("SELECT * FROM students WHERE classroom_id=? AND status='ACTIVE' ORDER BY full_name", [$schedule['classroom_id']])->fetchAll();
-        $gradesRaw = $db->query("SELECT * FROM student_grades WHERE schedule_id=? ORDER BY type, category, seq_num", [$scheduleId])->fetchAll();
+
+        // Ambil semua jadwal mapel+kelas ini
+        $allScheduleIds = $db->query("SELECT id FROM schedules WHERE subject_id=? AND classroom_id=? AND academic_year_id=?",
+            [$schedule['subject_id'], $schedule['classroom_id'], $schedule['academic_year_id']])->fetchAll(\PDO::FETCH_COLUMN);
+        $inClause = implode(',', $allScheduleIds);
+
+        $gradesRaw = $db->query("SELECT * FROM student_grades WHERE schedule_id IN ($inClause) ORDER BY type, category, seq_num")->fetchAll();
 
         $gradeMap = []; $harianColumns = [];
         foreach ($gradesRaw as $g) {
@@ -470,7 +481,7 @@ class AcademicController {
                 $gradeMap[$g['student_id']][$g['type']] = $g['score'];
             }
         }
-        ksort($harianColumns);
+        ksort($harianColumns, SORT_NATURAL);
 
         $weights = $db->query("SELECT * FROM grading_weights WHERE academic_year_id=?", [$schedule['academic_year_id']])->fetch()
             ?: ['weight_daily'=>40,'weight_uts'=>30,'weight_uas'=>30];

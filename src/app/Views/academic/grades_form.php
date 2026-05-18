@@ -32,10 +32,11 @@
                     <tr class="bg-slate-50 border-b border-slate-200">
                         <th class="px-3 py-3 font-bold text-slate-500 uppercase">Nama</th>
                         <?php foreach ($harianColumns as $key => $col): ?>
-                        <th class="px-2 py-3 font-bold text-slate-500 text-center" title="<?= htmlspecialchars($col['description'] ?? '') ?>">
+                        <th class="px-2 py-3 font-bold text-slate-500 text-center min-w-[80px]" title="<?= htmlspecialchars($col['description'] ?? '') ?>">
                             <div class="uppercase text-[10px]"><?= $col['category'] ?> <?= $col['seq_num'] ?></div>
                             <?php if (!empty($col['date'])): ?><div class="text-[9px] text-slate-400 font-normal"><?= date('d/m', strtotime($col['date'])) ?></div><?php endif; ?>
-                            <?php if (!empty($col['description'])): ?><div class="text-[9px] text-slate-400 font-normal truncate max-w-[60px]"><?= htmlspecialchars($col['description']) ?></div><?php endif; ?>
+                            <?php if (!empty($col['description'])): ?><div class="text-[9px] text-slate-400 font-normal whitespace-normal leading-tight"><?= htmlspecialchars($col['description']) ?></div><?php endif; ?>
+                            <?php if (!empty($col['by'])): ?><div class="text-[8px] text-blue-400 font-normal whitespace-normal leading-tight mt-0.5"><?= htmlspecialchars($col['by']) ?></div><?php endif; ?>
                         </th>
                         <?php endforeach; ?>
                         <th class="px-2 py-3 font-bold text-slate-500 uppercase text-center bg-blue-50">UTS</th>
@@ -45,22 +46,38 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     <?php
-                    $totalHarianCount = count($harianColumns); // Jumlah UH/Tugas yang sudah ada
+                    $totalHarianCount = count($harianColumns);
                     foreach ($students as $s):
-                        // Rata-rata: total semua nilai / jumlah kolom (0 jika tidak ikut)
-                        $sumHarian = 0;
+                        // Rata-rata harian: hanya dari kategori UH
+                        $sumUH = 0; $countUH = 0;
                         foreach ($harianColumns as $key => $col) {
-                            $sumHarian += (float)($gradeMap[$s['id']][$key] ?? 0);
+                            if ($col['category'] === 'UH') {
+                                $cell = $gradeMap[$s['id']][$key] ?? null;
+                                $sumUH += (float)(is_array($cell) ? $cell['score'] : ($cell ?? 0));
+                                $countUH++;
+                            }
                         }
-                        $avgHarian = $totalHarianCount > 0 ? round($sumHarian / $totalHarianCount, 1) : '-';
+                        $avgHarian = $countUH > 0 ? round($sumUH / $countUH, 1) : '-';
                     ?>
                     <tr class="hover:bg-slate-50/80">
                         <td class="px-3 py-2 font-semibold text-slate-800"><?= htmlspecialchars($s['full_name']) ?></td>
-                        <?php foreach ($harianColumns as $key => $col): ?>
-                        <td class="px-2 py-2 text-center"><?= $gradeMap[$s['id']][$key] ?? '<span class="text-slate-300">-</span>' ?></td>
+                        <?php foreach ($harianColumns as $key => $col):
+                            $cell = $gradeMap[$s['id']][$key] ?? null;
+                            $score = is_array($cell) ? $cell['score'] : $cell;
+                            $by = is_array($cell) ? $cell['by'] : '';
+                        ?>
+                        <td class="px-2 py-2 text-center" title="<?= $by ? 'Diinput oleh: '.$by : '' ?>">
+                            <?= $score ?? '<span class="text-slate-300">-</span>' ?>
+                        </td>
                         <?php endforeach; ?>
-                        <td class="px-2 py-2 text-center bg-blue-50 font-bold"><?= $gradeMap[$s['id']]['UTS'] ?? '<span class="text-slate-300">-</span>' ?></td>
-                        <td class="px-2 py-2 text-center bg-green-50 font-bold"><?= $gradeMap[$s['id']]['UAS'] ?? '<span class="text-slate-300">-</span>' ?></td>
+                        <?php
+                            $utsCell = $gradeMap[$s['id']]['UTS'] ?? null;
+                            $uasCell = $gradeMap[$s['id']]['UAS'] ?? null;
+                            $utsScore = is_array($utsCell) ? $utsCell['score'] : $utsCell;
+                            $uasScore = is_array($uasCell) ? $uasCell['score'] : $uasCell;
+                        ?>
+                        <td class="px-2 py-2 text-center bg-blue-50 font-bold"><?= $utsScore ?? '<span class="text-slate-300">-</span>' ?></td>
+                        <td class="px-2 py-2 text-center bg-green-50 font-bold"><?= $uasScore ?? '<span class="text-slate-300">-</span>' ?></td>
                         <td class="px-2 py-2 text-center bg-amber-50 font-bold"><?= $avgHarian ?></td>
                     </tr>
                     <?php endforeach; ?>

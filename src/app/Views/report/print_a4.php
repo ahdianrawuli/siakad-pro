@@ -83,25 +83,33 @@
             </tr>
         </table>
 
+        <p class="text-xs text-gray-500 mb-2"><strong>Keterangan Bobot:</strong> Rata² Harian <?= $weights['weight_daily'] ?>% + UTS <?= $weights['weight_uts'] ?>% + UAS <?= $weights['weight_uas'] ?>% = Nilai Akhir</p>
+
         <table class="mb-6">
             <thead>
                 <tr class="bg-gray-200">
-                    <th width="5%" class="text-center">No</th>
-                    <th width="35%">Mata Pelajaran</th>
-                    <th width="10%" class="text-center">KKM</th>
-                    <th width="10%" class="text-center">Nilai</th>
-                    <th width="10%" class="text-center">Predikat</th>
-                    <th width="30%">Deskripsi Capaian</th>
+                    <th width="4%" class="text-center">No</th>
+                    <th width="22%">Mata Pelajaran</th>
+                    <th width="7%" class="text-center">KKM</th>
+                    <th width="9%" class="text-center">Harian</th>
+                    <th width="8%" class="text-center">UTS</th>
+                    <th width="8%" class="text-center">UAS</th>
+                    <th width="9%" class="text-center">Nilai</th>
+                    <th width="8%" class="text-center">Predikat</th>
+                    <th width="25%">Deskripsi Capaian</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if(!empty($grades['NASIONAL'])): ?>
-                <tr class="bg-gray-200"><td colspan="6" class="font-bold px-2">A. Muatan Nasional</td></tr>
+                <tr class="bg-gray-200"><td colspan="9" class="font-bold px-2">A. Muatan Nasional</td></tr>
                 <?php $no=1; foreach($grades['NASIONAL'] as $g): ?>
                     <tr>
                         <td class="text-center"><?= $no++ ?></td>
                         <td><?= $g['subject_name'] ?></td>
                         <td class="text-center"><?= $g['kkm'] ?></td>
+                        <td class="text-center"><?= $g['avg_harian'] ?></td>
+                        <td class="text-center"><?= $g['uts'] ?></td>
+                        <td class="text-center"><?= $g['uas'] ?></td>
                         <td class="text-center font-bold"><?= $g['final_score'] ?></td>
                         <td class="text-center"><?= $g['predicate'] ?></td>
                         <td class="text-sm"><?= $g['description'] ?></td>
@@ -109,12 +117,15 @@
                 <?php endforeach; endif; ?>
 
                 <?php if(!empty($grades['PESANTREN'])): ?>
-                <tr class="bg-gray-200"><td colspan="6" class="font-bold px-2">B. Muatan Pesantren (Diniyyah)</td></tr>
+                <tr class="bg-gray-200"><td colspan="9" class="font-bold px-2">B. Muatan Pesantren (Diniyyah)</td></tr>
                 <?php $no=1; foreach($grades['PESANTREN'] as $g): ?>
                     <tr>
                         <td class="text-center"><?= $no++ ?></td>
                         <td><?= $g['subject_name'] ?></td>
                         <td class="text-center"><?= $g['kkm'] ?></td>
+                        <td class="text-center"><?= $g['avg_harian'] ?></td>
+                        <td class="text-center"><?= $g['uts'] ?></td>
+                        <td class="text-center"><?= $g['uas'] ?></td>
                         <td class="text-center font-bold"><?= $g['final_score'] ?></td>
                         <td class="text-center"><?= $g['predicate'] ?></td>
                         <td class="text-sm"><?= $g['description'] ?></td>
@@ -122,12 +133,15 @@
                 <?php endforeach; endif; ?>
 
                 <?php if(!empty($grades['MULOK'])): ?>
-                <tr class="bg-gray-200"><td colspan="6" class="font-bold px-2">C. Muatan Lokal</td></tr>
+                <tr class="bg-gray-200"><td colspan="9" class="font-bold px-2">C. Muatan Lokal</td></tr>
                 <?php $no=1; foreach($grades['MULOK'] as $g): ?>
                     <tr>
                         <td class="text-center"><?= $no++ ?></td>
                         <td><?= $g['subject_name'] ?></td>
                         <td class="text-center"><?= $g['kkm'] ?></td>
+                        <td class="text-center"><?= $g['avg_harian'] ?></td>
+                        <td class="text-center"><?= $g['uts'] ?></td>
+                        <td class="text-center"><?= $g['uas'] ?></td>
                         <td class="text-center font-bold"><?= $g['final_score'] ?></td>
                         <td class="text-center"><?= $g['predicate'] ?></td>
                         <td class="text-sm"><?= $g['description'] ?></td>

@@ -44,7 +44,7 @@ class ReportController {
 
         // Ambil semua nilai siswa untuk tahun ajaran ini
         $gradesRaw = $db->query("
-            SELECT sg.type, sg.score, s.name as subject_name
+            SELECT sg.type, sg.category, sg.score, s.name as subject_name
             FROM student_grades sg
             JOIN schedules sch ON sg.schedule_id = sch.id
             JOIN subjects s ON sch.subject_id = s.id
@@ -69,7 +69,14 @@ class ReportController {
         foreach ($allSubjects as $subj) {
             $key = $subj['subject_name'];
             $harian = $scoreMap[$key]['harian'] ?? [];
-            $daily = !empty($harian) ? array_sum($harian) / count($harian) : 0;
+            // Rata-rata harian hanya dari UH (category UH), bukan Tugas/Quiz
+            $uhScores = [];
+            foreach ($gradesRaw as $g) {
+                if ($g['subject_name'] === $key && $g['type'] === 'HARIAN' && ($g['category'] ?? 'UH') === 'UH') {
+                    $uhScores[] = (float)$g['score'];
+                }
+            }
+            $daily = !empty($uhScores) ? array_sum($uhScores) / count($uhScores) : 0;
             $uts   = $scoreMap[$key]['uts'] ?? 0;
             $uas   = $scoreMap[$key]['uas'] ?? 0;
             $hasScore = !empty($harian) || $uts > 0 || $uas > 0;
@@ -93,6 +100,9 @@ class ReportController {
             $grades[$type][] = [
                 'subject_name' => $subj['subject_name'],
                 'kkm'          => $subj['kkm'],
+                'avg_harian'   => !empty($uhScores) ? round(array_sum($uhScores) / count($uhScores), 1) : '-',
+                'uts'          => $uts ?: '-',
+                'uas'          => $uas ?: '-',
                 'final_score'  => $final ?? '-',
                 'predicate'    => $predicate,
                 'description'  => $desc,
@@ -112,6 +122,7 @@ class ReportController {
             'student'    => $student,
             'year'       => $year,
             'grades'     => $grades,
+            'weights'    => $weights,
             'attendance' => $attendance,
         ]);
     }

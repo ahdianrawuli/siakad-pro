@@ -40,9 +40,11 @@
         </thead>
         <tbody>
             <?php $no=1; foreach ($students as $s):
-                $sum = 0;
-                foreach ($harianColumns as $key => $col) { $sum += (float)($gradeMap[$s['id']][$key] ?? 0); }
-                $avg = $totalHarian > 0 ? round($sum / $totalHarian, 1) : 0;
+                $sumUH = 0; $countUH = 0;
+                foreach ($harianColumns as $key => $col) {
+                    if ($col['category'] === 'UH') { $sumUH += (float)($gradeMap[$s['id']][$key] ?? 0); $countUH++; }
+                }
+                $avg = $countUH > 0 ? round($sumUH / $countUH, 1) : 0;
                 $uts = (float)($gradeMap[$s['id']]['UTS'] ?? 0);
                 $uas = (float)($gradeMap[$s['id']]['UAS'] ?? 0);
                 $na = round(($avg * $weights['weight_daily'] + $uts * $weights['weight_uts'] + $uas * $weights['weight_uas']) / 100, 1);
